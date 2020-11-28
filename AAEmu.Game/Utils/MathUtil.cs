@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
@@ -8,6 +9,10 @@ namespace AAEmu.Game.Utils
 {
     public static class MathUtil
     {
+        private const double Pi = 3.14159;
+        private const double Pi2 = 3.14159 * 2;
+        private const double Pi12 = 3.14159 * 0.5;
+
         // Return degree value of object 2 to the horizontal line with object 1 being the origin
         public static double CalculateAngleFrom(GameObject obj1, GameObject obj2)
         {
@@ -25,14 +30,31 @@ namespace AAEmu.Game.Utils
 
             return angleTarget;
         }
+        // Returns distance between 2 objects in a 3D space (x, y, z)
+        public static double GetDistance3D(GameObject obj1, GameObject obj2)
+        {
+            var xs = Math.Pow(obj2.Position.X - obj1.Position.X, 2);
+            var ys = Math.Pow(obj2.Position.Y - obj1.Position.Y, 2);
+            var zs = Math.Pow(obj2.Position.Z - obj1.Position.Z, 2);
+            var sqrt = Math.Sqrt(xs + ys + zs);
+            return sqrt;
+        }
+
+        // Returns distance between 2 objects in a 2D space (x, y)
+        public static double GetDistance2D(GameObject obj1, GameObject obj2)
+        {
+            return Math.Sqrt(Math.Pow(obj2.Position.X - obj1.Position.X, 2) + Math.Pow(obj2.Position.Y - obj1.Position.Y, 2));
+        }
+
 
         public static double RadianToDegree(double angle)
         {
-            return angle * (180.0 / Math.PI);
+            return angle * (180.0 / Pi);
         }
+
         public static double DegreeToRadian(double angle)
         {
-            return angle * (Math.PI / 180.0);
+            return angle * (Pi / 180.0);
         }
 
         public static double ConvertDirectionToDegree(sbyte direction)
@@ -62,12 +84,31 @@ namespace AAEmu.Game.Utils
 
             return res;
         }
+        public static Quaternion ConvertRadianToDirectionShort(double radian)
+        {
+            if (radian < 0)
+            {
+                radian = Pi2 + radian;
+            }
+            radian -= Pi12;
+            if (radian > Pi)
+            {
+                radian -= Pi2;
+            }
+            //if (degree < -Pi)
+            //{
+            //    degree += Pi2;
+            //}
+            var quat = Quaternion.CreateFromYawPitchRoll((float)radian, 0.0f, 0.0f);
+
+            return quat;
+        }
 
         public static short UpdateHeading(Vector3 point, Vector3 target)
         {
             var rad = Math.Atan2(target.Y - point.Y, target.X - point.X);
-            rad -= Math.PI / 2; // 12 o'clock == 0°
-            var heading = (short)(rad * 32767 / Math.PI);
+            rad -= Pi / 2; // 12 o'clock == 0°
+            var heading = (short)(rad * 32767 / Pi);
 
             return heading;
         }
@@ -76,8 +117,8 @@ namespace AAEmu.Game.Utils
             ushort heading;
             if (radian)
             {
-                degree -= Math.PI / 2; // 12 o'clock == 0°
-                heading = (ushort)(degree * 32767 / Math.PI);
+                degree -= Pi / 2; // 12 o'clock == 0°
+                heading = (ushort)(degree * 32767 / Pi);
             }
             else
             {
@@ -145,7 +186,15 @@ namespace AAEmu.Game.Utils
 
         public static double ConvertDirectionToRadian(sbyte direction)
         {
-            return ConvertDirectionToDegree(direction) * Math.PI / 180.0;
+            return ConvertDirectionToDegree(direction) * Pi / 180.0;
+        }
+
+        public static (float, float) AddDistanceToFrontDeg(float distance, float x, float y, float deg)
+        {
+            var rad = deg * Math.PI / 180.0;
+            var newX = (distance * (float)Math.Cos(rad)) + x;
+            var newY = (distance * (float)Math.Sin(rad)) + y;
+            return (newX, newY);
         }
 
         public static (float, float) AddDistanceToFront(float distance, float x, float y, sbyte rotZ)
@@ -155,16 +204,10 @@ namespace AAEmu.Game.Utils
             var newY = (distance * (float)Math.Sin(rad)) + y;
             return (newX, newY);
         }
-        public static (float, float) AddDistanceToFront(float distance, float x, float y, double rad)
-        {
-            var newX = distance * (float)Math.Cos(rad) + x;
-            var newY = distance * (float)Math.Sin(rad) + y;
-            return (newX, newY);
-        }
 
         public static (float, float) AddDistanceToRight(float distance, float x, float y, sbyte rotZ)
         {
-            var rad = ConvertDirectionToRadian(rotZ) - (Math.PI / 2);
+            var rad = ConvertDirectionToRadian(rotZ) - (Pi / 2);
             var newX = (distance * (float)Math.Cos(rad)) + x;
             var newY = (distance * (float)Math.Sin(rad)) + y;
             return (newX, newY);
@@ -220,7 +263,7 @@ namespace AAEmu.Game.Utils
 
         public static short UpdateHeading(Unit obj, Vector3 target)
         {
-            return (short)(Math.Atan2(target.Y - obj.Position.Y, target.X - obj.Position.X) * 32768 / Math.PI);
+            return (short)(Math.Atan2(target.Y - obj.Position.Y, target.X - obj.Position.X) * 32768 / Pi);
         }
 
         // ===========================================================================================================
@@ -287,26 +330,27 @@ namespace AAEmu.Game.Utils
         public static Quaternion shortestArc(Vector3 from, Vector3 to)
         {
             var q2 = new Quaternion(0, 0, 0, 1);
-            var crossV = Vector3.Cross(from, to);
-            var q = new Quaternion(crossV.X, crossV.Y, crossV.Z, Vector3.Dot(from, to));
+            var crossV = Vector3.Cross(@from, to);
+            var q = new Quaternion(crossV.X, crossV.Y, crossV.Z, Vector3.Dot(@from, to));
             q = Quaternion.Normalize(q);    // if "from" or "to" is not unit, normalize it
 
             // contains quaternion of "double angle" rotation from to. can be non unit.
             q.W += 1.0f;               // reducing angle to half angle
             if (q.W <= 0.000062000123) // angle close to PI
             {
-                if ((from.Z * from.Z) > (from.X * from.X))
+                if ((@from.Z * @from.Z) > (@from.X * @from.X))
                 {
-                    q2 = new Quaternion(0, from.Z, -from.Y, q.W); // from * vector3(1,0,0) 
+                    q2 = new Quaternion(0, @from.Z, -@from.Y, q.W); // from * vector3(1,0,0) 
                 }
                 else
                 {
-                    q2 = new Quaternion(from.Y, -from.X, 0, q.W); // from * vector3(0,0,1) 
+                    q2 = new Quaternion(@from.Y, -@from.X, 0, q.W); // from * vector3(0,0,1) 
                 }
             }
             q2 = Quaternion.Normalize(q2);
             return q2;
         }
+
         public static float ConvertToDirection(double radian)
         {
             var degree = RadianToDegree(radian);
@@ -329,18 +373,21 @@ namespace AAEmu.Game.Utils
 
             return Helpers.ConvertDirectionToRadian((short)direction);
         }
+
         public static double CalculateDirection(Vector3 obj1, Vector3 obj2)
         {
             var rad = Math.Atan2(obj2.Y - obj1.Y, obj2.X - obj1.X);
 
             return rad;
         }
+
         public static double CalculateDirectionZ(Vector3 obj1, Vector3 obj2)
         {
             var rad = Math.Atan2(obj2.Y - obj1.Y, obj2.Z - obj1.Z);
 
             return rad;
         }
+
         public static float GetDistance(Vector3 v1, Vector3 v2, bool point3d = false)
         {
             return point3d
@@ -348,6 +395,79 @@ namespace AAEmu.Game.Utils
                 MathF.Sqrt(MathF.Pow(v1.X - v2.X, 2) + MathF.Pow(v1.Y - v2.Y, 2) + MathF.Pow(v1.Y - v2.Y, 2))
                 :
                 MathF.Sqrt(MathF.Pow(v1.X - v2.X, 2) + MathF.Pow(v1.Y - v2.Y, 2));
+        }
+
+        public static Vector3 GetVectorFromQuat(Quaternion quat)
+        {
+            double sqw = quat.W * quat.W;
+            double sqx = quat.X * quat.X;
+            double sqy = quat.Y * quat.Y;
+            double sqz = quat.Z * quat.Z;
+
+            var rotX = (float)Math.Atan2(2.0 * (quat.X * quat.Y + quat.Z * quat.W), (sqx - sqy - sqz + sqw));
+            var rotY = (float)Math.Atan2(2.0 * (quat.Y * quat.Z + quat.X * quat.W), (-sqx - sqy + sqz + sqw));
+            var rotZ = (float)Math.Asin(-2.0 * (quat.X * quat.Z - quat.Y * quat.W) / (sqx + sqy + sqz + sqw));
+
+            return new Vector3(rotX, rotY, rotZ);
+        }
+        public static (float, float, float) GetSlaveRotationInDegrees(short rotX, short rotY, short rotZ)
+        {
+            var quatX = rotX * 0.00003052f;
+            var quatY = rotY * 0.00003052f;
+            var quatZ = rotZ * 0.00003052f;
+            var quatNorm = quatX * quatX + quatY * quatY + quatZ * quatZ;
+
+            var quatW = 0.0f;
+            if (quatNorm < 0.99750)
+            {
+                quatW = (float)Math.Sqrt(1.0 - quatNorm);
+            }
+
+            var quat = new Quaternion(quatX, quatY, quatZ, quatW);
+
+            var roll = (float)Math.Atan2(2 * (quat.W * quat.X + quat.Y * quat.Z),
+                1 - 2 * (quat.X * quat.X + quat.Y * quat.Y));
+            var sinp = 2 * (quat.W * quat.Y - quat.Z * quat.X);
+            var pitch = 0.0f;
+            if (Math.Abs(sinp) >= 1)
+                pitch = (float)CopySign(Math.PI / 2, sinp);
+            else
+            {
+                pitch = (float)Math.Asin(sinp);
+            }
+
+            var yaw = (float)Math.Atan2(2 * (quat.W * quat.Z + quat.X * quat.Y), 1 - 2 * (quat.Y * quat.Y + quat.Z * quat.Z));
+
+            return (roll, pitch, yaw);
+        }
+
+        public static (short, short, short) GetSlaveRotationFromDegrees(float degX, float degY, float degZ)
+        {
+            var reverseQuat = Quaternion.CreateFromYawPitchRoll(degZ, degX, degY);
+            return ((short)(reverseQuat.X / 0.00003052f), (short)(reverseQuat.Z / 0.00003052f), (short)(reverseQuat.Y / 0.00003052f));
+        }
+
+        // взял из Math (.Net 3.1)
+        public static double CopySign(double x, double y)
+        {
+            return SoftwareFallback(x, y);
+
+            double SoftwareFallback(double xx, double yy)
+            {
+                const long signMask = 1L << 63;
+
+                // This method is required to work for all inputs,
+                // including NaN, so we operate on the raw bits.
+                long xbits = BitConverter.DoubleToInt64Bits(xx);
+                long ybits = BitConverter.DoubleToInt64Bits(yy);
+
+                // Remove the sign from x, and remove everything but the sign from y
+                xbits &= ~signMask;
+                ybits &= signMask;
+
+                // Simply OR them to get the correct sign
+                return BitConverter.Int64BitsToDouble(xbits | ybits);
+            }
         }
     }
 }

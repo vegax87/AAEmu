@@ -269,7 +269,7 @@ namespace AAEmu.Commons.Utils
         {
             var z = rotation * 0.0078740157; // переводим из направления в радианы
             z *= Math.PI * 2;
-            
+
             return (float)z;
         }
         public static float ConvertDirectionToRadian(short rotation)
@@ -321,6 +321,26 @@ namespace AAEmu.Commons.Utils
         public static float Int16ToFloat(short i)
         {
             return ((i - short.MinValue) * (1f / 0xFFFF)) - 0.5f;
+        }
+
+        /*
+        * Which works out about 30% faster than PZahras (not that you'd notice with small amounts of data).
+        * The BitConverter method itself is pretty quick, it's just having to do the replace which slows it down, so if you can live with the dashes then it's perfectly good.
+        */
+        public static string ByteArrayToString(byte[] data)
+        {
+            char[] lookup = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+            int i = 0, p = 0, l = data.Length;
+            char[] c = new char[l * 2 + 2];
+            byte d;
+            //int p = 2; c[0] = '0'; c[1] = 'x'; //если хотим 0x
+            while (i < l)
+            {
+                d = data[i++];
+                c[p++] = lookup[d / 0x10];
+                c[p++] = lookup[d % 0x10];
+            }
+            return new string(c, 0, c.Length);
         }
     }
 }

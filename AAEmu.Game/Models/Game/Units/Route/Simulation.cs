@@ -41,7 +41,6 @@ namespace AAEmu.Game.Models.Game.Units.Route
         private float diffY;
         private float diffZ;
         //
-        public float DeltaTime { get; set; } = 0.05f;
         public double _angleTmp;
         public Vector3 _vPosition;
         public Vector3 _vTarget;
@@ -947,266 +946,104 @@ namespace AAEmu.Game.Models.Game.Units.Route
             }
             else if (unit is Transfer transfer)
             {
-                if (!MoveToPathEnabled || transfer.Position == null || !transfer.IsInPatrol)
+                if (!sim.MoveToPathEnabled || transfer.Position == null || !transfer.IsInPatrol)
                 {
                     transfer.Throttle = 0;
-                    StopMove(transfer);
+                    sim.StopMove(transfer);
                     return;
                 }
 
                 // create a pointer where we are going
                 //var spwnFlag = SpawnFlag(vTarget);
-                vTarget = new Vector3(targetX, targetY, targetZ);
-                vPosition = new Vector3(transfer.Position.X, transfer.Position.Y, transfer.Position.Z);
+                sim.vTarget = new Vector3(targetX, targetY, targetZ);
+                sim.vPosition = new Vector3(transfer.Position.X, transfer.Position.Y, transfer.Position.Z);
                 // вектор направление на таргет (последовательность аргументов важно, чтобы смотреть на таргет)
-                vDistance = vTarget - vPosition; // dx, dy, dz
+                sim.vDistance = sim.vTarget - sim.vPosition; // dx, dy, dz
                 // distance to the point where we are moving
-                Distance = MathUtil.GetDistance(vTarget, vPosition);
+                sim.Distance = MathUtil.GetDistance(sim.vTarget, sim.vPosition);
 
-                if (!(Distance > 0))
+                if (!(sim.Distance > 0))
                 {
-                    InPatrol = false;
+                    sim.InPatrol = false;
                     // get next path or point # in current path
-                    OnMove2(transfer);
+                    sim.OnMove2(transfer);
                     return;
                 }
 
-                // get current values
-                // var deltaTime = (float)(DateTime.Now - GameService.StartTime).TotalSeconds;
-                DeltaTime = 0.05f; // temporarily took a constant, later it will be necessary to take the current time
-                //DeltaTime = (float)(DateTime.Now - UpdateTime).TotalSeconds;
-                //UpdateTime = DateTime.Now;
-                //if (DeltaTime > 1)
-                //{
-                //    DeltaTime = 1.0f / 60.0f;
-                //}
-
-                _maxVelocityForward = 8.0f; // temporarily took a constant
-
-                vDistance = vTarget - vPosition;
-                // скорость движения velociti за период времени DeltaTime
-                var velocity = MaxVelocityForward * DeltaTime;
-                // вектор направление на таргет (последовательность аргументов важно, чтобы смотреть на таргет)
-                var direction = vTarget - vPosition;
-                // вектор направления необходимо нормализовать
-                if (direction != Vector3.Zero)
+                sim.DeltaTime = (float)(DateTime.UtcNow - sim.UpdateTime).TotalSeconds;
+                sim.UpdateTime = DateTime.UtcNow;
+                if (sim.DeltaTime > 1)
                 {
-                    direction = Vector3.Normalize(direction);
+                    sim.DeltaTime = 1.0f / 20.0f;
                 }
 
+                sim._maxVelocityForward = 9.0f; // temporarily took a constant
+                // accelerate to maximum speed
+                transfer.Speed += sim._velAccel * sim.DeltaTime;
+                //check that it is not more than the maximum forward or reverse speed
+                transfer.Speed = Math.Clamp(transfer.Speed, sim._maxVelocityBackward, sim._maxVelocityForward);
+
+                //var velocity = MaxVelocityForward * DeltaTime;
+                var velocity = transfer.Speed * sim.DeltaTime;
+                // вектор направление на таргет (последовательность аргументов важно, чтобы смотреть на таргет)
+                // вектор направления необходимо нормализовать
+                var direction = sim.vDistance != Vector3.Zero ? Vector3.Normalize(sim.vDistance) : Vector3.Zero;
                 // вектор скорости (т.е. координаты, куда попадём двигаясь со скоростью velociti по направдению direction)
                 var diff = direction * velocity;
 
                 transfer.Position.X += diff.X;
                 transfer.Position.Y += diff.Y;
                 transfer.Position.Z += diff.Z;
-                if (Math.Abs(vDistance.X) < RangeToCheckPoint) { transfer.Position.X = vTarget.X; }
-                if (Math.Abs(vDistance.Y) < RangeToCheckPoint) { transfer.Position.Y = vTarget.Y; }
-                if (Math.Abs(vDistance.Z) < RangeToCheckPoint) { transfer.Position.Z = vTarget.Z; }
+                if (Math.Abs(sim.vDistance.X) < sim.RangeToCheckPoint) { transfer.Position.X = sim.vTarget.X; }
+                if (Math.Abs(sim.vDistance.Y) < sim.RangeToCheckPoint) { transfer.Position.Y = sim.vTarget.Y; }
+                if (Math.Abs(sim.vDistance.Z) < sim.RangeToCheckPoint) { transfer.Position.Z = sim.vTarget.Z; }
 
-
-
-                // ********************************************
-                //var carLocation = new Vector2(transfer.Position.X, transfer.Position.Y);
-                //var carHeading = (float)MathUtil.CalculateDirection(vPosition, vTarget);
-                ////var carSpeed = 8f;
-                //var steerAngle = (float)MathUtil.CalculateDirection(vPosition, vTarget);
-                //var wheelBase = 9f; // the distance between the two axles
-
-                //var frontWheel = carLocation + wheelBase / 2 * new Vector2((float)Math.Cos(carHeading), (float)Math.Sin(carHeading));
-                //var backWheel = carLocation - wheelBase / 2 * new Vector2((float)Math.Cos(carHeading), (float)Math.Sin(carHeading));
-
-                //backWheel += _maxVelocityForward * DeltaTime * new Vector2((float)Math.Cos(carHeading), (float)Math.Sin(carHeading));
-                //frontWheel += _maxVelocityForward * DeltaTime * new Vector2((float)Math.Cos(carHeading + steerAngle), (float)Math.Sin(carHeading + steerAngle));
-                //carLocation = (frontWheel + backWheel) / 2;
-                //carHeading = (float)Math.Atan2(frontWheel.Y - backWheel.Y, frontWheel.X - backWheel.X);
-
-                //transfer.Position.X = carLocation.X;
-                //transfer.Position.Y = carLocation.Y;
-                //Angle = carHeading;
-                // ********************************************
-
-
-                //var velocityX = vVelocity.X;
-                //var velocityY = vVelocity.Y;
-                //var velocityZ = vVelocity.Z;
-                // accelerate to maximum speed
-                //transfer.Speed += _velAccel * DeltaTime;
-                // check that it is not more than the maximum forward or reverse speed
-                //transfer.Speed = Math.Clamp(transfer.Speed, _maxVelocityBackward, _maxVelocityForward);
-
-                // скорость движения velociti за период времени DeltaTime
-                //var velociti = transfer.Speed * DeltaTime;
-                // вектор направления необходимо нормализовать
-                //if (vDistance != Vector3.Zero)
-                //{
-                //    vDistance = Vector3.Normalize(vDistance);
-                //}
-                // вектор скорости (т.е. координаты, куда попадем двигаясь со скоростью velociti по направдению direction)
-                //var diff = vDistance; // * velociti;
-                //transfer.Position.X += diff.X;
-                //transfer.Position.Y += diff.Y;
-                //transfer.Position.Z += diff.Z;
-
-                //transfer.Velocity = new Vector3(diff.X, diff.Y, diff.Z);
-
-                //if (Math.Abs(vDistance.X) < RangeToCheckPoint) { transfer.Position.X = vTarget.X; }
-                //if (Math.Abs(vDistance.Y) < RangeToCheckPoint) { transfer.Position.Y = vTarget.Y; }
-                ////if (Math.Abs(vDistance.Z) < RangeToCheckPoint) { transfer.Position.Z = vTarget.Z; }
-                //transfer.Position.Z = AppConfiguration.Instance.HeightMapsEnable ? WorldManager.Instance.GetHeight(transfer.Position.ZoneId, transfer.Position.X, transfer.Position.Y) : vTarget.Z;
-
-
-                //rad = MathUtil.CalculateDirection(vPosition, vTarget);
-                //var cosA = (float)Math.Cos(rad);
-                //var sinA = (float)Math.Sin(rad);
-                //diffX = MovingDistance * cosA;
-                //diffY = MovingDistance * sinA;
-                //var velX = transfer.Speed * cosA;
-                //var velY = transfer.Speed * sinA;
-
-                //if the distance in X to travel is greater than the distance that can be traveled in a period of time
-                //if (Math.Abs(vDistance.X) > RangeToCheckPoint)
-                //{
-                //    transfer.Position.X += diff.X;
-                //}
-                //else
-                //{
-                //    transfer.Position.X = vTarget.X;
-                //}
-                // if the distance in Y to travel is greater than the distance that can be traveled in a period of time
-                //if (Math.Abs(vDistance.Y) > RangeToCheckPoint)
-                //{
-                //    transfer.Position.Y += diff.Y;
-                //}
-                //else
-                //{
-                //    transfer.Position.Y = vTarget.Y;
-                //}
-
-                //var cosA = (float)Math.Cos(MathUtil.CalculateDirectionZ(vPosition, vTarget));
-                //diffZ = MovingDistance * cosA;
-                //if (Math.Abs(vDistance.Z) > RangeToCheckPoint)
-                //{
-                //    transfer.Position.Z += diffZ;
-                //    var tempPosZ = AppConfiguration.Instance.HeightMapsEnable ? WorldManager.Instance.GetHeight(transfer.Position.ZoneId, vPosition.X, vPosition.Y) : vPosition.Z;
-                //    if (transfer.Position.Z < tempPosZ)
-                //    {
-                //        transfer.Position.Z = tempPosZ;
-                //    }
-                //}
-                //else
-                //{
-                //    transfer.Position.Z = vTarget.Z;
-                //}
-
-                //var velZ = transfer.Speed * cosA;
-                //transfer.Velocity = new Vector3(velX, velY, velZ);
-                //vVelocity = new Vector3(velX, velY, velZ);
-
-                // looks in the direction of movement
-                //_angleTmp = MathUtil.RadianToDegree(rad);
-                // slowly turn to the desired angle
-                //if (_angleTmp > 0)
-                //{
-                //    _angle += _angVel;
-                //    _angle = (float)Math.Clamp(_angle, 0f, _angleTmp);
-                //}
-                //else
-                //{
-                //    _angle -= _angVel;
-                //    _angle = (float)Math.Clamp(_angle, _angleTmp, 0f);
-                //}
-                // var rotZ = MathUtil.ConvertDegreeToDirectionShort(angle);
-                //var rotZ = MathUtil.UpdateHeading(angle);
-                //transfer.Rot.Z = rotZ;
-                //var tmpZ = Helpers.ConvertRotation(transfer.Position.RotationZ);
-
-
-                //var axis = new Vector3(0f, 0f, 1f);
-                //transfer.Rot = Quaternion.CreateFromAxisAngle(axis, (float)_angleTmp);
-
-                //var temp = Quaternion.CreateFromYawPitchRoll((float)_angleTmp, 0 , 0);
-                //transfer.Rot = new Quaternion(0f, 0f, temp.Y * 32767f, temp.W * 32767);
-
-                var deltaY = Math.Abs(vTarget.Y - vPosition.Y);
-                var deltaX = Math.Abs(vTarget.X - vPosition.X);
-
-                var angleInDegrees = MathUtil.RadianToDegree(Math.Atan2(deltaY, deltaX));
-
-                if (vTarget.Y > vPosition.Y) // Second point is lower than first, angle goes down (180-360)
+                var quat = new Quaternion();
+                if (sim.Distance > sim.RangeToCheckPoint)
                 {
-                    if (vTarget.X < vPosition.X)//Second point is to the left of first (180-270)
-                    {
-                        angleInDegrees += 180;
-                    }
-                    else //(270-360)
-                    {
-                        angleInDegrees += 270;
-                    }
-                }
-                else if (vTarget.X < vPosition.X) //Second point is top left of first (90-180)
-                {
-                    angleInDegrees += 90;
+                    sim.Angle = MathUtil.CalculateDirection(sim.vPosition, sim.vTarget);
+                    quat = MathUtil.ConvertRadianToDirectionShort(sim.Angle);
+                    transfer.Rot = new Quaternion(quat.X, quat.Z, quat.Y, quat.W); // quat.Y - вращение вокруг оси Z
+                    transfer.Velocity = Vector3.Zero; // пока обнулим
+                    transfer.AngVel = new Vector3(0f, 0f, (float)sim.Angle); // сюда записывать дельту, в радианах, угла поворота между начальным вектором и конечным
                 }
 
-                Angle = MathUtil.DegreeToRadian(angleInDegrees);
+                if (transfer.TemplateId == 6)
+                {
+                    // для проверки углов
+                    var v1 = transfer.Position.RotationZ * 0.0078740157;
+                    var v2 = v1 * 3.14159 * 2;
+                    var RotationZdeg = MathUtil.RadianToDegree(v2);
+                    var degree = MathUtil.RadianToDegree(sim.Angle);
 
-                //Angle = (float)Math.Atan2(direction.Y, direction.X); // угол в радианах
-
-                //чтобы не разворачивало назад, если точка последняя
-                //if (Math.Abs(Distance) < 0.5f) // && MoveStepIndex == TransferPath.Count - 1)
-                //{
-                //    Point pp;
-                //    if (MoveStepIndex == TransferPath.Count - 1)
-                //    {
-                //        pp = Steering == Routes.Count - 1 ? Routes[0][0] : Routes[Steering + 1][0];
-                //    }
-                //    else
-                //    {
-                //        pp = Steering == Routes.Count - 1 ? Routes[0][MoveStepIndex + 1] : Routes[Steering + 1][MoveStepIndex + 1];
-                //    }
-                //    var vNewTarget = new Vector3(pp.X, pp.Y, pp.Z);
-                //    Angle = MathUtil.CalculateDirection(vPosition, vNewTarget);
-                //}
-                //else
-                //{
-                //    Angle = MathUtil.CalculateDirection(vPosition, vTarget);
-                //}
-
-                //Angle = MathUtil.CalculateDirection(vPosition, vTarget);
-
-                transfer.Position.RotationZ = MathUtil.ConvertDegreeToDirection(MathUtil.RadianToDegree(Angle));
-                //transfer.Rot = new Quaternion(0f, 0f, MathUtil.ConvertToDirection(Angle), 1f);
-                transfer.Rot = new Quaternion(0f, 0f, (float)Angle, 1f);
-                transfer.AngVel = new Vector3(0f, 0f, (float)Angle); // сюда записывать дельту, в радианах, угла поворота между начальным вектором и конечным
-                //if (transfer.TemplateId == 52)
-                //{
-                //    _log.Warn("Rad={0}, Angle={1}, angleTmp={2}, RotationZ={3}, Rot={4}", rad, Angle, _angleTmp, transfer.Position.RotationZ, transfer.Rot);
-                //    _log.Warn("Distance={0}, MoveStepIndex={1}, TransferPath.Count-1={2}", Math.Abs(Distance), MoveStepIndex, TransferPath.Count - 1);
-                //}
+                    //_log.Warn("Angle={0}, _angle={1}, angleTmp={2}, Rot={3}, RotationZ={4}", Angle, _angle, _angleTmp, transfer.Rot, transfer.Position.RotationZ);
+                    _log.Warn("Distance={0}, MoveStepIndex={1}, TransferPath.Count-1={2}", Math.Abs(sim.Distance), sim.MoveStepIndex, sim.TransferPath.Count - 1);
+                    _log.Warn("Angle={0}, degree={1}, transfer.RotationZ={2}, Rot={3}", sim.Angle, degree, quat.Y * 32767, transfer.Rot);
+                    _log.Warn("RotationZ={0}, RotationZdeg={1}", transfer.Position.RotationZ, RotationZdeg);
+                }
 
                 //DespawnFlag(spwnFlag);
 
-                if (Distance > RangeToCheckPoint)
+                if (sim.Distance > sim.RangeToCheckPoint)
                 {
                     //update class variables
                     //transfer.Velocity = vDistance;
                     // update Transfer variable
-                    transfer.PathPointIndex = MoveStepIndex; // текущая точка, куда движемся
-                    transfer.Steering = Steering; // текущий участок пути
+                    transfer.PathPointIndex = sim.MoveStepIndex; // текущая точка, куда движемся
+                    transfer.Steering = sim.Steering; // текущий участок пути
                     // moving to the point #
                     var moveTypeTr = (TransferData)UnitMovement.GetType(UnitMovementType.Transfer);
                     moveTypeTr.UseTransferBase(transfer);
 
-                    transfer.SetPosition(moveTypeTr.X, moveTypeTr.Y, moveTypeTr.Z, 0, 0, Helpers.ConvertRadianToSbyteDirection(moveTypeTr.Rot.Z));
+                    transfer.SetPosition(transfer.Position.X, transfer.Position.Y, transfer.Position.Z, 0, 0, Helpers.ConvertRadianToSbyteDirection((float)sim.Angle));
                     transfer.BroadcastPacket(new SCOneUnitMovementPacket(transfer.ObjId, moveTypeTr), true);
-                    RepeatMove(sim, transfer, targetX, targetY, targetZ);
+                    sim.RepeatMove(sim, transfer, targetX, targetY, targetZ);
                 }
                 else
                 {
-                    InPatrol = false;
+                    sim.InPatrol = false;
                     // get next path or point # in current path
-                    OnMove2(transfer);
+                    sim.OnMove2(transfer);
                 }
             }
         }
@@ -1257,14 +1094,14 @@ namespace AAEmu.Game.Models.Game.Units.Route
             {
                 //if ((sim ?? this).AbandonTo)
                 {
-                    TaskManager.Instance.Schedule(new Move(sim ?? this, npc, targetX, targetY, targetZ), TimeSpan.FromMilliseconds(time));
+                    TaskManager.Instance.Schedule(new Move(this, npc, targetX, targetY, targetZ), TimeSpan.FromMilliseconds(time));
                 }
             }
             else if (unit is Transfer transfer)
             {
                 //if ((sim ?? this).AbandonTo)
                 {
-                    TaskManager.Instance.Schedule(new Move(sim ?? this, transfer, targetX, targetY, targetZ), TimeSpan.FromMilliseconds(time));
+                    TaskManager.Instance.Schedule(new Move(this, transfer, targetX, targetY, targetZ), TimeSpan.FromMilliseconds(time));
                 }
             }
         }
@@ -1688,6 +1525,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
 
         private void OnMove2(BaseUnit unit)
         {
+            double time = 0;
             if (unit is Npc npc)
             {
                 if (!MoveToPathEnabled)
@@ -1858,7 +1696,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                             _vPosition.X = ExtractValue(s, 1);
                             _vPosition.Y = ExtractValue(s, 2);
                             _vPosition.Z = ExtractValue(s, 3);
-                            double time = 0;
+                            time = 0;
                             if (transfer.Template.TransferPaths[Steering].WaitTimeEnd > 0)
                             {
                                 time = transfer.Template.TransferPaths[Steering].WaitTimeEnd;
@@ -1892,7 +1730,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                             _vPosition.X = ExtractValue(s, 1);
                             _vPosition.Y = ExtractValue(s, 2);
                             _vPosition.Z = ExtractValue(s, 3);
-                            double time = 0;
+                            time = 0;
                             if (transfer.Template.TransferPaths[Steering].WaitTimeEnd > 0)
                             {
                                 time = transfer.Template.TransferPaths[Steering].WaitTimeEnd;
@@ -1944,10 +1782,10 @@ namespace AAEmu.Game.Models.Game.Units.Route
                                 else
                                 {
                                     LoadTransferPathFromRoutes(Steering); // загрузим путь в TransferPath
-                                                                          //s_log.Info("Transfer #" + transfer.TemplateId);
-                                                                          //s_log.Warn("next path #" + Steering);
-                                                                          //s_log.Warn("walk to #" + MoveStepIndex);
-                                                                          //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
+                                    //s_log.Info("TransfersPath #" + transfer.TemplateId);
+                                    //s_log.Warn("next path #" + Steering);
+                                    //s_log.Warn("walk to #" + MoveStepIndex);
+                                    //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
                                     s = TransferPath[MoveStepIndex];
                                     _vPosition.X = s.X;
                                     _vPosition.Y = s.Y;
@@ -1956,21 +1794,36 @@ namespace AAEmu.Game.Models.Game.Units.Route
                                     //var time = transfer.Template.TransferPaths[Steering].WaitTimeStart;
                                     //RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z, time * 1000);
                                     // паузу не делаем, так как еще не в начале пути, а в последней точке пути
-                                    RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z);
+                                    //RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z);
+                                    time = 0;
+                                    if (MoveStepIndex == 0 && transfer.Template.TransferPaths[Steering].WaitTimeStart > 0)
+                                    {
+                                        time = transfer.Template.TransferPaths[Steering].WaitTimeStart;
+                                    }
+                                    if (time > 0)
+                                    {
+                                        // здесь будет непосредственно пауза между участками дороги
+                                        RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z, time * 1000);
+                                    }
+                                    else
+                                    {
+                                        // иначе, паузу не делаем
+                                        RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z);
+                                    }
                                 }
                             }
                             else
                             {
                                 // продолжим путь
-                                var time = transfer.Template.TransferPaths[Steering].WaitTimeEnd;
+                                time = 0;
+                                if (MoveStepIndex >= TransferPath.Count - 1 && transfer.Template.TransferPaths[Steering].WaitTimeEnd > 0)
+                                {
+                                    time = transfer.Template.TransferPaths[Steering].WaitTimeEnd;
+                                }
                                 Steering++; // укажем на следующий участок пути
-                                //if (transfer.Template.TransferPaths[Steering].WaitTimeStart > 0)
-                                //{
-                                //    time = transfer.Template.TransferPaths[Steering].WaitTimeStart;
-                                //}
                                 LoadTransferPathFromRoutes(Steering); // загрузим путь в TransferPath
                                 //LoadTransferPath2(transfer.TemplateId, Steering); // загрузим путь в TransferPath
-                                //s_log.Info("Transfer #" + transfer.TemplateId);
+                                //s_log.Info("TransfersPath #" + transfer.TemplateId);
                                 //s_log.Warn("path #" + Steering);
                                 //s_log.Warn("walk to #" + MoveStepIndex);
                                 //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
@@ -1979,14 +1832,29 @@ namespace AAEmu.Game.Models.Game.Units.Route
                                 _vPosition.Y = s.Y;
                                 _vPosition.Z = s.Z;
                                 // здесь будет непосредственно пауза между участками дороги
-                                RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z, time * 1000);
+                                //RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z, pp, time * 1000);
+                                if (time > 0)
+                                {
+                                    // здесь будет непосредственно пауза между участками дороги
+                                    RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z, time * 1000);
+                                }
+                                else
+                                {
+                                    // иначе, паузу не делаем
+                                    RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z);
+                                }
                             }
                         }
                         else
                         {
+                            time = 0;
+                            if (MoveStepIndex == 0 && transfer.Template.TransferPaths[Steering].WaitTimeStart > 0)
+                            {
+                                time = transfer.Template.TransferPaths[Steering].WaitTimeStart;
+                            }
                             MoveStepIndex++;
                             //s_log.Warn("we reached checkpoint go further...");
-                            //s_log.Info("Transfer #" + transfer.TemplateId);
+                            //s_log.Info("TransfersPath #" + transfer.TemplateId);
                             //s_log.Warn("path #" + Steering);
                             //s_log.Warn("walk to #" + MoveStepIndex);
                             //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
@@ -1994,10 +1862,9 @@ namespace AAEmu.Game.Models.Game.Units.Route
                             _vPosition.X = s.X;
                             _vPosition.Y = s.Y;
                             _vPosition.Z = s.Z;
-                            if (MoveStepIndex - 1 == 0 && transfer.Template.TransferPaths[Steering].WaitTimeStart > 0)
+                            if (time > 0)
                             {
                                 // здесь будет пауза в начале участка пути, если она есть в базе данных
-                                var time = transfer.Template.TransferPaths[Steering].WaitTimeStart;
                                 RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z, time * 1000);
                             }
                             else
@@ -2023,21 +1890,21 @@ namespace AAEmu.Game.Models.Game.Units.Route
                                 // закончились дороги, нужно начать с конца
                                 Steering = Routes.Count - 1; // укажем на самый последний в списке путь
                                 PauseMove(transfer); // продолжим путь после паузы назад
-                                                     //LoadTransferPath(Steering); // загрузим путь в TransferPath
-                                                     //LoadTransferPath2(transfer.TemplateId, Steering); // загрузим путь в TransferPath
+                                //LoadTransferPath(Steering); // загрузим путь в TransferPath
+                                //LoadTransferPath2(transfer.TemplateId, Steering); // загрузим путь в TransferPath
                                 LoadTransferPathFromRoutes(Steering); // загрузим путь в TransferPath
 
                                 MoveStepIndex = TransferPath.Count - 1; // укажем на последнюю точку в пути
-                                                                        //s_log.Info("Transfer #" + transfer.TemplateId);
-                                                                        //s_log.Warn("next path #" + Steering);
-                                                                        //s_log.Warn("walk to #" + MoveStepIndex);
-                                                                        //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
+                                //s_log.Info("TransfersPath #" + transfer.TemplateId);
+                                //s_log.Warn("next path #" + Steering);
+                                //s_log.Warn("walk to #" + MoveStepIndex);
+                                //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
                                 s = TransferPath[MoveStepIndex];
                                 _vPosition.X = s.X;
                                 _vPosition.Y = s.Y;
                                 _vPosition.Z = s.Z;
                                 // здесь непосредственно пауза
-                                double time = 0;
+                                time = 0;
                                 if (transfer.Template.TransferPaths[Steering].WaitTimeEnd > 0)
                                 {
                                     time = transfer.Template.TransferPaths[Steering].WaitTimeEnd;
@@ -2055,16 +1922,16 @@ namespace AAEmu.Game.Models.Game.Units.Route
                                 //LoadTransferPath2(transfer.TemplateId, Steering); // загрузим путь в TransferPath
                                 LoadTransferPathFromRoutes(Steering); // загрузим путь в TransferPath
                                 MoveStepIndex = TransferPath.Count - 1; // укажем на последнюю точку в пути
-                                                                        //s_log.Info("Transfer #" + transfer.TemplateId);
-                                                                        //s_log.Warn("path #" + Steering);
-                                                                        //s_log.Warn("walk to #" + MoveStepIndex);
-                                                                        //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
+                                //s_log.Info("TransfersPath #" + transfer.TemplateId);
+                                //s_log.Warn("path #" + Steering);
+                                //s_log.Warn("walk to #" + MoveStepIndex);
+                                //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
                                 s = TransferPath[MoveStepIndex];
                                 _vPosition.X = s.X;
                                 _vPosition.Y = s.Y;
                                 _vPosition.Z = s.Z;
                                 // здесь будет непосредственно пауза между участками дороги, если она есть в базе данных
-                                double time = 0;
+                                time = 0;
                                 if (transfer.Template.TransferPaths[Steering].WaitTimeEnd > 0)
                                 {
                                     time = transfer.Template.TransferPaths[Steering].WaitTimeEnd;
@@ -2080,7 +1947,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                         {
                             MoveStepIndex--;
                             //s_log.Warn("we reached checkpoint go further...");
-                            //s_log.Info("Transfer #" + transfer.TemplateId);
+                            //s_log.Info("TransfersPath #" + transfer.TemplateId);
                             //s_log.Warn("path #" + Steering);
                             //s_log.Warn("walk to #" + MoveStepIndex);
                             //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
@@ -2092,15 +1959,6 @@ namespace AAEmu.Game.Models.Game.Units.Route
                             RepeatMove(this, transfer, _vPosition.X, _vPosition.Y, _vPosition.Z);
                         }
                     }
-                    //}
-                    //else
-                    //{
-                    //    //s_log.Info("Transfer #" + transfer.TemplateId);
-                    //    //s_log.Warn("path #" + Steering);
-                    //    //s_log.Warn("checkpoint #" + MoveStepIndex);
-                    //    //s_log.Warn("x:=" + _vPosition.X + " y:=" + _vPosition.Y + " z:=" + _vPosition.Z);
-                    //    //s_log.Warn("to any point is very far, we stop.");
-                    //}
                 }
             }
         }

@@ -90,6 +90,14 @@ namespace AAEmu.Game.Core.Managers
                         {
                             foreach (var path in transfer.Where(path => path.Name == transferPaths.PathName))
                             {
+                                var exist = false;
+                                foreach (var tr in transferTemplate.TransferRoads.Where(tr => tr.Name == transferPaths.PathName))
+                                {
+                                    exist = true;
+                                }
+
+                                if (exist) { continue; }
+
                                 var tmp = new TransferRoads()
                                 {
                                     Name = path.Name,
@@ -105,7 +113,7 @@ namespace AAEmu.Game.Core.Managers
                 }
             }
         }
-        
+
         /// <summary>
         /// Поиск участка пути по позиции транспорта. Предположительно, что начало пути имеет отличный от нуля ScType
         /// </summary>

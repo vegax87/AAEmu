@@ -2,6 +2,7 @@
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
@@ -21,7 +22,8 @@ namespace AAEmu.Game.Core.Packets.G2C
 
             // ---- test Ai ----
             var unit = WorldManager.Instance.GetUnit(id);
-            if (!(unit is Npc npc)) { return; }
+            if (!(unit is Npc) && !(unit is Transfer) && !(unit is Gimmick)) { return; }
+
             var movementAction = new MovementAction(
                 new Point(type.X, type.Y, type.Z, Helpers.ConvertRadianToSbyteDirection(type.Rot.X), Helpers.ConvertRadianToSbyteDirection(type.Rot.Y), Helpers.ConvertRadianToSbyteDirection(type.Rot.Z)),
                 new Point(0, 0, 0),
@@ -29,7 +31,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 3,
                 UnitMovementType.Actor
             );
-            npc.VisibleAi.OwnerMoved(movementAction);
+            unit.VisibleAi.OwnerMoved(movementAction);
             // ---- test Ai ----
         }
 
@@ -38,6 +40,7 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.WriteBc(_id);
             stream.Write((byte) _type.ScType);
             stream.Write(_type);
+
             return stream;
         }
     }

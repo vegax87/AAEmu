@@ -190,6 +190,7 @@ namespace AAEmu.Game.Core.Packets.G2C
 
             stream.Write(_unit.ModelParams);
             stream.WriteBc(0);
+
             stream.Write(_unit.Hp * 100); // preciseHealth
             stream.Write(_unit.Mp * 100); // preciseMana
 

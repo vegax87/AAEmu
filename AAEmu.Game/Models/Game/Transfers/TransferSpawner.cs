@@ -71,7 +71,7 @@ namespace AAEmu.Game.Models.Game.Transfers
 
             if (transfer.TemplateId != 46 && transfer.TemplateId != 4 && transfer.TemplateId != 122)
             {
-                if (transfer.TemplateId == 6)
+                //if (transfer.TemplateId == 103)
                 {
                     if (!transfer.IsInPatrol)
                     {
@@ -101,8 +101,11 @@ namespace AAEmu.Game.Models.Game.Transfers
                             var vPosition = new Vector3(point.X, point.Y, point.Z);
                             var vTarget = new Vector3(point2.X, point2.Y, point2.Z);
                             path.Angle = MathUtil.CalculateDirection(vPosition, vTarget);
+
                             transfer.Position.RotationZ = MathUtil.ConvertDegreeToDirection(MathUtil.RadianToDegree(path.Angle));
-                            transfer.Rot = new Quaternion(0f, 0f, MathUtil.ConvertToDirection(path.Angle), 1f);
+
+                            var quat = Quaternion.CreateFromYawPitchRoll((float)path.Angle, 0.0f, 0.0f);
+                            transfer.Rot = new Quaternion(quat.X, quat.Z, quat.Y, quat.W);
 
                             transfer.Position.WorldId = 1;
                             transfer.Position.ZoneId = transfer.Template.TransferRoads[0].ZoneId;
@@ -111,8 +114,8 @@ namespace AAEmu.Game.Models.Game.Transfers
                             transfer.Position.Y = point.Y;
                             transfer.Position.Z = point.Z;
 
-                            transfer.WorldPos = new WorldPos(Helpers.ConvertLongY(point.X), Helpers.ConvertLongY(point.Y), point.Z);
-                            _log.Warn("Transfer #" + transfer.TemplateId);
+                            transfer.WorldPos = new WorldPos(Helpers.ConvertLongX(point.X), Helpers.ConvertLongY(point.Y), point.Z);
+                            _log.Warn("TransfersPath #" + transfer.TemplateId);
                             _log.Warn("New spawn X={0}", transfer.Position.X);
                             _log.Warn("New spawn Y={0}", transfer.Position.Y);
                             _log.Warn("New spawn Z={0}", transfer.Position.Z);

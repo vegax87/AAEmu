@@ -83,7 +83,7 @@ namespace AAEmu.Game.Models.Game.Units.Movements
                 //RotationZ2 = stream.ReadSByte();
                 GcWorldRot = stream.ReadQuaternionSbyte();
             }
-            if ((actorFlags & 0x60) == 0x60)
+            if ((actorFlags & 0x60) != 0)
             {
                 GcId = stream.ReadUInt32(); // actor.gcId
             }
@@ -138,9 +138,8 @@ namespace AAEmu.Game.Models.Game.Units.Movements
                 //stream.Write(RotationY2);
                 //stream.Write(RotationZ2);
                 stream.WriteQuaternionSbyte(GcWorldRot);
-
             }
-            if ((actorFlags & 0x60) == 0x60)
+            if ((actorFlags & 0x60) != 0)
             {
                 stream.Write(GcId);
             }

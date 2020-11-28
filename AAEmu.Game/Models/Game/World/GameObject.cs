@@ -42,14 +42,18 @@ namespace AAEmu.Game.Models.Game.World
         public virtual void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
         {
             if (DisabledSetPosition)
+            {
                 return;
+            }
 
             var charMoved = false;
             var lastZoneKey = Position.ZoneId;
             if (this is Character)
             {
                 if (!Position.X.Equals(x) || !Position.Y.Equals(y) || !Position.Z.Equals(z))
+                {
                     charMoved = true;
+                }
             }
 
             WorldPos.X = Helpers.ConvertLongX(x);
@@ -103,7 +107,9 @@ namespace AAEmu.Game.Models.Game.World
                             */
                             // Send extra info to player if we are still in a real but unreleased zone (not null), this is not retail behaviour
                             if (newZone != null)
-                                thisChar.SendMessage(ChatType.System, "|cFFFF0000You have entered a closed zone ({0} - {1})!\nPlease leave immediatly!|r",newZone.ZoneKey,newZone.Name);
+                            {
+                                thisChar.SendMessage(ChatType.System, "|cFFFF0000You have entered a closed zone ({0} - {1})!\nPlease leave immediatly!|r", newZone.ZoneKey, newZone.Name);
+                            }
                             // Send the error message
                             thisChar.SendErrorMessage(ErrorMessageType.ClosedZone);
                         }
