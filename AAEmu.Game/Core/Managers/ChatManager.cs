@@ -124,7 +124,7 @@ namespace AAEmu.Game.Core.Managers
 
         public ChatManager()
         {
-            nullChannel = new ChatChannel() { chatType = ChatType.White, faction = 0, internalName = "Null" };
+            nullChannel = new ChatChannel { chatType = ChatType.White, faction = 0, internalName = "Null" };
             _factionChannels = new ConcurrentDictionary<long, ChatChannel>();
             _nationChannels = new ConcurrentDictionary<long, ChatChannel>();
             _zoneChannels = new ConcurrentDictionary<long, ChatChannel>();
@@ -228,7 +228,7 @@ namespace AAEmu.Game.Core.Managers
 
         private bool AddFactionChannel(uint factionId,string name)
         {
-            var channel = new ChatChannel() { chatType = ChatType.Ally, faction = factionId, internalId = factionId, internalName = name };
+            var channel = new ChatChannel { chatType = ChatType.Ally, faction = factionId, internalId = factionId, internalName = name };
             return _factionChannels.TryAdd(factionId, channel);
         }
 
@@ -248,7 +248,7 @@ namespace AAEmu.Game.Core.Managers
         private bool AddNationChannel(Race race, uint factionDisplayId, string name)
         {
             var mRace = (((byte)race - 1) & 0xFC);
-            var channel = new ChatChannel() { chatType = ChatType.Region, faction = factionDisplayId, internalId = mRace, internalName = name };
+            var channel = new ChatChannel { chatType = ChatType.Region, faction = factionDisplayId, internalId = mRace, internalName = name };
             return _nationChannels.TryAdd(mRace, channel);
         }
 
@@ -270,7 +270,7 @@ namespace AAEmu.Game.Core.Managers
 
         private bool AddZoneChannel(uint zoneGroupId,string name)
         {
-            var channel = new ChatChannel() { chatType = ChatType.Shout, subType = (short)zoneGroupId, internalId = zoneGroupId, internalName = name };
+            var channel = new ChatChannel { chatType = ChatType.Shout, subType = (short)zoneGroupId, internalId = zoneGroupId, internalName = name };
             return _zoneChannels.TryAdd(zoneGroupId, channel);
         }
 
@@ -300,7 +300,7 @@ namespace AAEmu.Game.Core.Managers
 
         private bool AddGuildChannel(Expedition guild)
         {
-            var channel = new ChatChannel() { chatType = ChatType.Clan, subType = (short)guild.Id, internalId = guild.Id, internalName = guild.Name };
+            var channel = new ChatChannel { chatType = ChatType.Clan, subType = (short)guild.Id, internalId = guild.Id, internalName = guild.Name };
             return _guildChannels.TryAdd(guild.Id, channel);
         }
 
@@ -327,7 +327,7 @@ namespace AAEmu.Game.Core.Managers
 
         private bool AddPartyChannel(uint partyId)
         {
-            var channel = new ChatChannel() { chatType = ChatType.Party, subType = (short)partyId, internalId = partyId, internalName = "Party(" + partyId.ToString() + ")" };
+            var channel = new ChatChannel { chatType = ChatType.Party, subType = (short)partyId, internalId = partyId, internalName = "Party(" + partyId.ToString() + ")" };
             return _partyChannels.TryAdd(partyId, channel);
         }
 
@@ -339,7 +339,7 @@ namespace AAEmu.Game.Core.Managers
         /// <returns>ChatChannel based on your position inside a Raid</returns>
         public ChatChannel GetPartyChat(Team party, Character myChar)
         {
-            uint partyId = party.Id << 6;
+            var partyId = party.Id << 6;
             // Find my position inside the raid
             uint partyNumber = 0;
             for(uint i = 0; i < party.Members.Length;i++)
@@ -375,7 +375,7 @@ namespace AAEmu.Game.Core.Managers
 
         private bool AddRaidChannel(uint partyId)
         {
-            var channel = new ChatChannel() { chatType = ChatType.Raid, subType = (short)partyId, internalId = partyId, internalName = "Party("+partyId.ToString()+")" };
+            var channel = new ChatChannel { chatType = ChatType.Raid, subType = (short)partyId, internalId = partyId, internalName = "Party("+partyId.ToString()+")" };
             return _raidChannels.TryAdd(partyId, channel);
         }
 

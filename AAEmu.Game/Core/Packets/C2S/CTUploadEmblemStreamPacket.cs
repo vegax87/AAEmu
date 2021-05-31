@@ -18,7 +18,7 @@ namespace AAEmu.Game.Core.Packets.C2S
             var index = stream.ReadUInt32();
             var data = stream.ReadBytes(size); // or bytes; max length 3096
             
-            var uccPart = new UccPart()
+            var uccPart = new UccPart
             {
                 Total = total,
                 Size = size,

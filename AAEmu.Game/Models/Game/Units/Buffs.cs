@@ -242,7 +242,7 @@ namespace AAEmu.Game.Models.Game.Units
                 } 
                 else if (buffTolerance != null)
                 {
-                    _toleranceCounters.Add(buffTolerance.Id, new BuffToleranceCounter()
+                    _toleranceCounters.Add(buffTolerance.Id, new BuffToleranceCounter
                     {
                         Tolerance = buffTolerance,
                         CurrentStep = buffTolerance.GetFirstStep(),

@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.AI.Params;
 using AAEmu.Game.Models.Game.AI.Utils;
-using AAEmu.Game.Models.Game.AI.v2.AiCharacters;
-using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Models.Game.Merchant;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Templates;
+using AAEmu.Game.Models.Game.Merchant;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils.DB;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.UnitManagers
@@ -101,7 +102,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             for (var i = 0; i < 7; i++)
             {
-                EquipmentItemSlot slot = (EquipmentItemSlot)(i + 19);
+                var slot = (EquipmentItemSlot)(i + 19);
                 if ((slot == EquipmentItemSlot.Hair) && (template.ModelParams != null))
                     SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
                 else
@@ -123,7 +124,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             foreach (var npcPassiveBuff in template.PassiveBuffs)
             {
-                var passive = new PassiveBuff() { Template = npcPassiveBuff.PassiveBuff };
+                var passive = new PassiveBuff { Template = npcPassiveBuff.PassiveBuff };
                 passive.Apply(npc);
             }
 
@@ -140,22 +141,22 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             if (npc.Template.AiFileId > 0)
             {
-               var ai = AIUtils.GetAiByType((AiParamType)npc.Template.AiFileId, npc);
-               if (ai == null)
-                   return npc;
+                var ai = AIUtils.GetAiByType((AiParamType)npc.Template.AiFileId, npc);
+                if (ai == null)
+                    return npc;
 
-               npc.Ai = ai;
-               AIManager.Instance.AddAi(ai);
-               npc.Ai.Start();
+                npc.Ai = ai;
+                AIManager.Instance.AddAi(ai);
+                npc.Ai.Start();
             }
-            
+
             return npc;
         }
 
         private NpcTemplate LoadCustom(NpcTemplate template)
         {
             var _template = new NpcTemplate();
-            var totalCustomId = (uint)template.TotalCustomId;
+            var totalCustomId = template.TotalCustomId;
 
             if (totalCustomId != 0 || template.FactionId == 115 || template.FactionId == 116) // 115 - Monstrosity, 116 - Animal
             {
@@ -334,7 +335,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             custom.LeftPupilColor = reader.GetUInt32("left_pupil_color");
                             custom.RightPupilColor = reader.GetUInt32("right_pupil_color");
                             custom.EyebrowColor = reader.GetUInt32("eyebrow_color");
-                            object blob = reader.GetValue("modifier");
+                            var blob = reader.GetValue("modifier");
                             if (blob != null)
                                 custom.Modifier = (byte[])blob;
                             custom.OwnerTypeId = reader.GetUInt32("owner_type_id");
@@ -779,7 +780,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
         {
             if (!_templates.ContainsKey(templateId))
                 return;
-            
+
             _templates[templateId].BindSkills(skills);
         }
     }

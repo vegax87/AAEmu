@@ -63,7 +63,7 @@ namespace AAEmu.Game.Models.Game.Char
                 var portal = PortalManager.Instance.GetPortalBySubZoneId(subZoneId);
                 if (portal != null)
                 {
-                    var newVisitedDistrict = new VisitedDistrict()
+                    var newVisitedDistrict = new VisitedDistrict
                     {
                         Id = VisitedSubZoneIdManager.Instance.GetNextId(),
                         SubZone = subZoneId,
@@ -80,7 +80,7 @@ namespace AAEmu.Game.Models.Game.Char
         public void AddPrivatePortal(float x, float y, float z, sbyte zRot, uint zoneId, string name)
         {
             // TODO - Only working by command
-            var newPortal = new Portal()
+            var newPortal = new Portal
             {
                 Id = PrivateBookIdManager.Instance.GetNextId(),
                 Name = name,

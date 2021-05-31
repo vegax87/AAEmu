@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
@@ -8,9 +9,7 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Expeditions;
-using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Plots.Tree;
@@ -50,6 +49,7 @@ namespace AAEmu.Game.Models.Game.Units
         public virtual int HpRegen { get; set; }
         [UnitAttribute(UnitAttribute.PersistentHealthRegen)]
         public virtual int PersistentHpRegen { get; set; } = 30;
+        public int HighAbilityRsc { get; set; }
         public int Mp { get; set; }
         [UnitAttribute(UnitAttribute.MaxMana)]
         public virtual int MaxMp { get; set; }
@@ -142,7 +142,7 @@ namespace AAEmu.Game.Models.Game.Units
         [UnitAttribute(UnitAttribute.IncomingHealMul)]
         public virtual float IncomingHealMul { get; set; } = 1.0f;
         [UnitAttribute(UnitAttribute.HealMul)]
-        public virtual float HealMul { get; set; }  = 1.0f;
+        public virtual float HealMul { get; set; } = 1.0f;
         [UnitAttribute(UnitAttribute.IncomingDamageMul)]
         public virtual float IncomingDamageMul { get; set; } = 1f;
         [UnitAttribute(UnitAttribute.IncomingMeleeDamageMul)]
@@ -196,7 +196,7 @@ namespace AAEmu.Game.Models.Game.Units
         /// </summary>
         public Patrol Patrol { get; set; }
         public Simulation Simulation { get; set; }
-        
+
         public UnitProcs Procs { get; set; }
         public object ChargeLock { get; set; }
 
@@ -236,7 +236,7 @@ namespace AAEmu.Game.Models.Game.Units
                     value = absorptionEffect.ConsumeCharge(value);
                 }
             }
-            
+
             Hp = Math.Max(Hp - value, 0);
             if (Hp <= 0)
             {
@@ -248,27 +248,27 @@ namespace AAEmu.Game.Models.Game.Units
             {
                 //StartRegen();
             }
-            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Hp > 0 ? Mp : 0), true);
+            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Hp > 0 ? Mp : 0, HighAbilityRsc), true);
         }
-        
+
         public virtual void ReduceCurrentMp(Unit unit, int value)
         {
             if (Hp == 0)
                 return;
-            
+
             Mp = Math.Max(Mp - value, 0);
             if (Mp == 0)
                 StopRegen();
             else
                 StartRegen();
-            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Mp), true);
+            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc), true);
         }
 
         public virtual void DoDie(Unit killer)
         {
             InterruptSkills();
 
-            Events.OnDeath(this, new OnDeathArgs { Killer = killer, Victim =  this});
+            Events.OnDeath(this, new OnDeathArgs { Killer = killer, Victim = this });
             Buffs.RemoveEffectsOnDeath();
             killer.BroadcastPacket(new SCUnitDeathPacket(ObjId, KillReason.Damage, killer), true);
             if (killer == this)
@@ -354,13 +354,13 @@ namespace AAEmu.Game.Models.Game.Units
         {
             if (criminalState)
             {
-                var buff = SkillManager.Instance.GetBuffTemplate((uint) BuffConstants.RETRIBUTION_BUFF);
+                var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.RETRIBUTION_BUFF);
                 var casterObj = new SkillCasterUnit(ObjId);
                 Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now));
             }
             else
             {
-                Buffs.RemoveBuff((uint) BuffConstants.RETRIBUTION_BUFF);
+                Buffs.RemoveBuff((uint)BuffConstants.RETRIBUTION_BUFF);
             }
         }
 
@@ -369,13 +369,13 @@ namespace AAEmu.Game.Models.Game.Units
             ForceAttack = value;
             if (ForceAttack)
             {
-                var buff = SkillManager.Instance.GetBuffTemplate((uint) BuffConstants.BLOODLUST_BUFF);
+                var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.BLOODLUST_BUFF);
                 var casterObj = new SkillCasterUnit(ObjId);
                 Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now));
             }
             else
             {
-                Buffs.RemoveBuff((uint) BuffConstants.BLOODLUST_BUFF);
+                Buffs.RemoveBuff((uint)BuffConstants.BLOODLUST_BUFF);
             }
             BroadcastPacket(new SCForceAttackSetPacket(ObjId, ForceAttack), true);
         }
@@ -444,18 +444,18 @@ namespace AAEmu.Game.Models.Game.Units
         {
             SendPacket(new SCErrorMsgPacket(type, 0, true));
         }
-        
+
         public float GetDistanceTo(BaseUnit baseUnit, bool includeZAxis = false)
         {
             if (Position == baseUnit.Position)
                 return 0.0f;
-            
+
             var rawDist = MathUtil.CalculateDistance(this.Position, baseUnit.Position, includeZAxis);
 
             rawDist -= ModelManager.Instance.GetActorModel(ModelId)?.Radius ?? 0 * Scale;
             if (baseUnit is Unit unit)
                 rawDist -= ModelManager.Instance.GetActorModel(unit.ModelId)?.Radius ?? 0 * unit.Scale;
-            
+
             return Math.Max(rawDist, 0);
         }
 
@@ -524,7 +524,7 @@ namespace AAEmu.Game.Models.Game.Units
 
         public virtual void OnSkillEnd(Skill skill)
         {
-            
+
         }
     }
 }

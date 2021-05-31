@@ -6,6 +6,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Effects;
+using AAEmu.Game.Models.Game.Skills.Effects.Enums;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -111,7 +112,7 @@ namespace AAEmu.Game.Core.Managers
 
         public List<BuffTriggerTemplate> GetBuffTriggerTemplates(uint buffId)
         {
-            if (_buffTriggers.TryGetValue(buffId, out List<BuffTriggerTemplate> triggers))
+            if (_buffTriggers.TryGetValue(buffId, out var triggers))
             {
                 return triggers;
             }
@@ -205,7 +206,7 @@ namespace AAEmu.Game.Core.Managers
 
         public List<SkillReagent> GetSkillReagentsBySkillId(uint id)
         {
-            List<SkillReagent> reagents = new List<SkillReagent>();
+            var reagents = new List<SkillReagent>();
 
             foreach (var reagent in _skillReagents)
             {
@@ -218,7 +219,7 @@ namespace AAEmu.Game.Core.Managers
 
         public List<SkillProduct> GetSkillProductsBySkillId(uint id)
         {
-            List<SkillProduct> products = new List<SkillProduct>();
+            var products = new List<SkillProduct>();
 
             foreach (var product in _skillProducts)
             {
@@ -1494,7 +1495,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var combatBuffTemplate = new CombatBuffTemplate()
+                            var combatBuffTemplate = new CombatBuffTemplate
                             {
                                 Id = reader.GetUInt32("id"),
                                 HitSkillId = reader.GetUInt32("hit_skill_id", 0),

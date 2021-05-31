@@ -68,7 +68,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var model = new ActorModel()
+                            var model = new ActorModel
                             {
                                 Id = reader.GetUInt32("id"),
                                 Radius = reader.GetFloat("radius"),
@@ -88,7 +88,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var model = new ShipModel()
+                            var model = new ShipModel
                             {
                                 Id = reader.GetUInt32("id"),
                                 Velocity = reader.GetFloat("velocity"),
@@ -119,7 +119,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var model = new ModelType()
+                            var model = new ModelType
                             {
                                 Id = reader.GetUInt32("id"),
                                 SubId = reader.GetUInt32("sub_id"),

@@ -43,7 +43,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new Anim()
+                            var template = new Anim
                             {
                                 Id = reader.GetUInt32("id"),
                                 Name = reader.GetString("name"),

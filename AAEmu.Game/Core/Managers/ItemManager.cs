@@ -6,9 +6,9 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Auction.Templates;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
@@ -763,7 +763,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new ItemProcTemplate()
+                            var template = new ItemProcTemplate
                             {
                                 Id = reader.GetUInt32("id"),
                                 SkillId = reader.GetUInt32("skill_id"),
@@ -793,7 +793,7 @@ namespace AAEmu.Game.Core.Managers
                             if (!_equipItemSets.ContainsKey(id))
                                 _equipItemSets.Add(id, new EquipItemSet { Id = id });
 
-                            var bonus = new EquipItemSetBonus()
+                            var bonus = new EquipItemSetBonus
                             {
                                 NumPieces = reader.GetInt32("num_pieces"),
                                 BuffId = reader.GetUInt32("buff_id", 0),
@@ -1326,7 +1326,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var armorGradeBuff = new ArmorGradeBuff()
+                            var armorGradeBuff = new ArmorGradeBuff
                             {
                                 Id = reader.GetByte("id"),
                                 ArmorType = (ArmorType)reader.GetUInt32("armor_type_id"),

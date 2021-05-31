@@ -86,7 +86,7 @@ namespace AAEmu.Game.Models.Game.Char
                 {
                     while (reader.Read())
                     {
-                        var template = new BlockedTemplate()
+                        var template = new BlockedTemplate
                         {
                             Owner = reader.GetUInt32("owner"),
                             BlockedId = reader.GetUInt32("blocked_id")
@@ -135,7 +135,7 @@ namespace AAEmu.Game.Models.Game.Char
             var blocked = WorldManager.Instance.GetCharacter(name);
 
             if (blocked == null || BlockedList.ContainsKey(blocked.Id)) return; // already blocked
-            var template = new BlockedTemplate()
+            var template = new BlockedTemplate
             {
                 BlockedId = blocked.Id,
                 Owner = Owner.Id
@@ -156,7 +156,7 @@ namespace AAEmu.Game.Models.Game.Char
 
         private Blocked FormatBlocked(Character blocked)
         {
-            return new Blocked()
+            return new Blocked
             {
                 CharacterId = blocked.Id,
                 Name = blocked.Name

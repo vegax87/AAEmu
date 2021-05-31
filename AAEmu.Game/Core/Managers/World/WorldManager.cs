@@ -314,7 +314,7 @@ namespace AAEmu.Game.Core.Managers.World
         public Region GetRegion(GameObject obj)
         {
             obj = GetRootObj(obj);
-            InstanceWorld world = GetWorld(obj.Position.WorldId);
+            var world = GetWorld(obj.Position.WorldId);
             return GetRegion(world, obj.Position.X, obj.Position.Y);
         }
 
@@ -381,7 +381,7 @@ namespace AAEmu.Game.Core.Managers.World
             FirstNonNameArgument = 0;
             if ((TargetName != null) && (TargetName != string.Empty))
             {
-                Character player = WorldManager.Instance.GetCharacter(TargetName);
+                var player = WorldManager.Instance.GetCharacter(TargetName);
                 if (player != null)
                 {
                     FirstNonNameArgument = 1;
@@ -723,7 +723,7 @@ namespace AAEmu.Game.Core.Managers.World
 
         public AreaShape GetAreaShapeById(uint id)
         {
-            if (_areaShapes.TryGetValue(id, out AreaShape res))
+            if (_areaShapes.TryGetValue(id, out var res))
                 return res;
             return null;
         }

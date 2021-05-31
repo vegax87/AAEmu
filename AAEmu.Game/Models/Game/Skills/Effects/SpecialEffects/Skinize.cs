@@ -56,7 +56,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                 return;
             }
 
-            Item powderItem = character.Inventory.GetItemById(powderSkillItem.ItemId);
+            var powderItem = character.Inventory.GetItemById(powderSkillItem.ItemId);
             if (powderItem == null)
             {
                 return;
@@ -68,7 +68,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             }
 
             itemToImage.SetFlag(ItemFlag.Skinized);
-            character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Sknize, new List<ItemTask>() { new ItemUpdateBits(itemToImage) } , new List<ulong>()));
+            character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Sknize, new List<ItemTask> { new ItemUpdateBits(itemToImage) } , new List<ulong>()));
             powderItem._holdingContainer.ConsumeItem(ItemTaskType.Sknize, powderItem.TemplateId, 1, powderItem);
         }
     }

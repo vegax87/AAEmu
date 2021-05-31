@@ -40,7 +40,8 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
                 }
                 else
                 {
-                    var childNode = new PlotNode() {
+                    var childNode = new PlotNode
+                    {
                         Tree = parent.Tree, 
                         Parent = parent,
                         Event = childNextEvent.Event, 

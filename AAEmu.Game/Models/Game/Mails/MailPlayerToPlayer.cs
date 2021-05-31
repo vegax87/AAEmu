@@ -89,7 +89,7 @@ namespace AAEmu.Game.Models.Game.Mails
                 // Move Item to sender's Mail ItemContainer, technically speaking this can never fail
                 if (_sender.Inventory.MailAttachments.AddOrMoveExistingItem(ItemTaskType.Invalid, tempItem))
                 {
-                    _sender.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Mail, new List<ItemTask>() { new ItemRemove(tempItem) }, new List<ulong>()));
+                    _sender.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Mail, new List<ItemTask> { new ItemRemove(tempItem) }, new List<ulong>()));
                     // Technically not needed, I just want to sync it up
                     tempItem.SlotType = SlotType.Mail;
                     tempItem.Slot = i;

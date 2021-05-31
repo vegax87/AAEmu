@@ -43,7 +43,7 @@ namespace AAEmu.Game.GameData
                 {
                     while (reader.Read())
                     {
-                        var template = new BuffModifier()
+                        var template = new BuffModifier
                         {
                             Id = reader.GetUInt32("id"),
                             OwnerId = reader.GetUInt32("owner_id"),
@@ -72,7 +72,7 @@ namespace AAEmu.Game.GameData
                 {
                     while (reader.Read())
                     {
-                        var template = new BuffTolerance()
+                        var template = new BuffTolerance
                         {
                             Id = reader.GetUInt32("id"),
                             BuffTagId = reader.GetUInt32("buff_tag_id"),
@@ -101,7 +101,7 @@ namespace AAEmu.Game.GameData
                         if (!_buffTolerancesById.ContainsKey(buffToleranceId))
                             continue;
                         var buffTolerance = _buffTolerancesById[buffToleranceId];
-                        var template = new BuffToleranceStep()
+                        var template = new BuffToleranceStep
                         {
                             Id = reader.GetUInt32("id"),
                             BuffTolerance = buffTolerance,

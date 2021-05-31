@@ -10,6 +10,7 @@ using AAEmu.Game.Utils.DB;
 using AAEmu.Game.Models.Game.Items;
 using NLog;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Items.Templates;
 using MySql.Data.MySqlClient;
 using AAEmu.Game.Models.Game.Mails;
@@ -43,7 +44,7 @@ namespace AAEmu.Game.Core.Managers
 
             if (!player.ChangeMoney(SlotType.Inventory, -(int)auctionFee))
             {
-                player.SendErrorMessage(Models.Game.Error.ErrorMessageType.CanNotPutupMoney);
+                player.SendErrorMessage(ErrorMessageType.CanNotPutupMoney);
                 return;
             }
             player.Inventory.Bag.RemoveItem(Models.Game.Items.Actions.ItemTaskType.Auction, newItem, true);
@@ -193,8 +194,8 @@ namespace AAEmu.Game.Core.Managers
 
         public List<AuctionItem> GetAuctionItems(AuctionSearchTemplate searchTemplate)
         {
-            List<AuctionItem> auctionItemsFound = new List<AuctionItem>();
-            bool myListing = false;
+            var auctionItemsFound = new List<AuctionItem>();
+            var myListing = false;
 
             if (searchTemplate.ItemName == "" && searchTemplate.CategoryA == 0 && searchTemplate.CategoryB == 0 && searchTemplate.CategoryC == 0)
             {
@@ -258,7 +259,7 @@ namespace AAEmu.Game.Core.Managers
             {
                 var tempList = new List<AuctionItem>();
 
-                for (int i = 0; i < 9; i++)
+                for (var i = 0; i < 9; i++)
                 {
                     tempList.Add(auctionItemsFound[i]);
                 }

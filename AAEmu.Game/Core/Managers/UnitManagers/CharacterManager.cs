@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Models;
 using AAEmu.Commons.Utils;
@@ -10,15 +11,15 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Char.Templates;
+using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.Items;
+using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
-using AAEmu.Game.Models.Game.Chat;
+
 using NLog;
-using AAEmu.Game.Models.Game.Items.Actions;
-using MySql.Data.MySqlClient;
 
 namespace AAEmu.Game.Core.Managers.UnitManagers
 {
@@ -47,7 +48,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
         public CharacterTemplate GetTemplate(byte race, byte gender)
         {
-            return _templates[(byte) (16 * gender + race)];
+            return _templates[(byte)(16 * gender + race)];
         }
 
         public AppellationTemplate GetAppellationsTemplate(uint id)
@@ -56,7 +57,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 return _appellations[id];
             return null;
         }
-        
+
         public List<Expand> GetExpands(int step)
         {
             return _expands[step];
@@ -84,14 +85,14 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
         public void CombatTick(TimeSpan delta)
         {
             //Not sure if we should put htis here or world
-            foreach(var character in WorldManager.Instance.GetAllCharacters())
+            foreach (var character in WorldManager.Instance.GetAllCharacters())
             {
                 if (character.IsInCombat && character.LastCombatActivity.AddSeconds(30) < DateTime.Now)
                 {
                     character.BroadcastPacket(new SCCombatClearedPacket(character.ObjId), true);
                     character.IsInCombat = false;
                 }
-                
+
                 if (character.IsInPostCast && character.LastCast.AddSeconds(5) < DateTime.Now)
                 {
                     character.IsInPostCast = false;
@@ -118,17 +119,17 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
                 character.Hp = Math.Min(character.Hp, character.MaxHp);
                 character.Mp = Math.Min(character.Mp, character.MaxMp);
-                character.BroadcastPacket(new SCUnitPointsPacket(character.ObjId, character.Hp, character.Mp), true);
+                character.BroadcastPacket(new SCUnitPointsPacket(character.ObjId, character.Hp, character.Mp, character.HighAbilityRsc), true);
             }
         }
-        
+
         public void BreathTick(TimeSpan delta)
         {
             foreach (var character in WorldManager.Instance.GetAllCharacters())
             {
-                if(character.IsDead || !character.IsUnderWater)
+                if (character.IsDead || !character.IsUnderWater)
                     continue;
-                
+
                 character.DoChangeBreath();
             }
         }
@@ -270,6 +271,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                             template.Items.UndershirtsGrade = reader2.GetByte("undershirt_grade_id");
                                             template.Items.Underpants = reader2.GetUInt32("underpants_id");
                                             template.Items.UnderpantsGrade = reader2.GetByte("underpants_grade_id");
+                                            //template.Items.Stabilizer = reader2.GetUInt32("stabilizer_id");
+                                            //template.Items.StabilizerGrade = reader2.GetByte("stabilizer_grade_id");
                                         }
                                     }
                                 }
@@ -421,11 +424,11 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     point.ZoneId = WorldManager
                         .Instance
                         .GetZoneId(charTemplate.Pos.WorldId, charTemplate.Pos.X, charTemplate.Pos.Y); // TODO ...
-                    
+
                     point.RotationX = charTemplate.Pos.RotationX;
                     point.RotationY = charTemplate.Pos.RotationY;
                     point.RotationZ = charTemplate.Pos.RotationZ;
-                    
+
                     var template = _templates[(byte)(16 + charTemplate.Id)];
                     template.Position = point;
                     template.NumInventorySlot = charTemplate.NumInventorySlot;
@@ -448,11 +451,10 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             var roll = Rand.Next(1, max);
             Self.BroadcastPacket(new SCChatMessagePacket(ChatType.System, string.Format(Self.Name + " rolled " + roll.ToString() + ".")), true);
-            
+
         }
 
-        public void Create(GameConnection connection, string name, byte race, byte gender, uint[] body,
-            UnitCustomModelParams customModel, byte ability1)
+        public void Create(GameConnection connection, string name, byte race, byte gender, uint[] body, UnitCustomModelParams customModel, byte ability1, byte ability2, byte ability3, byte level)
         {
             var nameValidationCode = NameManager.Instance.ValidationCharacterName(name);
             if (nameValidationCode == 0)
@@ -463,29 +465,37 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
                 var character = new Character(customModel);
                 character.Id = characterId;
+                character.AccessLevel = 100; // TODO for develop
                 character.AccountId = connection.AccountId;
                 character.Name = name.Substring(0, 1).ToUpper() + name.Substring(1);
-                character.Race = (Race) race;
-                character.Gender = (Gender) gender;
+                character.Race = (Race)race;
+                character.Gender = (Gender)gender;
                 character.Position = template.Position.Clone();
                 character.Position.ZoneId = template.ZoneId;
-                character.Level = 1;
+                character.Level = level;
                 character.Faction = FactionManager.Instance.GetFaction(template.FactionId);
                 character.FactionName = "";
                 character.LaborPower = 50;
-                character.LaborPowerModified = DateTime.Now;
+                character.LaborPowerModified = DateTime.UtcNow;
                 character.NumInventorySlots = template.NumInventorySlot;
                 character.NumBankSlots = template.NumBankSlot;
                 character.Inventory = new Inventory(character);
-                character.Updated = DateTime.Now;
-                character.Ability1 = (AbilityType) ability1;
-                character.Ability2 = AbilityType.None;
-                character.Ability3 = AbilityType.None;
+                character.Updated = DateTime.UtcNow;
+                character.Ability1 = (AbilityType)ability1;
+                character.Ability2 = (AbilityType)ability2;
+                character.Ability3 = (AbilityType)ability3;
                 character.ReturnDictrictId = template.ReturnDictrictId;
                 character.ResurrectionDictrictId = template.ResurrectionDictrictId;
-                character.Slots = new ActionSlot[85];
+                //character.WeaponTypeBuffId = 0;              //TODO: get from saved buffs
+                //character.WeaponEquipSetBuffId = 0;          //TODO: get from saved buffs
+                //character.ArmorKindBuffId = 0;               //TODO: get from saved buffs
+                //character.ArmorGradeBuffId = 0;              //TODO: get from saved buffs
+                //character.ArmorSetBuffIds = new List<uint>();//TODO: get from saved buffs
+                character.Slots = new ActionSlot[85];       // 85 in 1.2 & 3.0.3.0, 133 in 3.5.0.3
                 for (var i = 0; i < character.Slots.Length; i++)
+                {
                     character.Slots[i] = new ActionSlot();
+                }
 
                 var items = _abilityItems[ability1];
                 SetEquipItemTemplate(character.Inventory, items.Items.Headgear, EquipmentItemSlot.Head, items.Items.HeadgearGrade);
@@ -504,11 +514,12 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 SetEquipItemTemplate(character.Inventory, items.Items.Ranged, EquipmentItemSlot.Ranged, items.Items.RangedGrade);
                 SetEquipItemTemplate(character.Inventory, items.Items.Musical, EquipmentItemSlot.Musical, items.Items.MusicalGrade);
                 SetEquipItemTemplate(character.Inventory, items.Items.Cosplay, EquipmentItemSlot.Cosplay, items.Items.CosplayGrade);
+                //SetEquipItemTemplate(character.Inventory, items.Items.Stabilizer, EquipmentItemSlot.Stabilizer, items.Items.StabilizerGrade);
                 for (var i = 0; i < 7; i++)
                 {
                     if (body[i] == 0 && template.Items[i] > 0)
                         body[i] = template.Items[i];
-                    SetEquipItemTemplate(character.Inventory, body[i], (EquipmentItemSlot) (i + 19), 0);
+                    SetEquipItemTemplate(character.Inventory, body[i], (EquipmentItemSlot)(i + 19), 0);
                 }
 
                 byte slot = 10;
@@ -524,6 +535,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
                 items = _abilityItems[0];
                 if (items != null)
+                {
                     foreach (var item in items.Supplies)
                     {
                         character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Invalid, item.Id, item.Amount, item.Grade);
@@ -533,38 +545,47 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         character.SetAction(slot, ActionSlotType.Item, item.Id);
                         slot++;
                     }
+                }
 
                 character.Abilities = new CharacterAbilities(character);
                 character.Abilities.SetAbility(character.Ability1, 0);
-                
+
                 character.Actability = new CharacterActability(character);
                 foreach (var (id, actabilityTemplate) in _actabilities)
+                {
                     character.Actability.Actabilities.Add(id, new Actability(actabilityTemplate));
+                }
 
                 character.Skills = new CharacterSkills(character);
                 foreach (var skill in SkillManager.Instance.GetDefaultSkills())
                 {
                     if (!skill.AddToSlot)
+                    {
                         continue;
+                    }
+
                     character.SetAction(skill.Slot, ActionSlotType.Skill, skill.Template.Id);
                 }
 
                 slot = 1;
                 while (character.Slots[slot].Type != ActionSlotType.None)
+                {
                     slot++;
+                }
+
                 foreach (var skill in SkillManager.Instance.GetStartAbilitySkills(character.Ability1))
                 {
                     character.Skills.AddSkill(skill, 1, false);
                     character.SetAction(slot, ActionSlotType.Skill, skill.Id);
                     slot++;
                 }
-                
+
                 character.Appellations = new CharacterAppellations(character);
                 character.Quests = new CharacterQuests(character);
                 character.Mails = new CharacterMails(character);
                 character.Portals = new CharacterPortals(character);
                 character.Friends = new CharacterFriends(character);
-                
+
                 character.Hp = character.MaxHp;
                 character.Mp = character.MaxMp;
 
@@ -580,7 +601,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     NameManager.Instance.RemoveCharacterName(characterId);
                     // TODO release items...
                 }
-                
+
             }
             else
             {

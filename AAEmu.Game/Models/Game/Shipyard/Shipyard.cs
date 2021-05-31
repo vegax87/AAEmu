@@ -26,7 +26,7 @@ namespace AAEmu.Game.Models.Game.Shipyard
             character.SendPacket(new SCUnitStatePacket(this));
             character.SendPacket(new SCShipyardStatePacket(Template));
             // TODO This packet is not available on the 3.5 server, but on the 1.2 server the shipyard is required to revive
-            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp));
+            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc));
         }
 
         public override void RemoveVisibleObject(Character character)

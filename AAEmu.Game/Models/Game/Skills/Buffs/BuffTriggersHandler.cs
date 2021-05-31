@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Buffs.Triggers;
-using AAEmu.Game.Models.Game.Skills.Effects;
-using AAEmu.Game.Models.Game.Skills.Templates;
-using AAEmu.Game.Models.Game.Units;
 using NLog;
 
-namespace AAEmu.Game.Models.Game.Skills
+namespace AAEmu.Game.Models.Game.Skills.Buffs
 {
     public class BuffTriggersHandler
     {
@@ -25,7 +19,7 @@ namespace AAEmu.Game.Models.Game.Skills
 
         public void SubscribeEvents()
         {
-            uint buffId = _owner.Template.BuffId;
+            var buffId = _owner.Template.BuffId;
 
             var triggerTemplates = SkillManager.Instance.GetBuffTriggerTemplates(buffId);
 

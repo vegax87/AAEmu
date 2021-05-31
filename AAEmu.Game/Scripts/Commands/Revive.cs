@@ -34,7 +34,7 @@ namespace AAEmu.Game.Scripts.Commands
                     targetPlayer.Hp = targetPlayer.MaxHp;
                     targetPlayer.Mp = targetPlayer.MaxMp;
                     targetPlayer.BroadcastPacket(new SCCharacterResurrectedPacket(targetPlayer.ObjId, targetPlayer.Position.X, targetPlayer.Position.Y, targetPlayer.Position.Z, targetPlayer.Position.RotationZ), true);
-                    targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp), true);
+                    targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp, targetPlayer.HighAbilityRsc), true);
                 }
                 else
                 {

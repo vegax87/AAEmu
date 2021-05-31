@@ -22,7 +22,7 @@ namespace AAEmu.Game.Core.Packets.C2S
 
             if (total == 0) // simple
             {
-                var defaultUcc = new DefaultUcc()
+                var defaultUcc = new DefaultUcc
                 {
                     UploaderId = Connection.GameConnection.ActiveChar.Id
                 };

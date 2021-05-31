@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
@@ -16,7 +17,9 @@ using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.World;
 using AAEmu.Game.Utils.DB;
+
 using NLog;
+
 using Portal = AAEmu.Game.Models.Game.Portal;
 
 namespace AAEmu.Game.Core.Managers
@@ -24,7 +27,7 @@ namespace AAEmu.Game.Core.Managers
     public class PortalManager : Singleton<PortalManager>
     {
         private readonly Logger _log = LogManager.GetCurrentClassLogger();
-        
+
         private Dictionary<uint, uint> _allDistrictPortalsKey;
         private Dictionary<uint, Portal> _allDistrictPortals;
         private Dictionary<uint, OpenPortalReagents> _openPortalInlandReagents;
@@ -125,7 +128,7 @@ namespace AAEmu.Game.Core.Managers
         private static bool CheckItemAndRemove(Character owner, uint itemId, int amount)
         {
             if (!owner.Inventory.CheckItems(SlotType.Inventory, itemId, amount)) return false;
-            owner.Inventory.Bag.ConsumeItem(ItemTaskType.Teleport, itemId, amount,null);
+            owner.Inventory.Bag.ConsumeItem(ItemTaskType.Teleport, itemId, amount, null);
             return true;
             /*
             var items = owner.Inventory.RemoveItem(itemId, amount);
@@ -228,8 +231,7 @@ namespace AAEmu.Game.Core.Managers
             // TODO - UnitPortalUsed
             // TODO - Maybe need unitstate?
             // TODO - Reason, ErrorMessage
-            character.SendPacket(new SCTeleportUnitPacket(0, 0, portalInfo.TeleportPosition.X,
-                portalInfo.TeleportPosition.Y, portalInfo.TeleportPosition.Z, portalInfo.TeleportPosition.RotationZ));
+            character.SendPacket(new SCUnitTeleportPacket(0, 0, portalInfo.TeleportPosition.X, portalInfo.TeleportPosition.Y, portalInfo.TeleportPosition.Z, portalInfo.TeleportPosition.RotationZ));
         }
 
         public void DeletePortal(Character owner, byte type, uint id)

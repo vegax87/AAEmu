@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+
 using NLua;
 
 namespace AAEmu.Game.Models.Game.AI.Params
@@ -47,6 +47,15 @@ namespace AAEmu.Game.Models.Game.AI.Params
                         Skills.Add(aiSkill);
                     }
                 }
+            }
+            else
+            {
+                var aiSkill = new AiSkill();
+                aiSkill.SkillId = Convert.ToUInt32(table["skillType"]);
+                aiSkill.Delay = Convert.ToSingle(table["delay"]);
+                aiSkill.Strafe = Convert.ToBoolean(table["strafe"]);
+
+                Skills.Add(aiSkill);
             }
         }
     }

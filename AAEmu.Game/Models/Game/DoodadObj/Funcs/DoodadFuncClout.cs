@@ -34,7 +34,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
                 Duration, Tick, TargetRelation, BuffId, ProjectileId, ShowToFriendlyOnly, NextPhase, AoeShapeId, TargetBuffTagId, TargetNoBuffTagId, UseOriginSource);
 
 
-            var areaTrigger = new AreaTrigger()
+            var areaTrigger = new AreaTrigger
             {
                 Shape = WorldManager.Instance.GetAreaShapeById(AoeShapeId),
                 Owner = owner,

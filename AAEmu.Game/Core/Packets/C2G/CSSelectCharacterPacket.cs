@@ -7,13 +7,12 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Units.Route;
-using AAEmu.Game.Models.Game.World.Zones;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSSelectCharacterPacket : GamePacket
     {
-        public CSSelectCharacterPacket() : base(CSOffsets.CSSelectCharacterPacket, 1)
+        public CSSelectCharacterPacket() : base(CSOffsets.CSSelectCharacterPacket, 5)
         {
         }
 
@@ -31,7 +30,7 @@ namespace AAEmu.Game.Core.Packets.C2G
                 var houses = Connection.Houses.Values.Where(x => x.OwnerId == character.Id);
 
                 Connection.ActiveChar = character;
-                if (Models.Game.Char.Character._usedCharacterObjIds.TryGetValue(character.Id, out uint oldObjId))
+                if (Models.Game.Char.Character._usedCharacterObjIds.TryGetValue(character.Id, out var oldObjId))
                 {
                     Connection.ActiveChar.ObjId = oldObjId;
                 }
@@ -80,8 +79,8 @@ namespace AAEmu.Game.Core.Packets.C2G
                 Connection.ActiveChar.SendOption(1);
                 Connection.ActiveChar.SendOption(2);
                 Connection.ActiveChar.SendOption(5);
-                
-                Connection.ActiveChar.OnZoneChange(0,Connection.ActiveChar.Position.ZoneId);
+
+                Connection.ActiveChar.OnZoneChange(0, Connection.ActiveChar.Position.ZoneId);
             }
             else
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Login;
@@ -8,6 +9,7 @@ using AAEmu.Game.Core.Packets.G2L;
 using AAEmu.Game.Core.Packets.Proxy;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Tasks;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.World
@@ -53,7 +55,7 @@ namespace AAEmu.Game.Core.Managers.World
 
                     var port = AppConfiguration.Instance.StreamNetwork.Port;
                     var gm = connection.GetAttribute("gmFlag") != null;
-                    connection.SendPacket(new X2EnterWorldResponsePacket(0, gm, connection.Id, port));
+                    connection.SendPacket(new X2EnterWorldResponsePacket(0, gm, connection.Id, port, connection));
                     connection.SendPacket(new ChangeStatePacket(0));
                 }
                 else
@@ -75,14 +77,16 @@ namespace AAEmu.Game.Core.Managers.World
                 case 1: // выход к списку персонажей
                     if (connection.State == GameState.World)
                     {
-                        connection.SendPacket(new SCPrepareLeaveWorldPacket(10000, type, false));
+                        var delay = connection.ActiveChar.IsInBattle ? 20u : 10u; // takes longer during combat
+                        connection.SendPacket(new SCPrepareLeaveWorldPacket(delay * 1000, type, false));
 
                         connection.LeaveTask = new LeaveWorldTask(connection, type);
-                        TaskManager.Instance.Schedule(connection.LeaveTask, TimeSpan.FromSeconds(10));
+                        TaskManager.Instance.Schedule(connection.LeaveTask, TimeSpan.FromSeconds(delay));
                     }
 
                     break;
                 case 2: // выбор сервера
+                    connection.SendPacket(new SCChatMessagePacket(Models.Game.Chat.ChatType.Notice, "Good - bye!"));
                     if (connection.State == GameState.Lobby)
                     {
                         var gsId = AppConfiguration.Instance.Id;
@@ -91,7 +95,6 @@ namespace AAEmu.Game.Core.Managers.World
                             .GetConnection()
                             .SendPacket(new GLPlayerReconnectPacket(gsId, connection.AccountId, connection.Id));
                     }
-
                     break;
                 default:
                     _log.Info("[Leave] Unknown type: {0}", type);

@@ -8,13 +8,13 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Items.Actions;
 using MySql.Data.MySqlClient;
 using NLog;
@@ -662,7 +662,7 @@ namespace AAEmu.Game.Core.Managers
             normalHouseCount = 0;
             hostileTaxRate = 0; // NOTE: When castles are added, this needs to be updated depending on ruling guild's settings
 
-            Dictionary<uint, House> userHouses = new Dictionary<uint, House>();
+            var userHouses = new Dictionary<uint, House>();
             if (GetByAccountId(userHouses, AccountId) <= 0)
                 return false;
 

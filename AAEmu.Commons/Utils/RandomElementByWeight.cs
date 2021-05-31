@@ -9,9 +9,9 @@ public static class IEnumerableExtensions
 
     public static T RandomElementByWeight<T>(this IEnumerable<T> sequence, Func<T, float> weightSelector)
     {
-        float totalWeight = sequence.Sum(weightSelector);
+        var totalWeight = sequence.Sum(weightSelector);
         // The weight we are after...
-        float itemWeightIndex = Rand.NextSingle() * totalWeight;
+        var itemWeightIndex = Rand.NextSingle() * totalWeight;
         float currentWeightIndex = 0;
 
         foreach (var item in from weightedItem in sequence select new { Value = weightedItem, Weight = weightSelector(weightedItem) })

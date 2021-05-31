@@ -28,7 +28,7 @@ namespace AAEmu.Game.Models.Game.Char
                 return;
             }
 
-            var template = new FriendTemplate()
+            var template = new FriendTemplate
             {
                 Id = FriendIdManager.Instance.GetNextId(),
                 FriendId = friend.CharacterId,
@@ -75,7 +75,7 @@ namespace AAEmu.Game.Models.Game.Char
                 {
                     while (reader.Read())
                     {
-                        var template = new FriendTemplate()
+                        var template = new FriendTemplate
                         {
                             Id = reader.GetUInt32("id"),
                             FriendId = reader.GetUInt32("friend_id"),

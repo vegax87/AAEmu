@@ -36,7 +36,7 @@ namespace AAEmu.Game.GameData
                     while (reader.Read())
                     {
                         var ownerId = reader.GetUInt32("owner_id");
-                        var template = new BonusTemplate()
+                        var template = new BonusTemplate
                         {
                             Attribute = (UnitAttribute)reader.GetUInt32("unit_attribute_id"),
                             ModifierType = (UnitModifierType)reader.GetUInt32("unit_modifier_type_id"),

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.GameData.Framework;
-using AAEmu.Game.Models.Game.AI.v2.Params;
+using AAEmu.Game.Models.Game.AI.Params;
 using AAEmu.Game.Utils.DB;
 using Microsoft.Data.Sqlite;
 using NLog;

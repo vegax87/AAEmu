@@ -94,14 +94,14 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 
             if (character.Money < cost)
             {
-                character.SendErrorMessage(Error.ErrorMessageType.NotEnoughMoney);
+                character.SendErrorMessage(ErrorMessageType.NotEnoughMoney);
                 return;
             }
 
             if (!character.Inventory.CheckItems(SlotType.Inventory,scroll.ItemTemplateId, 1))
             {
                 // No scroll
-                character.SendErrorMessage(Error.ErrorMessageType.NotEnoughRequiredItem);
+                character.SendErrorMessage(ErrorMessageType.NotEnoughRequiredItem);
                 return;
             }
 
@@ -118,13 +118,13 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                 charmInfo = ItemManager.Instance.GetItemGradEnchantingSupportByItemId(charmItem.TemplateId);
                 if (charmInfo.RequireGradeMin != -1 && item.Grade < charmInfo.RequireGradeMin)
                 {
-                    character.SendErrorMessage(Error.ErrorMessageType.NotEnoughRequiredItem);
+                    character.SendErrorMessage(ErrorMessageType.NotEnoughRequiredItem);
                     return;
                 }
 
                 if (charmInfo.RequireGradeMax != -1 && item.Grade > charmInfo.RequireGradeMax)
                 {
-                    character.SendErrorMessage(Error.ErrorMessageType.GradeEnchantMax);
+                    character.SendErrorMessage(ErrorMessageType.GradeEnchantMax);
                     return;
                 }
 
@@ -141,7 +141,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             else
             {
                 // No Poof
-                character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.GradeEnchant, new List<ItemTask>() { new ItemGradeChange(item, item.Grade) }, new List<ulong>()));
+                character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.GradeEnchant, new List<ItemTask> { new ItemGradeChange(item, item.Grade) }, new List<ulong>()));
             }
 
             // Consume
@@ -226,15 +226,15 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             switch (ItemType)
             {
                 case 1:
-                    WeaponTemplate weaponTemplate = (WeaponTemplate)item.Template;
+                    var weaponTemplate = (WeaponTemplate)item.Template;
                     slotTypeId = weaponTemplate.HoldableTemplate.SlotTypeId;
                     break;
                 case 2:
-                    ArmorTemplate armorTemplate = (ArmorTemplate)item.Template;
+                    var armorTemplate = (ArmorTemplate)item.Template;
                     slotTypeId = armorTemplate.SlotTemplate.SlotTypeId;
                     break;
                 case 24:
-                    AccessoryTemplate accessoryTemplate = (AccessoryTemplate)item.Template;
+                    var accessoryTemplate = (AccessoryTemplate)item.Template;
                     slotTypeId = accessoryTemplate.SlotTemplate.SlotTypeId;
                     break;
             }

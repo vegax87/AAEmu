@@ -149,7 +149,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new ShipyardSteps()
+                            var template = new ShipyardSteps
                             {
                                 Id = reader.GetUInt32("id"),
                                 ShipyardId = reader.GetUInt32("shipyard_id"),

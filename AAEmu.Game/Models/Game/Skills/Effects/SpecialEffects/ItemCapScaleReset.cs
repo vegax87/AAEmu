@@ -65,7 +65,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             equipItem.TemperPhysical = 0;
             equipItem.TemperMagical = 0;
 
-            owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.EnchantPhysical, new List<ItemTask>() { new ItemUpdate(equipItem) }, new List<ulong>()));
+            owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.EnchantPhysical, new List<ItemTask> { new ItemUpdate(equipItem) }, new List<ulong>()));
             // No indication ingame that the item's tempering has been successfully resetted 
             owner.SendMessage(ChatType.System, "Tempering reset");
         }

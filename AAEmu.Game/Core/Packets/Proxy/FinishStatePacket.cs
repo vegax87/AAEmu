@@ -1,5 +1,4 @@
-﻿using System;
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
@@ -44,7 +43,7 @@ namespace AAEmu.Game.Core.Packets.Proxy
                             Connection.Payment.StartTime,
                             Connection.Payment.EndTime)
                     );
-                    Connection.SendPacket(new SCChatSpamDelayPacket());
+                    Connection.SendPacket(new SCChatSpamConfigPacket());
                     Connection.SendPacket(new SCAccountAttributeConfigPacket(new[] { false, true })); // TODO
                     Connection.SendPacket(new SCLevelRestrictionConfigPacket(10, 10, 10, 10, 10,
                         new byte[] { 0, 15, 15, 15, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 15 })); // TODO - config files

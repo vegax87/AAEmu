@@ -144,14 +144,14 @@ namespace AAEmu.Game.Core.Managers
         {
             // спавним кабину
             character.SendPacket(new SCUnitStatePacket(tr));
-            character.SendPacket(new SCUnitPointsPacket(tr.ObjId, tr.Hp, tr.Mp));
+            character.SendPacket(new SCUnitPointsPacket(tr.ObjId, tr.Hp, tr.Mp, tr.HighAbilityRsc));
             character.SendPacket(new SCSlaveStatePacket(tr.ObjId, tr.TlId, "", tr.Spawner.Id, tr.Template.Id));
 
             // пробуем спавнить прицеп
             if (tr.Bounded != null)
             {
                 character.SendPacket(new SCUnitStatePacket(tr.Bounded));
-                character.SendPacket(new SCUnitPointsPacket(tr.Bounded.ObjId, tr.Bounded.Hp, tr.Bounded.Mp));
+                character.SendPacket(new SCUnitPointsPacket(tr.Bounded.ObjId, tr.Bounded.Hp, tr.Bounded.Mp, tr.Bounded.HighAbilityRsc));
                 character.SendPacket(new SCSlaveStatePacket(tr.Bounded.ObjId, tr.Bounded.TlId, "", tr.Spawner.Id, tr.Bounded.Template.Id));
 
                 if (tr.Bounded.AttachedDoodads.Count > 0)
@@ -227,7 +227,7 @@ namespace AAEmu.Game.Core.Managers
 
             owner.Faction = new SystemFaction();
             owner.Faction = FactionManager.Instance.GetFaction(164);
-            
+
             owner.Patrol = null;
             // add effect
             var buffId = 545u; //BUFF: Untouchable (Unable to attack this target)
@@ -272,7 +272,7 @@ namespace AAEmu.Game.Core.Managers
 
             transfer.Faction = new SystemFaction();
             owner.Faction = FactionManager.Instance.GetFaction(164);
-            
+
             transfer.Patrol = null;
             // add effect
             buffId = 545u; //BUFF: Untouchable (Unable to attack this target)
@@ -323,7 +323,7 @@ namespace AAEmu.Game.Core.Managers
             _templates = new Dictionary<uint, TransferTemplate>();
             _activeTransfers = new Dictionary<uint, Transfer>();
             _moveTransfers = new Dictionary<uint, Transfer>();
-            
+
             #region SQLLite
 
             using (var connection = SQLite.CreateConnection())
@@ -524,7 +524,7 @@ namespace AAEmu.Game.Core.Managers
 
                                 if (exist) { continue; }
 
-                                var tmp = new TransferRoads()
+                                var tmp = new TransferRoads
                                 {
                                     Name = path.Name,
                                     Type = path.Type,

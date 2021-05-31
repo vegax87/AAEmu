@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Mails;
+
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Utils;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Items.Actions;
-using System.Net.Mail;
-using AAEmu.Game.Core.Managers.Id;
-using SQLitePCL;
-using System.Numerics;
+using AAEmu.Game.Models.Game.Mails;
 
 namespace AAEmu.Game.Models.Game.Char
 {
@@ -25,10 +20,10 @@ namespace AAEmu.Game.Models.Game.Char
 
             unreadMailCount = new CountUnreadMail
             {
-                Sent = 0,
-                Received = 0,
-                MiaReceived = 0,
-                CommercialReceived = 0
+                TotalSent = 0,
+                TotalReceived = 0,
+                TotalMiaReceived = 0,
+                TotalCommercialReceived = 0
             };
         }
 
@@ -62,7 +57,7 @@ namespace AAEmu.Game.Models.Game.Char
             {
                 if ((mail.Header.Status == MailStatus.Unread) && !isSent)
                 {
-                    unreadMailCount.Received -= 1;
+                    unreadMailCount.TotalReceived -= 1;
                     mail.OpenDate = DateTime.Now;
                     mail.Header.Status = MailStatus.Read;
                     mail.IsDelivered = true;
@@ -80,7 +75,7 @@ namespace AAEmu.Game.Models.Game.Char
 
         public bool SendMailToPlayer(MailType mailType, string receiverName, string title, string text, byte attachments, int money0, int money1, int money2, long extra, List<(Items.SlotType, byte)> itemSlots)
         {
-            var mail = new MailPlayerToPlayer(Self,receiverName);
+            var mail = new MailPlayerToPlayer(Self, receiverName);
 
             mail.MailType = mailType;
             mail.Title = title;
@@ -97,7 +92,7 @@ namespace AAEmu.Game.Models.Game.Char
             // First verify source items, and add them to the attachments of body
             if (!mail.PrepareAttachmentItems(itemSlots))
             {
-                Self.SendErrorMessage(Error.ErrorMessageType.MailInvalidItem);
+                Self.SendErrorMessage(ErrorMessageType.MailInvalidItem);
                 return false;
             }
 
@@ -105,7 +100,7 @@ namespace AAEmu.Game.Models.Game.Char
             var mailFee = mail.GetMailFee();
             if ((mailFee + money0) > Self.Money)
             {
-                Self.SendErrorMessage(Error.ErrorMessageType.MailNotEnoughMoney);
+                Self.SendErrorMessage(ErrorMessageType.MailNotEnoughMoney);
                 return false;
             }
 
@@ -134,12 +129,12 @@ namespace AAEmu.Game.Models.Game.Char
         {
             if (MailManager.Instance._allPlayerMails.TryGetValue(mailId, out var thisMail))
             {
-                bool tookMoney = false;
+                var tookMoney = false;
                 if ((thisMail.MailType == MailType.AucOffSuccess) && (thisMail.Body.CopperCoins > 0) && takeMoney)
                 {
                     if (Self.LaborPower <= 1)
                     {
-                        Self.SendErrorMessage(Error.ErrorMessageType.NotEnoughLaborPower);
+                        Self.SendErrorMessage(ErrorMessageType.NotEnoughLaborPower);
                         takeMoney = false;
                     }
                     else
@@ -170,7 +165,7 @@ namespace AAEmu.Game.Models.Game.Char
                         if (itemAttachment.Id != 0)
                         {
                             // Free Space Check
-                            if (Self.Inventory.Bag.SpaceLeftForItem(itemAttachment,out var foundItems) >= itemAttachment.Count)
+                            if (Self.Inventory.Bag.SpaceLeftForItem(itemAttachment, out var foundItems) >= itemAttachment.Count)
                             {
                                 Item stackItem = null;
                                 // Check if we can stack the item onto a existing one
@@ -192,7 +187,7 @@ namespace AAEmu.Game.Models.Game.Char
                                 iial.Slot = (byte)itemAttachment.Slot;
 
                                 // Move item to player inventory
-                                if (Self.Inventory.Bag.AddOrMoveExistingItem(ItemTaskType.Mail, itemAttachment, stackItem != null? stackItem.Slot : -1))
+                                if (Self.Inventory.Bag.AddOrMoveExistingItem(ItemTaskType.Mail, itemAttachment, stackItem != null ? stackItem.Slot : -1))
                                 {
                                     itemSlotList.Add(iial);
                                     thisMail.Header.Attachments -= 1;
@@ -207,17 +202,17 @@ namespace AAEmu.Game.Models.Game.Char
                             else
                             {
                                 // Bag Full
-                                Self.SendErrorMessage(Error.ErrorMessageType.BagFull);
+                                Self.SendErrorMessage(ErrorMessageType.BagFull);
                             }
                         }
                     }
                     // Removed those marked to be taken
                     foreach (var ia in toRemove)
                         thisMail.Body.Attachments.Remove(ia);
-                    
+
                 }
                 // Mark taken items
-                
+
                 // Send attachments taken packets (if needed)
                 // Money
                 if (tookMoney)
@@ -245,7 +240,7 @@ namespace AAEmu.Game.Models.Game.Char
                 if ((thisMail.Header.Status == MailStatus.Unread) && (tookMoney || (itemSlotList.Count > 0)))
                 {
                     thisMail.Header.Status = MailStatus.Read;
-                    unreadMailCount.Received--;
+                    unreadMailCount.TotalReceived--;
                     Self.SendPacket(new SCMailStatusUpdatedPacket(false, mailId, MailStatus.Read));
                     SendUnreadMailCount();
                 }
@@ -265,7 +260,7 @@ namespace AAEmu.Game.Models.Game.Char
                 {
                     if (MailManager.Instance._allPlayerMails[id].Header.Status != MailStatus.Read)
                     {
-                        unreadMailCount.Received--;
+                        unreadMailCount.TotalReceived--;
                         Self.SendPacket(new SCMailDeletedPacket(isSent, id, true, unreadMailCount));
                     }
                     else
@@ -285,12 +280,12 @@ namespace AAEmu.Game.Models.Game.Char
                 {
                     var item = ItemManager.Instance.GetItemByItemId(thisMail.Body.Attachments[i].Id);
                     if (item.SlotType == SlotType.None)
-                        itemSlots.Add(((byte)0, (byte)0));
+                        itemSlots.Add((0, 0));
                     else
                         itemSlots.Add((item.SlotType, (byte)item.Slot));
                 }
 
-                SendMailToPlayer(thisMail.Header.Type, thisMail.Header.SenderName, thisMail.Header.Title, thisMail.Body.Text, 
+                SendMailToPlayer(thisMail.Header.Type, thisMail.Header.SenderName, thisMail.Header.Title, thisMail.Body.Text,
                     thisMail.Header.Attachments, thisMail.Body.CopperCoins, thisMail.Body.BillingAmount, thisMail.Body.MoneyAmount2,
                         thisMail.Header.Extra, itemSlots);
 

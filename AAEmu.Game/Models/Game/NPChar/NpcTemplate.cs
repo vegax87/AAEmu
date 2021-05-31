@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using AAEmu.Game.Models.Game.AI.v2.Params;
+
+using AAEmu.Game.Models.Game.AI.Params;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
@@ -18,7 +19,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         Strong = 7,
         BossS = 8
     }
-    
+
     public enum NpcKindType : byte
     {
         Human = 1,
@@ -35,7 +36,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         Machine = 14,
         Unknown = 15
     }
-    
+
     public enum NpcTemplateType : byte
     {
         Tanker = 1,
@@ -48,7 +49,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         DungeonMDealer = 8,
         Default = 9
     }
-    
+
     public class NpcTemplate
     {
         public uint Id { get; set; }
@@ -153,7 +154,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             {
                 if (!Skills.ContainsKey(skill.SkillUseCondition))
                     Skills.Add(skill.SkillUseCondition, new List<NpcSkill>());
-                
+
                 Skills[skill.SkillUseCondition].Add(skill);
             }
         }

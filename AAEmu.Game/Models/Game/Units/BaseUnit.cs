@@ -72,7 +72,7 @@ namespace AAEmu.Game.Models.Game.Units
                     return false;
                 }
 
-                bool isTeam = TeamManager.Instance.AreTeamMembers(me.Id, other.Id);
+                var isTeam = TeamManager.Instance.AreTeamMembers(me.Id, other.Id);
                 if (trgIsFlagged && !isTeam && relation == RelationState.Friendly)
                 {
                     return true;

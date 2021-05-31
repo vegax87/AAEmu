@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Team;
-using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.World;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers
@@ -39,7 +40,7 @@ namespace AAEmu.Game.Core.Managers
 
             return null;
         }
-        
+
         public Team GetTeamByObjId(uint objId)
         {
             foreach (var team in _activeTeams.Values)
@@ -170,7 +171,7 @@ namespace AAEmu.Game.Core.Managers
                 if (activeTeam.MembersCount() >= (activeTeam.IsParty ? 5 : 50)) // TODO - NEED TESTS
                 {
                     // ERROR TEAM IS FULL
-                    target.SendErrorMessage(Models.Game.Error.ErrorMessageType.TeamFull);
+                    target.SendErrorMessage(ErrorMessageType.TeamFull);
                     _activeInvitations.Remove(activeInvitation.Target.Id);
                     return;
                 }
@@ -180,7 +181,7 @@ namespace AAEmu.Game.Core.Managers
                 {
                     target.SendPacket(new SCJoinedTeamPacket(activeTeam));
                     target.InParty = true;
-                    target.SendPacket(new SCTeamPingPosPacket(true, activeTeam.PingPosition, 0));
+                    target.SendPacket(new SCTeamPingPosPacket(activeTeam.PingPosition));
                     activeTeam.BroadcastPacket(new SCTeamMemberJoinedPacket(activeTeam.Id, newTeamMember, party), target.Id);
                 }
             }
@@ -233,7 +234,22 @@ namespace AAEmu.Game.Core.Managers
             activeInvitation.Owner.InParty = true;
             activeInvitation.Target.SendPacket(new SCJoinedTeamPacket(newTeam));
             activeInvitation.Target.InParty = true;
-            newTeam.BroadcastPacket(new SCTeamPingPosPacket(true, activeInvitation.Owner.LocalPingPosition, 0));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
             if (!newTeam.IsParty)
             {
                 ChatManager.Instance.GetRaidChat(newTeam).JoinChannel(activeInvitation.Owner);
@@ -264,11 +280,11 @@ namespace AAEmu.Game.Core.Managers
 
             character.SendPacket(new SCJoinedTeamPacket(newTeam));
             character.InParty = asParty;
-            newTeam.BroadcastPacket(new SCTeamPingPosPacket(true, character.LocalPingPosition, 0));
+            newTeam.BroadcastPacket(new SCTeamPingPosPacket(character.LocalPingPosition));
 
             if (!newTeam.IsParty)
                 ChatManager.Instance.GetRaidChat(newTeam).JoinChannel(character);
-            ChatManager.Instance.GetPartyChat(newTeam,character).JoinChannel(character);
+            ChatManager.Instance.GetPartyChat(newTeam, character).JoinChannel(character);
         }
 
         public void AskRiskyTeam(Character unit, uint teamId, uint targetId, RiskyAction riskyAction)
@@ -366,7 +382,7 @@ namespace AAEmu.Game.Core.Managers
         public void ConvertToRaid(Character owner, uint teamId)
         {
             var activeTeam = GetActiveTeam(teamId);
-            if (activeTeam?.OwnerId != owner.Id) 
+            if (activeTeam?.OwnerId != owner.Id)
                 return;
 
             activeTeam.IsParty = false;
@@ -419,13 +435,13 @@ namespace AAEmu.Game.Core.Managers
             activeTeam.BroadcastPacket(new SCTeamLootingRuleChangedPacket(teamId, newRules, flags));
         }
 
-        public void SetPingPos(Character unit, uint teamId, bool hasPing, Point position, uint insId)
+        public void SetPingPos(Character unit, uint teamId, PingPosition pingPosition)
         {
             var activeTeam = GetActiveTeam(teamId);
-            if ( (activeTeam.OwnerId != unit.Id) && (activeTeam == null || !activeTeam.IsMarked(unit.Id)) ) return;
+            if (activeTeam.OwnerId != unit.Id && (activeTeam == null || !activeTeam.IsMarked(unit.Id))) return;
 
-            activeTeam.PingPosition = position;
-            activeTeam.BroadcastPacket(new SCTeamPingPosPacket(hasPing, position, insId));
+            activeTeam.PingPosition = pingPosition;
+            activeTeam.BroadcastPacket(new SCTeamPingPosPacket(pingPosition));
         }
 
         public void SetOffline(Character unit)
@@ -462,7 +478,7 @@ namespace AAEmu.Game.Core.Managers
             }
             if (!activeTeam.IsParty)
                 ChatManager.Instance.GetRaidChat(activeTeam).LeaveChannel(unit);
-            ChatManager.Instance.GetPartyChat(activeTeam,unit).LeaveChannel(unit);
+            ChatManager.Instance.GetPartyChat(activeTeam, unit).LeaveChannel(unit);
             AskRiskyTeam(source, activeTeam.Id, unit.Id, leaveType);
         }
 
@@ -475,7 +491,7 @@ namespace AAEmu.Game.Core.Managers
             if (index < 0) return;
 
             // TODO - MAYBE USE TASK FOR BETTER PERFORMANCE
-            activeTeam.BroadcastPacket(new SCTeamRemoteMembersExPacket(new[] {activeTeam.Members[index]}), id);
+            activeTeam.BroadcastPacket(new SCTeamRemoteMembersExPacket(new[] { activeTeam.Members[index] }), id);
         }
 
         public void UpdateAtLogin(Character unit)

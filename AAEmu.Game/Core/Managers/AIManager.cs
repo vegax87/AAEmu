@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.AI.Framework;
-using AAEmu.Game.Models.Game.AI.v2;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers
@@ -14,7 +15,7 @@ namespace AAEmu.Game.Core.Managers
 
         private List<NpcAi> _npcAis;
         private object _aiLock;
-        
+
         public void Initialize()
         {
             _npcAis = new List<NpcAi>();

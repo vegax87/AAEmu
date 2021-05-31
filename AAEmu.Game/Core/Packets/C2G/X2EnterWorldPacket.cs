@@ -7,7 +7,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class X2EnterWorldPacket : GamePacket
     {
-        public X2EnterWorldPacket() : base(CSOffsets.X2EnterWorldPacket, 1)
+        public X2EnterWorldPacket() : base(CSOffsets.X2EnterWorldPacket, 5)
         {
 
         }
@@ -19,8 +19,9 @@ namespace AAEmu.Game.Core.Packets.C2G
             var accountId = stream.ReadUInt64();
             var cookie = stream.ReadUInt32();
             var zoneId = stream.ReadInt32();
-            var tb = stream.ReadByte();
-            var revision = stream.ReadUInt64();
+            var tb = stream.ReadInt16();
+            var revision = stream.ReadUInt32();
+            var index = stream.ReadUInt32();
 
             EnterWorldManager.Instance.Login(Connection, accountId, cookie);
         }

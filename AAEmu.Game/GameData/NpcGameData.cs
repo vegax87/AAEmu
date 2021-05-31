@@ -31,7 +31,7 @@ namespace AAEmu.Game.GameData
                 {
                     while (reader.Read())
                     {
-                        var template = new NpcSkill()
+                        var template = new NpcSkill
                         {
                             Id = reader.GetUInt32("id"),
                             OwnerId = reader.GetUInt32("owner_id"),
@@ -59,7 +59,7 @@ namespace AAEmu.Game.GameData
                 {
                     while (reader.Read())
                     {
-                        var template = new NpcPassiveBuff()
+                        var template = new NpcPassiveBuff
                         {
                             Id = reader.GetUInt32("id"),
                             OwnerId = reader.GetUInt32("owner_id"),

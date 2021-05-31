@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Game;
@@ -16,18 +17,18 @@ namespace AAEmu.Game.Core.Packets.G2C
         //private ushort _errorMessage;
         //private ulong  _serverTIme;
 
-        public SCAuctionSearchedPacket(List<AuctionItem> auctionItems, uint page) : base(SCOffsets.SCAuctionSearchedPacket, 1)
+        public SCAuctionSearchedPacket(List<AuctionItem> auctionItems, uint page) : base(SCOffsets.SCAuctionSearchedPacket, 5)
         {
             _auctionItems = auctionItems;
             _count = (uint)_auctionItems.Count();
-            _page = page; 
+            _page = page;
         }
 
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write(_page);
             stream.Write(_count);
-            Random random = new Random();
+            var random = new Random();
 
             if (_count > 0)
             {
@@ -41,12 +42,12 @@ namespace AAEmu.Game.Core.Packets.G2C
                     stream.Write((byte)item.Flags);
                     stream.Write(item.StackSize);
                     stream.Write(item.DetailType);
-                    stream.Write(DateTime.Now);
+                    stream.Write(DateTime.UtcNow);
                     stream.Write(item.LifespanMins);
                     stream.Write(item.Type1);
                     stream.Write(item.WorldId);
-                    stream.Write(DateTime.Now);
-                    stream.Write(DateTime.Now);
+                    stream.Write(DateTime.UtcNow);
+                    stream.Write(DateTime.UtcNow);
                     stream.Write(item.WorldId2);
                     stream.Write(item.ClientId);
                     stream.Write(item.ClientName);

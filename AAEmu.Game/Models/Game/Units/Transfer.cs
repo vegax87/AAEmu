@@ -10,11 +10,10 @@ using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Formulas;
-using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Units.Movements;
-using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
 

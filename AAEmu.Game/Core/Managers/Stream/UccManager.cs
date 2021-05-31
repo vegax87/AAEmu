@@ -37,7 +37,7 @@ namespace AAEmu.Game.Core.Managers.Stream
                             var type = (UccType)reader.GetByte("type");
                             if (type == UccType.Simple)
                             {
-                                var ucc = new DefaultUcc()
+                                var ucc = new DefaultUcc
                                 {
                                     Id = id,
                                     UploaderId = reader.GetUInt32("uploader_id"),

@@ -221,7 +221,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
         public void StopRecord(Simulation sim)
         {
             // записываем в файл
-            using (StreamWriter sw = new StreamWriter(GetRecordFileName()))
+            using (var sw = new StreamWriter(GetRecordFileName()))
             {
                 foreach (var b in RecordPath)
                 {

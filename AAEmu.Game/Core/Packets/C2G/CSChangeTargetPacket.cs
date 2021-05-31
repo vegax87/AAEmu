@@ -5,13 +5,12 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSChangeTargetPacket : GamePacket
     {
-        public CSChangeTargetPacket() : base(CSOffsets.CSChangeTargetPacket, 1)
+        public CSChangeTargetPacket() : base(CSOffsets.CSChangeTargetPacket, 5)
         {
         }
 
@@ -36,8 +35,6 @@ namespace AAEmu.Game.Core.Packets.C2G
                 Connection.ActiveChar.SendMessage("ObjId: {0}, HouseId: {1}", targetId, house.Id);
             else if (Connection.ActiveChar.CurrentTarget is Character character)
                 Connection.ActiveChar.SendMessage("ObjId: {0}, CharacterId: {1}", targetId, character.Id);
-            else if (Connection.ActiveChar.CurrentTarget is Transfer transfer)
-                Connection.ActiveChar.SendMessage("ObjId: {0}, Transfer TemplateId: {1}", targetId, transfer.TemplateId);
         }
     }
 }

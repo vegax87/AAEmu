@@ -9,7 +9,7 @@ namespace AAEmu.Game.Core.Packets.G2C
     {
         private readonly Gimmick _gimmick;
 
-        public SCGimmickMovementPacket(Gimmick gimmick) : base(SCOffsets.SCGimmickMovementPacket, 1)
+        public SCGimmickMovementPacket(Gimmick gimmick) : base(SCOffsets.SCGimmickMovementPacket, 5)
         {
             _gimmick = gimmick;
         }

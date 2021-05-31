@@ -14,6 +14,6 @@ namespace AAEmu.Game.Models.Game.Items
         Glider = 9,
         SlaveEquipment = 10,
         Location = 11,
-        TypeMax = 12,
+        TypeMax = 12
     }
 }

@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Faction;
-using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Procs;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.Units.Route;
-using AAEmu.Game.Models.Tasks.UnitMove;
-using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects
 {
@@ -86,7 +82,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             if (Bonuses != null)
             {
-                foreach(var bonus in Bonuses)
+                foreach (var bonus in Bonuses)
                 {
                     caster.AddBonus(uint.MaxValue, new Bonus { Template = bonus, Value = bonus.Value });
                 }
@@ -108,7 +104,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             var holdable = (WeaponTemplate)weapon?.Template;
 
             var hitType = SkillHitType.Invalid;
-            if ((source?.Skill?.HitTypes.TryGetValue(trg.ObjId, out hitType) ?? false )
+            if ((source?.Skill?.HitTypes.TryGetValue(trg.ObjId, out hitType) ?? false)
                 && (source?.Skill.SkillMissed(trg.ObjId) ?? false))
             {
                 var missPacket = new SCUnitDamagedPacket(castObj, casterObj, caster.ObjId, target.ObjId, 0, 0)
@@ -158,12 +154,12 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             // Used for NPCs, I think
             var levelMin = 0.0f;
             var levelMax = 0.0f;
-            if (UseLevelDamage) 
+            if (UseLevelDamage)
             {
                 var lvlMd = caster.LevelDps * LevelMd;
                 // Hack null-check on skill
-                var levelModifier = (( (source.Skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
-            
+                var levelModifier = (((source.Skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
+
                 levelMin += (lvlMd - levelModifier * lvlMd) + 0.5f;
                 levelMax += (levelModifier + 1) * lvlMd + 0.5f;
             }
@@ -194,10 +190,10 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 weaponDamage = (caster.RangedDps * 0.001f) + weaponDamage; // TODO : Use only weapon value!
 
             max = (DpsMultiplier * weaponDamage) + max;
-            
+
             var minCastBonus = 1000f;
             // Hack null-check on skill
-            var castTimeMod = source.Skill?.Template.CastingTime ?? 0 ; // This mod depends on casting_inc too!
+            var castTimeMod = source.Skill?.Template.CastingTime ?? 0; // This mod depends on casting_inc too!
             if (castTimeMod <= 1000)
                 minCastBonus = min > 0 ? min : minCastBonus;
             else
@@ -258,8 +254,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             if (source.Buff?.TickEffects.Count > 0)
             {
-                min = (float) (min * (source.Buff.Tick / source.Buff.Duration));
-                max = (float) (max * (source.Buff.Tick / source.Buff.Duration));
+                min = (float)(min * (source.Buff.Tick / source.Buff.Duration));
+                max = (float)(max * (source.Buff.Tick / source.Buff.Duration));
 
                 caster.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.DamageEtcDot);
                 trg.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.DamagedEtcDot);
@@ -270,12 +266,12 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                     trg.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.DamagedSpellDot);
                 }
             }
-            
+
             if (UseChargedBuff && source.Skill != null)
             {
                 var effect = caster.Buffs.GetEffectFromBuffId(ChargedBuffId);
                 var charges = effect?.Charge ?? 0;
-                
+
                 min += charges * (ChargedMul + (source.Skill.Level * ChargedLevelMul));
                 max += charges * (ChargedMul + (source.Skill.Level * ChargedLevelMul));
                 effect?.Exit();
@@ -285,7 +281,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             {
                 var effect = target.Buffs.GetEffectFromBuffId(ChargedBuffId);
                 var charges = effect?.Charge ?? 0;
-                
+
                 min += charges * (ChargedMul + (source.Skill.Level * ChargedLevelMul));
                 max += charges * (ChargedMul + (source.Skill.Level * ChargedLevelMul));
                 effect?.Exit();
@@ -296,9 +292,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 min = FixedMin;
                 max = FixedMax;
             }
-            
+
             var finalDamage = Rand.Next(min, max);
-            
+
             // Buff tag increase (Hellspear's impale combo, for ex)
             if (TargetBuffTagId > 0 && target.Buffs.CheckBuffTag(TargetBuffTagId))
             {
@@ -308,7 +304,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             //toughness reduction (PVP Only)
             if (caster is Character && trg is Character)
-                finalDamage *= ( 1 - ( trg.BattleResist / ( 8000f + trg.BattleResist ) ) );
+                finalDamage *= (1 - (trg.BattleResist / (8000f + trg.BattleResist)));
 
             //Do Critical Dmgs
             switch (hitType)
@@ -369,7 +365,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             {
                 caster.Hp = Math.Min(caster.MaxHp, caster.Hp + healthStolen);
                 caster.Mp = Math.Min(caster.MaxMp, caster.Mp + manaStolen);
-                caster.BroadcastPacket(new SCUnitPointsPacket(caster.ObjId, caster.Hp, caster.Mp), true);
+                caster.BroadcastPacket(new SCUnitPointsPacket(caster.ObjId, caster.Hp, caster.Mp, caster.HighAbilityRsc), true);
             }
 
 
@@ -398,7 +394,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                     trgCharacter.SetHostileActivity(attacker);
                 }
                 trgCharacter.Procs.RollProcsForKind(ProcChanceKind.TakeDamageAny);
-            }    
+            }
             if (attacker != null)
             {
                 attacker.IsInCombat = true;
@@ -414,8 +410,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 HoldableId = (byte)(holdable?.HoldableTemplate?.Id ?? 0),
                 HitType = hitType
             };
-            
-            if (packetBuilder != null) 
+
+            if (packetBuilder != null)
                 packetBuilder.AddPacket(packet);
             else
                 trg.BroadcastPacket(packet, true);
@@ -437,34 +433,50 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             if (value > 0)
             {
-                caster.Events.OnDamage(this, new OnDamageArgs {
+                caster.Events.OnDamage(this, new OnDamageArgs
+                {
                     Attacker = caster,
                     Amount = value
                 });
                 caster.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.DamageEtc);
-                trg.Events.OnDamaged(this, new OnDamagedArgs {Attacker = caster,
-                    Amount = value });
-                
+                trg.Events.OnDamaged(this, new OnDamagedArgs
+                {
+                    Attacker = caster,
+                    Amount = value
+                });
+
                 switch (DamageType)
                 {
                     case DamageType.Melee:
-                        trg.Events.OnDamagedMelee(this, new OnDamagedArgs() {Attacker = caster,
-                            Amount = value });
+                        trg.Events.OnDamagedMelee(this, new OnDamagedArgs
+                        {
+                            Attacker = caster,
+                            Amount = value
+                        });
                         break;
                     case DamageType.Ranged:
-                        trg.Events.OnDamagedRanged(this, new OnDamagedArgs() {Attacker = caster,
-                            Amount = value });
+                        trg.Events.OnDamagedRanged(this, new OnDamagedArgs
+                        {
+                            Attacker = caster,
+                            Amount = value
+                        });
                         break;
                     case DamageType.Magic:
-                        trg.Events.OnDamagedSpell(this, new OnDamagedArgs() {Attacker = caster,
-                            Amount = value });
+                        trg.Events.OnDamagedSpell(this, new OnDamagedArgs
+                        {
+                            Attacker = caster,
+                            Amount = value
+                        });
                         break;
                     case DamageType.Siege:
-                        trg.Events.OnDamagedSiege(this, new OnDamagedArgs() {Attacker = caster,
-                            Amount = value });
+                        trg.Events.OnDamagedSiege(this, new OnDamagedArgs
+                        {
+                            Attacker = caster,
+                            Amount = value
+                        });
                         break;
                 }
-                
+
                 trg.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.DamagedEtc);
             }
         }

@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Expeditions;
 using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Models.Game.Error;
-using AAEmu.Game.Utils.DB;
-using NLog;
 using AAEmu.Game.Models.Game.Team;
+using AAEmu.Game.Utils.DB;
+
+using NLog;
 
 namespace AAEmu.Game.Core.Managers
 {
@@ -194,12 +196,13 @@ namespace AAEmu.Game.Core.Managers
             }
 
             foreach (var exp in _expeditions.Values)
+            {
                 if (name.Equals(exp.Name))
                 {
                     connection.ActiveChar.SendErrorMessage(ErrorMessageType.ExpeditionNameExist);
                     return;
                 }
-
+            }
             // ----------------- Conditions, can change this...
             var team = TeamManager.Instance.GetActiveTeamByUnit(owner.Id);
             if (team == null)// || !team.IsParty)
@@ -210,8 +213,8 @@ namespace AAEmu.Game.Core.Managers
             }
 
             // Check the number of members in the party that meet the requirements
-            List<TeamMember> validMembers = new List<TeamMember>();
-            List<TeamMember> teamMembers = new List<TeamMember>();
+            var validMembers = new List<TeamMember>();
+            var teamMembers = new List<TeamMember>();
             teamMembers.AddRange(team.Members.ToList());
 
             foreach (var m in teamMembers)
@@ -250,15 +253,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             owner.Money -= _config.Create.Cost;
-            owner.SendPacket(
-                new SCItemTaskSuccessPacket(
-                    ItemTaskType.ExpeditionCreation,
-                    new List<ItemTask>
-                    {
-                        new MoneyChange(-_config.Create.Cost)
-                    },
-                    new List<ulong>())
-            );
+            owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.ExpeditionCreation, new List<ItemTask> { new MoneyChange(-_config.Create.Cost) }, new List<ulong>()));
             // -----------------
 
             var expedition = Create(name, owner);
@@ -266,21 +261,16 @@ namespace AAEmu.Game.Core.Managers
 
             owner.Expedition = expedition;
 
-            owner.SendPacket(
-                new SCFactionCreatedPacket(expedition, owner.ObjId, new[] { (owner.ObjId, owner.Id, owner.Name) })
-            );
+            owner.SendPacket(new SCFactionCreatedPacket(expedition, owner.ObjId, new[] { (owner.ObjId, owner.Id, owner.Name) }));
 
-            WorldManager.Instance.BroadcastPacketToServer(new SCFactionListPacket(expedition));
-            owner.BroadcastPacket(
-                new SCUnitExpeditionChangedPacket(owner.ObjId, owner.Id, "", owner.Name, 0, expedition.Id, false),
-                true
-            );
+            WorldManager.Instance.BroadcastPacketToServer(new SCSystemFactionListPacket(expedition));
+            owner.BroadcastPacket(new SCUnitExpeditionChangedPacket(owner.ObjId, owner.Id, "", owner.Name, 0, expedition.Id, false), true);
 
             ChatManager.Instance.GetGuildChat(expedition).JoinChannel(owner);
             SendExpeditionInfo(owner);
             // owner.Save(); // Moved to SaveMananger
 
-            foreach(var m in validMembers)
+            foreach (var m in validMembers)
             {
                 if (m.Character.Id == owner.Id)
                     continue;
@@ -313,10 +303,7 @@ namespace AAEmu.Game.Core.Managers
             if (invited == null) return;
             if (invited.Expedition != null) return;
 
-            invited.SendPacket(
-                new SCExpeditionInvitationPacket(inviter.Id, inviter.Name, inviter.Expedition.Id,
-                    inviter.Expedition.Name)
-            );
+            invited.SendPacket(new SCExpeditionInvitationPacket(inviter.Id, inviter.Name, inviter.Expedition.Id, inviter.Expedition.Name));
         }
 
         public void ReplyInvite(GameConnection connection, uint id1, uint id2, bool reply)
@@ -331,9 +318,7 @@ namespace AAEmu.Game.Core.Managers
             invited.Expedition = expedition;
             expedition.Members.Add(newMember);
 
-            invited.BroadcastPacket(
-                new SCUnitExpeditionChangedPacket(invited.ObjId, invited.Id, "", invited.Name, 0, expedition.Id, false),
-                true);
+            invited.BroadcastPacket(new SCUnitExpeditionChangedPacket(invited.ObjId, invited.Id, "", invited.Name, 0, expedition.Id, false), true);
             SendExpeditionInfo(invited);
             expedition.OnCharacterLogin(invited);
             Save(expedition);
@@ -412,7 +397,6 @@ namespace AAEmu.Game.Core.Managers
                 // kickedChar.Save(); // Moved to SaveMananger
             }
             expedition.SendPacket(changedPacket);
-
             Save(expedition);
         }
 
@@ -432,9 +416,7 @@ namespace AAEmu.Game.Core.Managers
                 return;
 
             changedMember.Role = newRole;
-            expedition.SendPacket(
-                new SCExpeditionRoleChangedPacket(changedMember.CharacterId, changedMember.Role, changedMember.Name)
-            );
+            expedition.SendPacket(new SCExpeditionMemberRoleChangedPacket(changedMember.CharacterId, changedMember.Role, changedMember.Name));
             Save(expedition);
         }
 
@@ -455,19 +437,9 @@ namespace AAEmu.Game.Core.Managers
 
             expedition.OwnerId = newOwnerId;
 
-            expedition.SendPacket(
-                new SCExpeditionOwnerChangedPacket(
-                    ownerMember.CharacterId,
-                    newOwnerMember.CharacterId,
-                    newOwnerMember.Name
-                )
-            );
-            expedition.SendPacket(
-                new SCExpeditionRoleChangedPacket(ownerMember.CharacterId, ownerMember.Role, ownerMember.Name)
-            );
-            expedition.SendPacket(
-                new SCExpeditionRoleChangedPacket(newOwnerMember.CharacterId, newOwnerMember.Role, newOwnerMember.Name)
-            );
+            expedition.SendPacket(new SCExpeditionOwnerChangedPacket(ownerMember.CharacterId, newOwnerMember.CharacterId, newOwnerMember.Name));
+            expedition.SendPacket(new SCExpeditionMemberRoleChangedPacket(ownerMember.CharacterId, ownerMember.Role, ownerMember.Name));
+            expedition.SendPacket(new SCExpeditionMemberRoleChangedPacket(newOwnerMember.CharacterId, newOwnerMember.Role, newOwnerMember.Name));
             Save(expedition);
         }
 
@@ -486,7 +458,7 @@ namespace AAEmu.Game.Core.Managers
                 owner.SendErrorMessage(ErrorMessageType.OnlyExpeditionOwner);
                 return false;
             }
-            for (int i = guild.Members.Count - 1; i >= 0; i--)
+            for (var i = guild.Members.Count - 1; i >= 0; i--)
             {
                 var c = WorldManager.Instance.GetCharacterById(guild.Members[i].CharacterId);
                 if (c != null)
@@ -549,7 +521,7 @@ namespace AAEmu.Game.Core.Managers
                 {
                     var temp = new SystemFaction[expeditions.Length - i <= 20 ? expeditions.Length - i : 20];
                     Array.Copy(expeditions, i, temp, 0, temp.Length);
-                    character.SendPacket(new SCFactionListPacket(temp));
+                    character.SendPacket(new SCSystemFactionListPacket(temp));
                 }
             }
 

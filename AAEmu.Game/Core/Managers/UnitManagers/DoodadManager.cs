@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Funcs;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.UnitManagers
@@ -227,7 +229,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var func = new DoodadFuncAttachment();
                             func.Id = reader.GetUInt32("id");
-                            func.AttachPointId = reader.GetByte("attach_point_id");
+                            func.AttachPointId = (AttachPointKind)reader.GetByte("attach_point_id");
                             func.Space = reader.GetInt32("space");
                             func.BondKindId = reader.GetByte("bond_kind_id");
                             _funcTemplates["DoodadFuncAttachment"].Add(func.Id, func);
@@ -456,7 +458,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         }
                     }
                 }
-                
+
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "SELECT * FROM doodad_func_clout_effects";
@@ -2216,7 +2218,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 PlantTime = DateTime.Now,
                 //GrowthTime = DateTime.Now.AddMilliseconds(template.MinTime),
                 //GrowthTime = DateTime.Now.AddMilliseconds(10000),
-               
+
                 OwnerType = DoodadOwnerType.System
             };
             doodad.CurrentPhaseId = doodad.GetFuncGroupId();
@@ -2248,7 +2250,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 return null;
             return _funcsById[funcId];
         }
-        
+
         public DoodadFunc GetFunc(uint funcGroupId, uint skillId)
         {
             if (!_funcsByGroups.ContainsKey(funcGroupId))
@@ -2298,7 +2300,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
         public void CreatePlayerDoodad(Character character, uint id, float x, float y, float z, float zRot, float scale, ulong itemId)
         {
             _log.Warn("{0} is placing a doodad {1} at position {2} {3} {4}", character.Name, id, x, y, z);
-            
+
             // Create doodad
             var doodad = Instance.Create(0, id, character);
             doodad.Position = character.Position.Clone();
@@ -2315,7 +2317,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             if (scale > 0)
                 doodad.SetScale(scale);
-            
+
             // Consume item
             var items = ItemManager.Instance.GetItemIdsFromDoodad(id);
             var preferredItem = character.Inventory.Bag.GetItemByItemId(itemId);
@@ -2323,8 +2325,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             doodad.ItemTemplateId = preferredItem.TemplateId;
 
             foreach (var item in items)
-                character.Inventory.ConsumeItem(new [] {SlotType.Inventory}, ItemTaskType.DoodadCreate, item, 1, preferredItem);
-            
+                character.Inventory.ConsumeItem(new[] { SlotType.Inventory }, ItemTaskType.DoodadCreate, item, 1, preferredItem);
+
             doodad.Spawn();
             // TODO: Save doodad + current phase to database
             doodad.Save();
