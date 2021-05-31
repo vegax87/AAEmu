@@ -22,7 +22,7 @@ namespace AAEmu.Login.Core.Network.Internal
             RegisterPacket(GLOffsets.GLRegisterGameServerPacket, typeof(GLRegisterGameServerPacket));
             RegisterPacket(GLOffsets.GLPlayerEnterPacket, typeof(GLPlayerEnterPacket));
             RegisterPacket(GLOffsets.GLPlayerReconnectPacket, typeof(GLPlayerReconnectPacket));
-            RegisterPacket(GLOffsets.LGRequestInfoPacket, typeof(LGRequestInfoPacket));
+            RegisterPacket(GLOffsets.GLRequestInfoPacket, typeof(GLRequestInfoPacket));
         }
 
         public void Start()

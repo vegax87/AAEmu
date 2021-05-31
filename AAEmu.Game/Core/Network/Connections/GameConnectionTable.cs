@@ -6,11 +6,11 @@ namespace AAEmu.Game.Core.Network.Connections
 {
     public class GameConnectionTable : Singleton<GameConnectionTable>
     {
-        private ConcurrentDictionary<uint, GameConnection> _connections;
+        private ConcurrentDictionary<ulong, GameConnection> _connections;
 
         private GameConnectionTable()
         {
-            _connections = new ConcurrentDictionary<uint, GameConnection>();
+            _connections = new ConcurrentDictionary<ulong, GameConnection>();
         }
 
         public void AddConnection(GameConnection con)
@@ -18,13 +18,13 @@ namespace AAEmu.Game.Core.Network.Connections
             _connections.TryAdd(con.Id, con);
         }
 
-        public GameConnection GetConnection(uint id)
+        public GameConnection GetConnection(ulong id)
         {
             _connections.TryGetValue(id, out var con);
             return con;
         }
 
-        public GameConnection RemoveConnection(uint id)
+        public GameConnection RemoveConnection(ulong id)
         {
             _connections.TryRemove(id, out var con);
             return con;

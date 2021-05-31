@@ -588,7 +588,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             }
         }
 
-        public List<LoginCharacterInfo> LoadCharacters(uint accountId)
+        public List<LoginCharacterInfo> LoadCharacters(ulong accountId)
         {
             var result = new List<LoginCharacterInfo>();
             using (var connection = MySQL.CreateConnection())

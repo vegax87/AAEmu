@@ -111,8 +111,7 @@ namespace AAEmu.Login.Core.Controllers
                     if (!value.Active)
                         continue;
                     var chars = !connection.Characters.ContainsKey(value.Id);
-                    value.SendPacket(
-                        new LGRequestInfoPacket(connection.Id, requestIds[i], chars ? connection.AccountId : 0));
+                    value.SendPacket(new LGRequestInfoPacket(connection.Id, requestIds[i], chars ? connection.AccountId : 0));
                 }
 
                 await task;

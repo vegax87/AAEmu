@@ -6,9 +6,9 @@ using AAEmu.Login.Core.Network.Login;
 
 namespace AAEmu.Login.Core.Packets.C2L
 {
-    public class CARequestAuthTrionPacket : LoginPacket
+    public class CARequestAuthPacket_0x004 : LoginPacket
     {
-        public CARequestAuthTrionPacket() : base(CLOffsets.CARequestAuthTrionPacket)
+        public CARequestAuthPacket_0x004() : base(CLOffsets.CARequestAuthPacket_0x004)
         {
         }
 
@@ -20,7 +20,6 @@ namespace AAEmu.Login.Core.Packets.C2L
             var mac = stream.ReadBytes();
             var param = stream.ReadString();     // param
             var signature = stream.ReadString(); // si
-            var isLast = stream.ReadBoolean();
 
             var xmlDoc = XDocument.Parse(param);
 

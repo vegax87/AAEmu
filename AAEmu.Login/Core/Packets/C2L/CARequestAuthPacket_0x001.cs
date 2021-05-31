@@ -4,9 +4,9 @@ using AAEmu.Login.Core.Network.Login;
 
 namespace AAEmu.Login.Core.Packets.C2L
 {
-    public class CARequestAuthPacket : LoginPacket
+    public class CARequestAuthPacket_0x001 : LoginPacket
     {
-        public CARequestAuthPacket() : base(CLOffsets.CARequestAuthPacket)
+        public CARequestAuthPacket_0x001() : base(CLOffsets.CARequestAuthPacket_0x001)
         {
         }
 

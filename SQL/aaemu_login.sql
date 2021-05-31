@@ -1,5 +1,5 @@
-CREATE DATABASE  IF NOT EXISTS `aaemu_login` /*!40100 DEFAULT CHARACTER SET latin1 */;
-USE `aaemu_login`;
+CREATE DATABASE  IF NOT EXISTS `aaemu_login_3030` /*!40100 DEFAULT CHARACTER SET latin1 */;
+USE `aaemu_login_3030`;
 -- ----------------------------------------------------------------------------------------
 -- Make sure to remove the above two lines if you want use your own DB names during import
 -- ----------------------------------------------------------------------------------------
