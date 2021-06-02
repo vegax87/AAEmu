@@ -748,7 +748,6 @@
         public const ushort SCHousingRecoverTogglePacket = 0x0ffff;
         public const ushort SCTeamBecameRaidTeamPacket = 0x0ffff;
         public const ushort SCLootBagDataPacket = 0x0ffff;
-        public const ushort SCSkillUpgradedPacket = 0x0ffff;
         public const ushort SCAttachmentTakenPacket = 0x0ffff;
         public const ushort SCAuctionPostedPacket = 0x0ffff;
         public const ushort SCAuctionCanceledPacket = 0x0ffff;

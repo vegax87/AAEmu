@@ -232,12 +232,12 @@ namespace AAEmu.Game.Core.Managers
                     isDone &= TookLootDropItem(character, lootDropItems, lootDropItems[i], lootDropItems[i].Count);
                 }
                 if (lootDropItems.Count > 0)
-                    character.SendPacket(new SCLootBagDataPacket(lootDropItems, lootAll));
+                    character.SendPacket(new SCLootingBagPacket(lootDropItems, lootAll));
             }
             else
             {
                 isDone = lootDropItems.Count <= 0;
-                character.SendPacket(new SCLootBagDataPacket(lootDropItems, lootAll));
+                character.SendPacket(new SCLootingBagPacket(lootDropItems, lootAll));
             }
             return isDone;
         }

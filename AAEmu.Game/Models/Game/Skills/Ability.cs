@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Skills
+﻿namespace AAEmu.Game.Models.Game.Skills
 {
     public enum AbilityType : byte
     {
@@ -13,7 +13,9 @@ namespace AAEmu.Game.Models.Game.Skills
         Vocation = 8,
         Romance = 9,
         Love = 10,
-        None = 11
+        Predator = 11,
+        Trooper = 12,
+        None = 13
     }
 
     public class Ability
@@ -21,6 +23,7 @@ namespace AAEmu.Game.Models.Game.Skills
         public AbilityType Id { get; set; }
         public byte Order { get; set; }
         public int Exp { get; set; }
+        public int Level { get; set; }
 
         public Ability()
         {

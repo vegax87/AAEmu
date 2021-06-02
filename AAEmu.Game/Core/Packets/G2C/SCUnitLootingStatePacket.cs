@@ -3,7 +3,7 @@ using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
-    public class SCUnitLootingStatePacket :GamePacket
+    public class SCUnitLootingStatePacket : GamePacket
     {
         private readonly byte _bc;
         private readonly byte _looting;
@@ -17,6 +17,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         {
             stream.Write(_bc);
             stream.Write(_looting);
+
             return stream;
         }
     }

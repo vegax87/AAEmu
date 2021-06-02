@@ -16,8 +16,10 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.WriteBc(_unitObjId);
-            stream.Write(_skillId);
+            _log.Warn("SCSkillStoppedPacket: unitObjId = {0}, skillId = {1}", _unitObjId, _skillId);
+
+            stream.WriteBc(_unitObjId); // unitId
+            stream.Write(_skillId);     // skillType (type)
 
             return stream;
         }

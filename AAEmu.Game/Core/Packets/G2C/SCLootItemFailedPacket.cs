@@ -23,6 +23,8 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_errorMessage);
             stream.Write(_iId);
             stream.Write(_id);
+            stream.WriteBc(0);   // objId - add in 3.0.3.0
+
             return stream;
         }
     }
