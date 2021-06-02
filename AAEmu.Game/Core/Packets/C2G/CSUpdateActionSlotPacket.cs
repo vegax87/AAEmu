@@ -20,14 +20,14 @@ namespace AAEmu.Game.Core.Packets.C2G
                 case ActionSlotType.None:
                     Connection.ActiveChar.SetAction(slot, ActionSlotType.None, 0);
                     break;
-                case ActionSlotType.Item1:
-                case ActionSlotType.Skill:
-                case ActionSlotType.Unk5:
-                case ActionSlotType.Unk6:
+                case ActionSlotType.ItemType:
+                case ActionSlotType.Spell:
+                case ActionSlotType.RidePetSpell:
+                case ActionSlotType.BattlePetSpell:
                     var actionId = stream.ReadUInt32();
                     Connection.ActiveChar.SetAction(slot, type, actionId);
                     break;
-                case ActionSlotType.Item4:
+                case ActionSlotType.ItemId:
                     var itemId = stream.ReadUInt64();
                     Connection.ActiveChar.SetAction(slot, type, itemId);
                     break;

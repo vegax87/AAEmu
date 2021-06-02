@@ -3,12 +3,12 @@
     public enum ActionSlotType : byte
     {
         None = 0,
-        Item1 = 1,
-        Skill = 2,
-        Unk3 = 3,
-        Item4 = 4,
-        Unk5 = 5,
-        Unk6 = 6
+        ItemType = 1,
+        Spell = 2,
+        Macro = 3,
+        ItemId = 4,
+        RidePetSpell = 5,
+        BattlePetSpell = 6
     }
 
     public class ActionSlot

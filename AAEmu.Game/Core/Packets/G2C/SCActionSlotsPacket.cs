@@ -30,13 +30,13 @@ namespace AAEmu.Game.Core.Packets.G2C
                 {
                     case ActionSlotType.None:
                         break;
-                    case ActionSlotType.Item1:
-                    case ActionSlotType.Skill:
-                    case ActionSlotType.Unk5:
-                    case ActionSlotType.Unk6:
+                    case ActionSlotType.ItemType:
+                    case ActionSlotType.Spell:
+                    case ActionSlotType.RidePetSpell:
+                    case ActionSlotType.BattlePetSpell:
                         stream.Write((uint)s.ActionId);
                         break;
-                    case ActionSlotType.Item4:
+                    case ActionSlotType.ItemId:
                         stream.Write(s.ActionId); // itemId
                         break;
                     default:
