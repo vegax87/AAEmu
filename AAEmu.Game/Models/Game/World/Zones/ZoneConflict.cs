@@ -105,7 +105,8 @@ namespace AAEmu.Game.Models.Game.World.Zones
             //broadcast to all online clients in server
             WorldManager.Instance.BroadcastPacketToServer(new SCConflictZoneStatePacket(ZoneGroupId, CurrentZoneState, NextStateTime));
 
-            SetTimerTask();
+            // TODO test
+            //SetTimerTask();
         }
 
         public void CheckTimer()

@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.World.Zones;
 using AAEmu.Game.Utils.DB;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.World
@@ -30,7 +32,7 @@ namespace AAEmu.Game.Core.Managers.World
         {
             return _zones.ContainsKey(zoneKey) ? _zones[zoneKey] : null;
         }
-        
+
         public ZoneGroup GetZoneGroupById(uint zoneId)
         {
             return _groups.ContainsKey(zoneId) ? _groups[zoneId] : null;
@@ -98,7 +100,7 @@ namespace AAEmu.Game.Core.Managers.World
                         {
                             var template = new ZoneGroup();
                             template.Id = reader.GetUInt32("id");
-                            template.Name = (string) reader.GetValue("name");
+                            template.Name = (string)reader.GetValue("name");
                             template.X = reader.GetFloat("x");
                             template.Y = reader.GetFloat("y");
                             template.Width = reader.GetFloat("w");
@@ -130,7 +132,7 @@ namespace AAEmu.Game.Core.Managers.World
                             {
                                 var template = new ZoneConflict(_groups[zoneGroupId]);
                                 template.ZoneGroupId = zoneGroupId;
-                                
+
                                 for (var i = 0; i < 5; i++)
                                 {
                                     template.NumKills[i] = reader.GetInt32($"num_kills_{i}");
@@ -146,7 +148,7 @@ namespace AAEmu.Game.Core.Managers.World
                                 template.HariharaReturnPointId = reader.GetUInt32("harihara_return_point_id", 0);
                                 template.WarTowerDefId = reader.GetUInt32("war_tower_def_id", 0);
                                 // TODO 1.2 // template.PeaceTowerDefId = reader.GetUInt32("peace_tower_def_id", 0);
-                                template.Closed = reader.GetBoolean("closed",true);
+                                template.Closed = reader.GetBoolean("closed", true);
 
                                 _groups[zoneGroupId].Conflict = template;
                                 _conflicts.Add(zoneGroupId, template);
@@ -200,7 +202,7 @@ namespace AAEmu.Game.Core.Managers.World
                 _log.Info("Loaded {0} climate elems", _climateElem.Count);
             }
         }
-            /// <summary>
+        /// <summary>
         /// translate the local coordinates to the world coordinates using the original coordinates of the cells for the zone
         /// </summary>
         /// <param name="zoneId"></param>
@@ -212,7 +214,7 @@ namespace AAEmu.Game.Core.Managers.World
 
             switch (zoneId)
             {
-                // from game\world.xml for version 1.2.0.0
+                // from game\world.xml, updated for version AR3030 (r330995)
                 case 129: //  <Zone name="w_gweonid_forest_1" id="129" originX="9" originY="14">
                     origin = new Vector2(9f, 14f);
                     break;
@@ -339,17 +341,17 @@ namespace AAEmu.Game.Core.Managers.World
                 case 189: //  <Zone name="e_rainbow_field_4" id="189" originX="20" originY="6">
                     origin = new Vector2(20f, 6f);
                     break;
-                case 190: //  <Zone name="e_sunny_wilderness_2" id="190" originX="21" originY="5">
-                    origin = new Vector2(21f, 5f);
+                case 190: //  <Zone name="e_sunny_wilderness_2" id="190" originX="19" originY="4">
+                    origin = new Vector2(19f, 4f);
                     break;
                 case 191: //  <Zone name="e_sunrise_peninsula_2" id="191" originX="15" originY="8">
                     origin = new Vector2(15f, 8f);
                     break;
-                case 192: //  <Zone name="w_bronze_rock_2" id="192" originX="5" originY="13">
-                    origin = new Vector2(5f, 13f);
+                case 192: //  <Zone name="w_bronze_rock_2" id="192" originX="5" originY="12">
+                    origin = new Vector2(5f, 12f);
                     break;
-                case 193: //  <Zone name="w_bronze_rock_3" id="193" originX="6" originY="13">
-                    origin = new Vector2(6f, 13f);
+                case 193: //  <Zone name="w_bronze_rock_3" id="193" originX="6" originY="12">
+                    origin = new Vector2(6f, 12f);
                     break;
                 case 194: //  <Zone name="e_singing_land_2" id="194" originX="19" originY="9">
                     origin = new Vector2(19f, 9f);
@@ -480,8 +482,8 @@ namespace AAEmu.Game.Core.Managers.World
                 case 250: //  <Zone name="w_twist_coast" id="250" originX="7" originY="3">
                     origin = new Vector2(7f, 3f);
                     break;
-                case 251: //  <Zone name="e_sylvina_region" id="251" originX="15" originY="4">
-                    origin = new Vector2(15f, 4f);
+                case 251: //  <Zone name="e_sylvina_region" id="251" originX="12" originY="2">
+                    origin = new Vector2(12f, 2f);
                     break;
                 case 252: //  <Zone name="e_fossils_desert" id="252" originX="22" originY="3">
                     origin = new Vector2(22f, 3f);
@@ -507,8 +509,8 @@ namespace AAEmu.Game.Core.Managers.World
                 case 261: //  <Zone name="e_white_island" id="261" originX="24" originY="14">
                     origin = new Vector2(24f, 14f);
                     break;
-                case 266: //  <Zone name="w_mirror_kingdom_1" id="266" originX="6" originY="16">
-                    origin = new Vector2(6f, 16f);
+                case 266: //  <Zone name="w_mirror_kingdom_1" id="266" originX="6" originY="18">
+                    origin = new Vector2(6f, 18f);
                     break;
                 case 267: //  <Zone name="w_frozen_top_1" id="267" originX="4" originY="13">
                     origin = new Vector2(4f, 13f);
@@ -540,8 +542,8 @@ namespace AAEmu.Game.Core.Managers.World
                 case 277: //  <Zone name="s_lonely_sea_1" id="277" originX="29" originY="6">
                     origin = new Vector2(29f, 6f);
                     break;
-                case 281: //  <Zone name="o_ruins_of_gold" id="281" originX="16" originY="26">
-                    origin = new Vector2(16f, 26f);
+                case 281: //  <Zone name="o_ruins_of_gold" id="281" originX="16" originY="25">
+                    origin = new Vector2(16f, 25f);
                     break;
                 case 282: //  <Zone name="o_shining_shore_1" id="282" originX="17" originY="25">
                     origin = new Vector2(17f, 25f);
@@ -552,11 +554,11 @@ namespace AAEmu.Game.Core.Managers.World
                 case 284: //  <Zone name="s_pirate_island" id="284" originX="13" originY="21">
                     origin = new Vector2(13f, 21f);
                     break;
-                case 286: //  <Zone name="e_sunny_wilderness_3" id="286" originX="18" originY="4">
-                    origin = new Vector2(18f, 4f);
+                case 286: //  <Zone name="e_sunny_wilderness_3" id="286" originX="21" originY="4">
+                    origin = new Vector2(21f, 4f);
                     break;
-                case 287: //  <Zone name="e_sunny_wilderness_4" id="287" originX="18" originY="5">
-                    origin = new Vector2(18f, 5f);
+                case 287: //  <Zone name="e_sunny_wilderness_4" id="287" originX="21" originY="4">
+                    origin = new Vector2(21f, 4f);
                     break;
                 case 288: //  <Zone name="o_the_great_reeds" id="288" originX="17" originY="27">
                     origin = new Vector2(17f, 27f);
@@ -579,68 +581,66 @@ namespace AAEmu.Game.Core.Managers.World
                 case 307: //  <Zone name="o_dew_plains" id="307" originX="22" originY="26">
                     origin = new Vector2(22f, 26f);
                     break;
-                // for version 2.0.1.7
-                //case 308: //  <Zone name="s_broken_mirrors_sea_1" id="308" originX="4" originY="16">
-                //    origin = new Vector2(4f, 16f);
-                //    break;
-                //case 309: //  <Zone name="s_broken_mirrors_sea_2" id="309" originX="4" originY="19">
-                //    origin = new Vector2(4f, 19f);
-                //    break;
-                //case 310: //  <Zone name="o_whale_song_bay" id="310" originX="14" originY="26">
-                //    origin = new Vector2(14f, 26f);
-                //    break;
-                //case 311: //  <Zone name="lock_left_side_of_broken_mirrors_sea" id="311" originX="4" originY="16">
-                //    origin = new Vector2(4f, 16f);
-                //    break;
-                //case 312: //  <Zone name="o_epherium_1" id="312" originX="22" originY="24">
-                //    origin = new Vector2(22f, 24f);
-                //    break;
-                //case 314: //  <Zone name="o_epherium_2" id="314" originX="22" originY="25">
-                //    origin = new Vector2(22f, 25f);
-                //    break;
-                // for version 3.0.3.0
-                //case 328: //  <Zone name="w_cradle_of_genesis_2" id="328" originX="6" originY="12">
-                //    origin = new Vector2(6f, 12f);
-                //    break;
-                //case 329: //  <Zone name="s_boiling_sea_1" id="329" originX="12" originY="1">
-                //    origin = new Vector2(12f, 1f);
-                //    break;
-                //case 330: //  <Zone name="s_boiling_sea_2" id="330" originX="17" originY="1">
-                //    origin = new Vector2(17f, 1f);
-                //    break;
-                //case 331: //  <Zone name="s_boiling_sea_3" id="331" originX="21" originY="1">
-                //    origin = new Vector2(21f, 1f);
-                //    break;
-                //case 332: // <Zone name="s_boiling_sea_4" id="332" originX="17" originY="2">
-                //    origin = new Vector2(17f, 2f);
-                //    break;
-                //case 333: //  <Zone name="w_hanuimaru_2" id="333" originX="4" originY="9">
-                //    origin = new Vector2(4f, 9f);
-                //    break;
-                //case 334: //  <Zone name="w_hanuimaru_3" id="334" originX="5" originY="8">
-                //    origin = new Vector2(5f, 8f);
-                //    break;
-                //case 335: //  <Zone name="s_lonely_sea_2" id="335" originX="26" originY="9">
-                //    origin = new Vector2(26f, 9f);
-                //    break;
-                //case 336: //  <Zone name="s_west_sea_1" id="336" originX="2" originY="7">
-                //    origin = new Vector2(2f, 7f);
-                //    break;
-                //case 337: //  <Zone name="o_room_of_queen_1" id="337" originX="2" originY="30">
-                //    origin = new Vector2(2f, 30f);
-                //    break;
-                //case 339: //  <Zone name="s_boiling_sea_5" id="339" originX="14" originY="4">
-                //    origin = new Vector2(14f, 4f);
-                //    break;
-                //case 340: // <Zone name="e_lokaloka_mountains_2" id="340" originX="25" originY="8">
-                //    origin = new Vector2(25f, 8f);
-                //    break;
-                //case 341: // <Zone name="o_room_of_queen_2" id="341" originX="3" originY="30">
-                //    origin = new Vector2(3f, 30f);
-                //    break;
-                //case 342: //  <Zone name="o_room_of_queen_3" id="342" originX="2" originY="30">
-                //    origin = new Vector2(2f, 30f);
-                //    break;
+                case 308: //  <Zone name="s_broken_mirrors_sea_1" id="308" originX="4" originY="16">
+                    origin = new Vector2(4f, 16f);
+                    break;
+                case 309: //  <Zone name="s_broken_mirrors_sea_2" id="309" originX="4" originY="19">
+                    origin = new Vector2(4f, 19f);
+                    break;
+                case 310: //  <Zone name="o_whale_song_bay" id="310" originX="14" originY="26">
+                    origin = new Vector2(14f, 26f);
+                    break;
+                case 311: //  <Zone name="lock_left_side_of_broken_mirrors_sea" id="311" originX="4" originY="16">
+                    origin = new Vector2(4f, 16f);
+                    break;
+                case 312: //  <Zone name="o_epherium_1" id="312" originX="22" originY="24">
+                    origin = new Vector2(22f, 24f);
+                    break;
+                case 314: //  <Zone name="o_epherium_2" id="314" originX="22" originY="25">
+                    origin = new Vector2(22f, 25f);
+                    break;
+                case 328: //  <Zone name="w_cradle_of_genesis_2" id="328" originX="6" originY="12">
+                    origin = new Vector2(6f, 12f);
+                    break;
+                case 329: //  <Zone name="s_boiling_sea_1" id="329" originX="12" originY="1">
+                    origin = new Vector2(12f, 1f);
+                    break;
+                case 330: //  <Zone name="s_boiling_sea_2" id="330" originX="17" originY="1">
+                    origin = new Vector2(17f, 1f);
+                    break;
+                case 331: //  <Zone name="s_boiling_sea_3" id="331" originX="21" originY="1">
+                    origin = new Vector2(21f, 1f);
+                    break;
+                case 332: // <Zone name="s_boiling_sea_4" id="332" originX="17" originY="2">
+                    origin = new Vector2(17f, 2f);
+                    break;
+                case 333: //  <Zone name="w_hanuimaru_2" id="333" originX="4" originY="9">
+                    origin = new Vector2(4f, 9f);
+                    break;
+                case 334: //  <Zone name="w_hanuimaru_3" id="334" originX="5" originY="8">
+                    origin = new Vector2(5f, 8f);
+                    break;
+                case 335: //  <Zone name="s_lonely_sea_2" id="335" originX="26" originY="9">
+                    origin = new Vector2(26f, 9f);
+                    break;
+                case 336: //  <Zone name="s_west_sea_1" id="336" originX="2" originY="7">
+                    origin = new Vector2(2f, 7f);
+                    break;
+                case 337: //  <Zone name="o_room_of_queen_1" id="337" originX="2" originY="30">
+                    origin = new Vector2(2f, 30f);
+                    break;
+                case 339: //  <Zone name="s_boiling_sea_5" id="339" originX="14" originY="4">
+                    origin = new Vector2(14f, 4f);
+                    break;
+                case 340: // <Zone name="e_lokaloka_mountains_2" id="340" originX="25" originY="8">
+                    origin = new Vector2(25f, 8f);
+                    break;
+                case 341: // <Zone name="o_room_of_queen_2" id="341" originX="3" originY="30">
+                    origin = new Vector2(3f, 30f);
+                    break;
+                case 342: //  <Zone name="o_room_of_queen_3" id="342" originX="2" originY="30">
+                    origin = new Vector2(2f, 30f);
+                    break;
             }
 
             var newX = origin.X * 1024 + point.X;
@@ -648,5 +648,5 @@ namespace AAEmu.Game.Core.Managers.World
 
             return (newX, newY, point.Z);
         }
-}
+    }
 }

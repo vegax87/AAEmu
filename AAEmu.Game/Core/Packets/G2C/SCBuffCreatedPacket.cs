@@ -25,7 +25,6 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_buff.Caster.Level);            // l sourceLevel
             stream.Write(_buff.AbLevel);                 // a sourceAbLevel
             //TODO: Fix this applying CD to wrong skill
-            //stream.Write(_buff.Skill?.Template.Id ?? 0); // s skillId
             if (_buff.Skill != null && _buff.Skill.Template.ToggleBuffId == _buff.Template.Id)
                 stream.Write(_buff.Skill.Template.Id); // skillId
             else

@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
@@ -11,15 +11,15 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly int _tagCount = 0;
         private readonly string _creatorName;
         private readonly uint _ownerId;
-        private readonly uint _dbId;
+        private readonly uint _DbHouseId;
 
-        public SCSlaveStatePacket(uint objId, ushort tlId, string creatorName, uint ownerId, uint dbId) :
+        public SCSlaveStatePacket(uint objId, ushort tlId, string creatorName, uint ownerId, uint DbHouseId) :
             base(SCOffsets.SCSlaveStatePacket, 5)
         {
             _objId = objId;
             _tlId = tlId;
             _creatorName = creatorName;
-            _dbId = dbId;
+            _DbHouseId = DbHouseId;
             _ownerId = ownerId;
         }
 
@@ -32,7 +32,8 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_tagCount);
             stream.Write(_creatorName);
             stream.Write(_ownerId);
-            stream.Write(_dbId);
+            stream.Write(_DbHouseId);
+
             return stream;
         }
     }

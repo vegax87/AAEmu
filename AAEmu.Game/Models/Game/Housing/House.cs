@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -12,8 +13,9 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Utils.DB;
+
 using MySql.Data.MySqlClient;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Housing
@@ -123,7 +125,7 @@ namespace AAEmu.Game.Models.Game.Housing
             ModelParams = new UnitCustomModelParams();
             AttachedDoodads = new List<Doodad>();
             IsDirty = true;
-            Events.OnDeath += OnDeath ;
+            Events.OnDeath += OnDeath;
         }
 
         public void AddBuildAction()
@@ -272,7 +274,7 @@ namespace AAEmu.Game.Models.Game.Housing
             var sellToPlayerName = NameManager.Instance.GetCharacterName(SellToPlayerId);
 
             stream.Write(TlId);
-            stream.Write(Id); // dbId
+            stream.Write(Id); // DbHouseId
             stream.WriteBc(ObjId);
             stream.Write(TemplateId);
             stream.WritePisc(ModelId, 0);
@@ -293,7 +295,7 @@ namespace AAEmu.Game.Models.Game.Housing
                 stream.Write(AllAction); // allstep
                 stream.Write(CurrentAction); // curstep
             }
-            
+
             stream.Write(Template?.Taxation?.Tax ?? 0); // payMoneyAmount
             stream.Write(Helpers.ConvertLongX(Position.X));
             stream.Write(Helpers.ConvertLongY(Position.Y));
@@ -302,7 +304,7 @@ namespace AAEmu.Game.Models.Game.Housing
             stream.Write(true); // allowRecover
             stream.Write(SellPrice); // Sale moneyAmount
             stream.Write(SellToPlayerId); // type(id)
-            stream.Write(sellToPlayerName??""); // sellToName
+            stream.Write(sellToPlayerName ?? ""); // sellToName
             return stream;
         }
 

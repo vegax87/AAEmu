@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
@@ -59,7 +58,7 @@ namespace AAEmu.Game.Models.Game.Skills.SkillControllers
                 End();
                 return;
             };
-            MoveTowards(_calculatedSpeed * (float)(delta.TotalMilliseconds/1000f));
+            MoveTowards(_calculatedSpeed * (float)(delta.TotalMilliseconds / 1000f));
         }
 
         public override void Execute()
@@ -105,7 +104,7 @@ namespace AAEmu.Game.Models.Game.Skills.SkillControllers
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = Owner.Position.RotationZ;
-            moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = (ActorMoveType)flags;     // 5-walk, 4-run, 3-stand still
             moveType.Flags = 0x14;//SC move flag
             moveType.ScType = Template.Id;
 
@@ -113,8 +112,8 @@ namespace AAEmu.Game.Models.Game.Skills.SkillControllers
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Combat;    // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
 
             Owner.SetPosition(Owner.Position);

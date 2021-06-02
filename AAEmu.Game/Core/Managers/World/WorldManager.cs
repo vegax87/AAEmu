@@ -681,7 +681,7 @@ namespace AAEmu.Game.Core.Managers.World
         public void OnPlayerJoin(Character character)
         {
             //turn snow on off 
-            Snow(character);
+            //Snow(character); // не нашел такого пакета в 3.0.3.0
 
             //family stuff
             if (character.Family > 0)

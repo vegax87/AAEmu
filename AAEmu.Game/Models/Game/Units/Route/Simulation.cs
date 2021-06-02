@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
@@ -280,7 +279,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                 StopMove(npc);
                 return;
             }
-            _log.Warn("found nearest checkpoint # "+ i +" run there ...");
+            _log.Warn("found nearest checkpoint # " + i + " run there ...");
             //character.SendMessage("[MoveTo] найден ближайший чекпоинт #" + i + " бежим туда...");
             MoveToPathEnabled = true;
             MoveStepIndex = i;
@@ -416,18 +415,18 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationZ = rotZ;
             if (runningMode)
             {
-                moveType.ActorFlags = 4;      // 5-walk, 4-run, 3-stand still
+                moveType.ActorFlags = ActorMoveType.Run; // 5-walk, 4-run, 3-stand still
             }
             else
             {
-                moveType.ActorFlags = 5;      // 5-walk, 4-run, 3-stand still
+                moveType.ActorFlags = ActorMoveType.Walk; // 5-walk, 4-run, 3-stand still
             }
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 1;     // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 0;  // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Idle;           // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Idle;    // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time += 50;     // has to change all the time for normal motion.
             if (move)
             {
@@ -470,13 +469,13 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = rotZ;
-            moveType.ActorFlags = 5;      // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = ActorMoveType.Walk; // 5-walk, 4-run, 3-stand still
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 1;     // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 0;  // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Idle;           // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Idle;    // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time += 50; // has to change all the time for normal motion.
             npc.BroadcastPacket(new SCOneUnitMovementPacket(npc.ObjId, moveType), true);
             MoveToPathEnabled = false;
@@ -494,13 +493,13 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = rotZ;
-            moveType.ActorFlags = 5;      // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = ActorMoveType.Walk; // 5-walk, 4-run, 3-stand still
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 1;     // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 0;  // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Idle;           // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Idle;    // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time += 50; // has to change all the time for normal motion.
             npc.BroadcastPacket(new SCOneUnitMovementPacket(npc.ObjId, moveType), true);
         }

@@ -23,8 +23,8 @@ namespace AAEmu.Game.Models.Game.DoodadObj
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
         private float _scale;
+        public byte Flag { get; set; }
         public uint TemplateId { get; set; }
-        public uint DbId { get; set; }
         public DoodadTemplate Template { get; set; }
         public override float Scale => _scale;
         public uint FuncGroupId { get; set; }
@@ -263,40 +263,34 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public PacketStream Write(PacketStream stream)
         {
             stream.WriteBc(ObjId); //The object # in the list
-            stream.Write(TemplateId); //The template id needed for that object, the client then uses the template configurations, not the server
-            stream.WriteBc(OwnerObjId); //The creator of the object
-            stream.WriteBc(ParentObjId); //Things like boats or cars,
-            stream.Write(AttachPoint); // attachPoint, relative to the parentObj, (Door or window on a house)
-            if (AttachPoint != 255 && AttachPosition != null)
-            {
-                stream.WritePosition(AttachPosition.X, AttachPosition.Y, AttachPosition.Z);
-                stream.Write(Helpers.ConvertRotation(AttachPosition.RotationX)); //''
-                stream.Write(Helpers.ConvertRotation(AttachPosition.RotationY)); //''
-                stream.Write(Helpers.ConvertRotation(AttachPosition.RotationZ)); //''
-            }
-            else
-            {
-                stream.WritePosition(Position.X, Position.Y, Position.Z); //self explanatory
-                stream.Write(Helpers.ConvertRotation(Position.RotationX)); //''
-                stream.Write(Helpers.ConvertRotation(Position.RotationY)); //''
-                stream.Write(Helpers.ConvertRotation(Position.RotationZ)); //''
-            }
 
-            stream.Write(Scale); //The size of the object
-            stream.Write(false); // hasLootItem
-            stream.Write(CurrentPhaseId); // doodad_func_group_id
-            stream.Write(OwnerId); // characterId (Database relative)
-            stream.Write(UccId);
-            stream.Write(ItemTemplateId);
-            stream.Write(0u); //??type2
-            stream.Write(TimeLeft); // growing
-            stream.Write(PlantTime); //Time stamp of when it was planted
-            stream.Write(QuestGlow); //When this is higher than 0 it shows a blue orb over the doodad
-            stream.Write(0); // family TODO
-            stream.Write(-1); // puzzleGroup /for instances maybe?
+            // TemplateId - The template id needed for that object, the client then uses the template configurations, not the server
+            // CurrentPhaseId / FuncGroupId - doodad_func_group_id
+            // QuestGlow - When this is higher than 0 it shows a blue orb over the doodad
+            stream.WritePisc(TemplateId, CurrentPhaseId, 0, QuestGlow);
+            
+            stream.Write(Flag);
+            stream.WriteBc(OwnerObjId);  //The creator of the object
+            stream.WriteBc(ParentObjId); //Things like boats or cars,
+            stream.Write(AttachPoint);   // attachPoint, relative to the parentObj, (Door or window on a house)
+
+            stream.WritePosition(Position.X, Position.Y, Position.Z);
+
+            stream.Write(Helpers.ConvertRotation(Position.RotationX));
+            stream.Write(Helpers.ConvertRotation(Position.RotationY));
+            stream.Write(Helpers.ConvertRotation(Position.RotationZ));
+
+            stream.Write(Scale);           //The size of the object
+            stream.Write(OwnerId);         // characterId
+            stream.Write(UccId);           // type(id)
+            stream.Write(ItemTemplateId);  // type(id)
+            stream.Write(TimeLeft);        // growing
+            stream.Write(PlantTime);       // plantTime
+            stream.Write(0);               // family
+            stream.Write(-1);              // puzzleGroup
             stream.Write((byte)OwnerType); // ownerType
-            stream.Write(DbHouseId); // dbHouseId
-            stream.Write(Data); // data
+            stream.Write(DbHouseId);       // dbHouseId
+            stream.Write(Data);            // data
 
             return stream;
         }
@@ -306,14 +300,14 @@ namespace AAEmu.Game.Models.Game.DoodadObj
             base.Delete();
             _deleted = true;
 
-            if (DbId > 0)
+            if (DbHouseId > 0)
             {
                 using (var connection = MySQL.CreateConnection())
                 {
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = "DELETE FROM doodads WHERE id = @id";
-                        command.Parameters.AddWithValue("@id", DbId);
+                        command.Parameters.AddWithValue("@id", DbHouseId);
                         command.Prepare();
                         command.ExecuteNonQuery();
                     }
@@ -323,7 +317,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
 
         public void Save()
         {
-            DbId = DbId > 0 ? DbId : DoodadIdManager.Instance.GetNextId();
+            DbHouseId = DbHouseId > 0 ? DbHouseId : DoodadIdManager.Instance.GetNextId();
             using (var connection = MySQL.CreateConnection())
             {
                 using (var command = connection.CreateCommand())
@@ -331,7 +325,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
                     command.CommandText =
                         "REPLACE INTO doodads (id, owner_id, owner_type, template_id, current_phase_id, plant_time, growth_time, phase_time, x, y, z, rotation_x, rotation_y, rotation_z) " +
                         "VALUES(@id, @owner_id, @owner_type, @template_id, @current_phase_id, @plant_time, @growth_time, @phase_time, @x, @y, @z, @rotation_x, @rotation_y, @rotation_z)";
-                    command.Parameters.AddWithValue("@id", DbId);
+                    command.Parameters.AddWithValue("@id", DbHouseId);
                     command.Parameters.AddWithValue("@owner_id", OwnerId);
                     command.Parameters.AddWithValue("@owner_type", OwnerType);
                     command.Parameters.AddWithValue("@template_id", TemplateId);

@@ -49,17 +49,6 @@ namespace AAEmu.Game.Models.Game.Char
                 stream.Write(CosplayBackpack);
             if ((flag & 0x20) == 0x20)
                 stream.Write(CosplayVisual); // cosplay_visual, added in 1.7
-			return stream;
-        }
-        
-        public PacketStream WriteOptions(PacketStream stream)
-        {
-            // all this data must be output to the SCUnitStatePacket
-            stream.Write(Stp);             // stp
-            stream.Write(Helmet);          // helmet
-            stream.Write(BackHoldable);    // back_holdable
-            stream.Write(Cosplay);         // cosplay
-            stream.Write(CosplayBackpack); // cosplay_backpack
 
             return stream;
         }

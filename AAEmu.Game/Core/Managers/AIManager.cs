@@ -20,7 +20,8 @@ namespace AAEmu.Game.Core.Managers
         {
             _npcAis = new List<NpcAi>();
             _aiLock = new object();
-            TickManager.Instance.OnTick.Subscribe(Tick, TimeSpan.FromMilliseconds(100), true);
+            // disable movement NPC
+            //TickManager.Instance.OnTick.Subscribe(Tick, TimeSpan.FromMilliseconds(100), true);
         }
 
         public void AddAi(NpcAi ai)

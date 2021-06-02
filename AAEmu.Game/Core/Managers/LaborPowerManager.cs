@@ -43,6 +43,8 @@ namespace AAEmu.Game.Core.Managers
         public void Initialize()
         {
             _log.Info("Initialising Labor Power Manager...");
+            
+            // TODO works
             LaborPowerTickStart();
         }
 

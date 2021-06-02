@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
@@ -13,6 +14,7 @@ using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.World
@@ -163,7 +165,7 @@ namespace AAEmu.Game.Core.Managers.World
                         while (reader.Read())
                         {
                             var templateId = reader.GetUInt32("template_id");
-                            var dbId = reader.GetUInt32("id");
+                            var dbHouseId = reader.GetUInt32("id");
                             var phaseId = reader.GetUInt32("current_phase_id");
                             var x = reader.GetFloat("x");
                             var y = reader.GetFloat("y");
@@ -176,7 +178,7 @@ namespace AAEmu.Game.Core.Managers.World
 
                             var doodad = new Doodad
                             {
-                                DbId = dbId,
+                                DbHouseId = dbHouseId,
                                 ObjId = ObjectIdManager.Instance.GetNextId(),
                                 TemplateId = templateId,
                                 Template = DoodadManager.Instance.GetTemplate(templateId),
@@ -187,7 +189,8 @@ namespace AAEmu.Game.Core.Managers.World
                                 GrowthTime = growthTime,
                                 Position = new Point(x, y, z)
                                 {
-                                    RotationZ = reader.GetSByte("rotation_z"), WorldId = 0
+                                    RotationZ = reader.GetSByte("rotation_z"),
+                                    WorldId = 0
                                 }
                             };
 
@@ -216,8 +219,8 @@ namespace AAEmu.Game.Core.Managers.World
                     spawner.SpawnAll();
 
             foreach (var (worldId, worldSpawners) in _gimmickSpawners)
-            foreach (var spawner in worldSpawners.Values)
-                spawner.Spawn(0);
+                foreach (var spawner in worldSpawners.Values)
+                    spawner.Spawn(0);
 
             Task.Run(() =>
             {

@@ -131,7 +131,7 @@ namespace AAEmu.Game.Core.Packets.C2G
                     return;
                 }
 
-                if ((mType.ActorFlags & 0x20) != 0)
+                if (((ushort)mType.ActorFlags & 0x20) != 0)
                 {
                     Connection
                     .ActiveChar

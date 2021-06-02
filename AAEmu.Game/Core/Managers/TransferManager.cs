@@ -145,14 +145,14 @@ namespace AAEmu.Game.Core.Managers
             // спавним кабину
             character.SendPacket(new SCUnitStatePacket(tr));
             character.SendPacket(new SCUnitPointsPacket(tr.ObjId, tr.Hp, tr.Mp, tr.HighAbilityRsc));
-            character.SendPacket(new SCSlaveStatePacket(tr.ObjId, tr.TlId, "", tr.Spawner.Id, tr.Template.Id));
+            //character.SendPacket(new SCSlaveStatePacket(tr.ObjId, tr.TlId, "", tr.Spawner.Id, tr.Template.Id));
 
             // пробуем спавнить прицеп
             if (tr.Bounded != null)
             {
                 character.SendPacket(new SCUnitStatePacket(tr.Bounded));
                 character.SendPacket(new SCUnitPointsPacket(tr.Bounded.ObjId, tr.Bounded.Hp, tr.Bounded.Mp, tr.Bounded.HighAbilityRsc));
-                character.SendPacket(new SCSlaveStatePacket(tr.Bounded.ObjId, tr.Bounded.TlId, "", tr.Spawner.Id, tr.Bounded.Template.Id));
+                //character.SendPacket(new SCSlaveStatePacket(tr.Bounded.ObjId, tr.Bounded.TlId, "", tr.Spawner.Id, tr.Bounded.Template.Id));
 
                 if (tr.Bounded.AttachedDoodads.Count > 0)
                 {

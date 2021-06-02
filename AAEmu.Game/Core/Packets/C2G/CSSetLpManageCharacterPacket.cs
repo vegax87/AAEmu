@@ -13,6 +13,7 @@ namespace AAEmu.Game.Core.Packets.C2G
         public override void Read(PacketStream stream)
         {
             var characterId = stream.ReadUInt32();
+
             Connection.SendPacket(new SCCharacterLpManagedPacket(characterId));
         }
     }

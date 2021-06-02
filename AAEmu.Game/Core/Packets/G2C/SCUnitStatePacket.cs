@@ -137,7 +137,7 @@ namespace AAEmu.Game.Core.Packets.G2C
 
             stream.Write(_unit.ModelId); // modelRef
 
-            Inventory_Equip(stream, _unit); // Equip character
+            Inventory_Equip0(stream, _unit); // Equip character
 
             stream.Write(_unit.ModelParams); // CustomModel_3570
 
@@ -241,7 +241,15 @@ namespace AAEmu.Game.Core.Packets.G2C
                 case Character character:
                     {
                         stream.Write((byte)character.Skills.Skills.Count);       // learnedSkillCount
+                        if (character.Skills.Skills.Count >= 0)
+                        {
+                            _log.Warn("Warning! character.learnedSkillCount = {0}", character.Skills.Skills.Count);
+                        }
                         stream.Write((byte)character.Skills.PassiveBuffs.Count); // passiveBuffCount
+                        if (character.Skills.Skills.Count >= 0)
+                        {
+                            _log.Warn("Warning! character.passiveBuffCount = {0}", character.Skills.PassiveBuffs.Count);
+                        }
                         stream.Write(character.HighAbilityRsc);                  // highAbilityRsc
 
                         foreach (var skill in character.Skills.Skills.Values)
@@ -252,12 +260,19 @@ namespace AAEmu.Game.Core.Packets.G2C
                         {
                             stream.WritePisc(buff.Id);
                         }
-
                         break;
                     }
                 case Npc npc:
                     stream.Write((byte)npc.Template.Skills.Count);       // learnedSkillCount
+                    if (npc.Template.Skills.Count >= 0)
+                    {
+                        _log.Warn("Warning! npc.learnedSkillCount = {0}", npc.Template.Skills.Count);
+                    }
                     stream.Write((byte)npc.Template.PassiveBuffs.Count); // passiveBuffCount
+                    if (npc.Template.PassiveBuffs.Count >= 0)
+                    {
+                        _log.Warn("Warning! npc.passiveBuffCount = {0}", npc.Template.PassiveBuffs.Count);
+                    }
                     stream.Write(npc.HighAbilityRsc);                    // highAbilityRsc
                     foreach (var skills in npc.Template.Skills.Values)
                     {
@@ -279,47 +294,63 @@ namespace AAEmu.Game.Core.Packets.G2C
                         */
                         var hcount = skills.Count;
                         var index = 0;
+                        var pcount = 4;
                         do
                         {
-                            var pcount = 4;
-                            do
+                            if (hcount < 4)
+                                pcount = hcount;
+
+                            switch (pcount)
                             {
-                                if (hcount > 4)
-                                {
-                                    hcount -= pcount;
-                                }
-                                else
-                                {
-                                    pcount = hcount;
-                                }
-                                switch (pcount)
-                                {
-                                    case 1:
-                                        stream.WritePisc(skills[index].Id);
-                                        index += 1;
-                                        break;
-                                    case 2:
-                                        stream.WritePisc(skills[index].Id, skills[index + 1].Id);
-                                        index += 2;
-                                        break;
-                                    case 3:
-                                        stream.WritePisc(skills[index].Id, skills[index + 1].Id, skills[index + 2].Id);
-                                        index += 3;
-                                        break;
-                                    case 4:
-                                        stream.WritePisc(skills[index].Id, skills[index + 1].Id, skills[index + 2].Id, skills[index + 3].Id);
-                                        index += 4;
-                                        break;
-                                }
-                            } while (pcount > 0);
-
+                                case 1:
+                                    stream.WritePisc(skills[index].Id);
+                                    index += 1;
+                                    break;
+                                case 2:
+                                    stream.WritePisc(skills[index].Id, skills[index + 1].Id);
+                                    index += 2;
+                                    break;
+                                case 3:
+                                    stream.WritePisc(skills[index].Id, skills[index + 1].Id, skills[index + 2].Id);
+                                    index += 3;
+                                    break;
+                                case 4:
+                                    stream.WritePisc(skills[index].Id, skills[index + 1].Id, skills[index + 2].Id, skills[index + 3].Id);
+                                    index += 4;
+                                    break;
+                            }
+                            hcount -= pcount;
                         } while (hcount > 0);
-
-                        //foreach (var skill in skills)
-                        //{
-                        //    stream.WritePisc(skill.SkillId); // npc.Template.BaseSkillId
-                        //}
                     }
+                    var hcount2 = npc.Template.PassiveBuffs.Count;
+                    var index2 = 0;
+                    var pcount2 = 4;
+                    do
+                    {
+                        if (hcount2 < 4)
+                            pcount2 = hcount2;
+
+                        switch (pcount2)
+                        {
+                            case 1:
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id);
+                                index2 += 1;
+                                break;
+                            case 2:
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id, npc.Template.PassiveBuffs[index2 + 1].Id);
+                                index2 += 2;
+                                break;
+                            case 3:
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id, npc.Template.PassiveBuffs[index2 + 1].Id, npc.Template.PassiveBuffs[index2 + 2].Id);
+                                index2 += 3;
+                                break;
+                            case 4:
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id, npc.Template.PassiveBuffs[index2 + 1].Id, npc.Template.PassiveBuffs[index2 + 2].Id, npc.Template.PassiveBuffs[index2 + 3].Id);
+                                index2 += 4;
+                                break;
+                        }
+                        hcount2 -= pcount2;
+                    } while (hcount2 > 0);
                     break;
                 default:
                     stream.Write((byte)0); // learnedSkillCount
@@ -353,16 +384,17 @@ namespace AAEmu.Game.Core.Packets.G2C
             }
 
             if (_unit is Character character4)
-                stream.WritePisc(0, 0, character4.Appellations.ActiveAppellation, 0); // pisc
-            else
-                stream.WritePisc(0, 26601, 0, 0); // pisc
-
-            stream.WritePisc(_unit.Faction?.Id ?? 0, _unit.Expedition?.Id ?? 0, 0, 0); // pisc
-
-            if (_unit is Transfer)
+            {
+                stream.WritePisc(0, 0, character4.Appellations.ActiveAppellation, 0);      // pisc
+                stream.WritePisc(_unit.Faction?.Id ?? 0, _unit.Expedition?.Id ?? 0, 0, 0); // pisc
                 stream.WritePisc(0, 0, 0, 0); // pisc
+            }
             else
+            {
+                stream.WritePisc(0, 0, 0, 0); // TODO второе число больше нуля, что это за число?
+                stream.WritePisc(_unit.Faction?.Id ?? 0, _unit.Expedition?.Id ?? 0, 0, 0); // pisc
                 stream.WritePisc(0, 0, 0, 0); // pisc
+            }
 
             if (_unit is Character character5)
             {
@@ -401,7 +433,7 @@ namespace AAEmu.Game.Core.Packets.G2C
 
             if (_unit is Character character6)
             {
-                #region read_Exp_Order_6300
+                #region read_Abilities_6300
                 var activeAbilities = character6.Abilities.GetActiveAbilities();
                 foreach (var ability in character6.Abilities.Values)
                 {
@@ -414,14 +446,14 @@ namespace AAEmu.Game.Core.Packets.G2C
                 {
                     stream.Write((byte)ability); // active
                 }
-                #endregion read_Exp_Order_6300
+                #endregion read_Abilities_6300
 
                 #region read_Exp_Order_6460
                 foreach (var ability in character6.Abilities.Values)
                 {
                     stream.Write(ability.Exp);
                     stream.Write(ability.Order);  // ability.Order
-                    stream.Write(true);           // canNotLevelUp
+                    stream.Write(false);          // canNotLevelUp
                 }
 
                 byte nHighActive = 0;
@@ -439,7 +471,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 }
                 #endregion read_Exp_Order_6460
 
-                stream.WriteBc(0);      // objId
+                stream.WriteBc(0);     // objId
                 stream.Write((byte)0); // camp
 
                 #region Stp
@@ -451,7 +483,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 stream.Write((byte)100); // stp
 
                 stream.Write((byte)7); // flags
-                //stream.Write((byte)0); // cosplay_visual
+
                 character6.VisualOptions.Write(stream, 0x20); // cosplay_visual
                 #endregion Stp
 
@@ -474,7 +506,9 @@ namespace AAEmu.Game.Core.Packets.G2C
             }
             #endregion NetUnit
 
+
             #region NetBuff
+
             // TODO: Fix the patron and auction house license buff issue
             if (_unit is Character)
             {
@@ -496,7 +530,6 @@ namespace AAEmu.Game.Core.Packets.G2C
             _unit.Buffs.GetAllBuffs(goodBuffs, badBuffs, hiddenBuffs);
 
             stream.Write((byte)goodBuffs.Count); // TODO max 32
-
             foreach (var buff in goodBuffs)
             {
                 WriteBuff(stream, buff);
@@ -520,13 +553,171 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         private void WriteBuff(PacketStream stream, Buff buff)
         {
-            stream.Write(buff.Index); // Id
-            stream.Write(buff.SkillCaster);
-            stream.Write(0u); // type(id)
+            stream.Write(buff.Index);        // Id
+            stream.Write(buff.SkillCaster);  // skillCaster
+            stream.Write(0);                 // type(id)
             stream.Write(buff.Caster.Level); // sourceLevel
-            stream.Write(buff.AbLevel); // sourceAbLevel
+            stream.Write(buff.AbLevel);      // sourceAbLevel
             stream.WritePisc(0, buff.GetTimeElapsed(), 0, 0u); // add in 3.0.3.0
-            stream.WritePisc(buff.Template.BuffId, 1, 0, 0u); // add in 3.0.3.0
+            stream.WritePisc(buff.Template.BuffId, 1, 0, 0u);  // add in 3.0.3.0
+        }
+
+        private void Inventory_Equip0(PacketStream stream, Unit unit)
+        {
+            #region Inventory_Equip
+            var index = 0;
+            var validFlags = 0;
+            if (unit is Character character1)
+            {
+                // calculate validFlags
+                var items = character1.Inventory.Equipment.GetSlottedItemsList();
+                foreach (var item in items)
+                {
+                    if (item != null)
+                    {
+                        validFlags |= 1 << index;
+                    }
+
+                    index++;
+                }
+                stream.Write((uint)validFlags); // validFlags for 3.0.3.0
+                var itemSlot = EquipmentItemSlot.Head;
+                foreach (var item in items)
+                {
+                    if (item == null)
+                    {
+                        itemSlot++;
+                        continue;
+                    }
+                    switch (itemSlot)
+                    {
+                        case EquipmentItemSlot.Head:
+                        case EquipmentItemSlot.Neck:
+                        case EquipmentItemSlot.Chest:
+                        case EquipmentItemSlot.Waist:
+                        case EquipmentItemSlot.Legs:
+                        case EquipmentItemSlot.Hands:
+                        case EquipmentItemSlot.Feet:
+                        case EquipmentItemSlot.Arms:
+                        case EquipmentItemSlot.Back:
+                        case EquipmentItemSlot.Undershirt:
+                        case EquipmentItemSlot.Underpants:
+                        case EquipmentItemSlot.Mainhand:
+                        case EquipmentItemSlot.Offhand:
+                        case EquipmentItemSlot.Ranged:
+                        case EquipmentItemSlot.Musical:
+                        case EquipmentItemSlot.Cosplay:
+                            stream.Write(item);
+                            break;
+                        case EquipmentItemSlot.Face:
+                        case EquipmentItemSlot.Hair:
+                        case EquipmentItemSlot.Glasses:
+                        case EquipmentItemSlot.Horns:
+                        case EquipmentItemSlot.Tail:
+                        case EquipmentItemSlot.Body:
+                        case EquipmentItemSlot.Beard:
+                            stream.Write(item.TemplateId);
+                            break;
+                        case EquipmentItemSlot.Ear1:
+                        case EquipmentItemSlot.Ear2:
+                        case EquipmentItemSlot.Finger1:
+                        case EquipmentItemSlot.Finger2:
+                        case EquipmentItemSlot.Backpack:
+                        case EquipmentItemSlot.Stabilizer:
+                            break;
+                    }
+                    itemSlot++;
+                }
+            }
+            else if (unit is Npc npc)
+            {
+                // calculate validFlags for 3.0.3.0
+                for (var i = 0; i < npc.Equipment.GetSlottedItemsList().Count; i++)
+                {
+                    var item = npc.Equipment.GetItemBySlot(i);
+                    if (item != null)
+                    {
+                        validFlags |= 1 << index;
+                    }
+
+                    index++;
+                }
+                stream.Write((uint)validFlags); // validFlags for 3.0.3.0
+                var itemSlot = EquipmentItemSlot.Head;
+                var items = npc.Equipment.GetSlottedItemsList();
+                foreach (var item in items)
+                {
+                    if (item == null)
+                    {
+                        itemSlot++;
+                        continue;
+                    }
+                    switch (itemSlot)
+                    {
+                        case EquipmentItemSlot.Head:
+                        case EquipmentItemSlot.Neck:
+                        case EquipmentItemSlot.Chest:
+                        case EquipmentItemSlot.Waist:
+                        case EquipmentItemSlot.Legs:
+                        case EquipmentItemSlot.Hands:
+                        case EquipmentItemSlot.Feet:
+                        case EquipmentItemSlot.Arms:
+                        case EquipmentItemSlot.Back:
+                        case EquipmentItemSlot.Undershirt:
+                        case EquipmentItemSlot.Underpants:
+                        case EquipmentItemSlot.Mainhand:
+                        case EquipmentItemSlot.Offhand:
+                        case EquipmentItemSlot.Ranged:
+                        case EquipmentItemSlot.Musical:
+                            stream.Write(item.TemplateId);
+                            stream.Write(0L);
+                            stream.Write((byte)0);
+                            break;
+                        case EquipmentItemSlot.Cosplay:
+                            stream.Write(item);
+                            break;
+                        case EquipmentItemSlot.Face:
+                        case EquipmentItemSlot.Hair:
+                        case EquipmentItemSlot.Glasses:
+                        case EquipmentItemSlot.Horns:
+                        case EquipmentItemSlot.Tail:
+                        case EquipmentItemSlot.Body:
+                        case EquipmentItemSlot.Beard:
+                            stream.Write(item.TemplateId);
+                            break;
+                        case EquipmentItemSlot.Ear1:
+                        case EquipmentItemSlot.Ear2:
+                        case EquipmentItemSlot.Finger1:
+                        case EquipmentItemSlot.Finger2:
+                        case EquipmentItemSlot.Backpack:
+                        case EquipmentItemSlot.Stabilizer:
+                            break;
+                    }
+                    itemSlot++;
+                }
+            }
+            else // for transfer and other
+            {
+                stream.Write(0u); // validFlags for 3.0.3.0
+            }
+
+            if (_unit is Character chrUnit)
+            {
+                index = 0;
+                var ItemFlags = 0;
+                var items = chrUnit.Inventory.Equipment.GetSlottedItemsList();
+                foreach (var item in items)
+                {
+                    if (item != null)
+                    {
+                        var v15 = (int)item.ItemFlags << index;
+                        ++index;
+                        ItemFlags |= v15;
+                    }
+                }
+                stream.Write(ItemFlags); //  ItemFlags flags for 3.0.3.0
+            }
+            #endregion Inventory_Equip
         }
 
         private void Inventory_Equip(PacketStream stream, Unit unit)

@@ -1526,6 +1526,12 @@ namespace AAEmu.Game.Models.Game.Char
             Slots[slot].ActionId = actionId;
         }
 
+        public void SetAction(byte slot, ActionSlotType type, ulong actionId)
+        {
+            Slots[slot].Type = type;
+            Slots[slot].ActionId = actionId;
+        }
+
         public void SetOption(ushort key, string value)
         {
             if (_options.ContainsKey(key))
@@ -1814,7 +1820,7 @@ namespace AAEmu.Game.Models.Game.Char
             var template = CharacterManager.Instance.GetTemplate((byte)Race, (byte)Gender);
             ModelId = template.ModelId;
             BuyBackItems = new ItemContainer(this, SlotType.None, false);
-            Slots = new ActionSlot[85];
+            Slots = new ActionSlot[121]; // 85 in 1.2, 121 in 3.0.3.0, 133 in 3.5.0.3
             for (var i = 0; i < Slots.Length; i++)
                 Slots[i] = new ActionSlot();
 
@@ -1862,7 +1868,9 @@ namespace AAEmu.Game.Models.Game.Char
                             {
                                 slot.Type = (ActionSlotType)slots.ReadByte();
                                 if (slot.Type != ActionSlotType.None)
-                                    slot.ActionId = slots.ReadUInt32();
+                                {
+                                    slot.ActionId = slots.ReadUInt64();
+                                }
                             }
                         }
                     }

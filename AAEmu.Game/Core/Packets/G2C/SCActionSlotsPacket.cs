@@ -1,8 +1,6 @@
-﻿using System;
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Items;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
@@ -17,16 +15,40 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            foreach (var slot in _slots)
+            //foreach (var slot in _slots)
+            //{
+            //    stream.Write((byte)slot.Type);
+            //    if (slot.Type != ActionSlotType.None)
+            //        stream.Write(slot.ActionId);
+            //}
+
+            foreach (var s in _slots)
             {
-                stream.Write((byte)slot.Type);
-                if (slot.Type != ActionSlotType.None)
-                    stream.Write(slot.ActionId);
+                var slot = (byte)s.Type;
+                stream.Write(slot);
+                switch (s.Type)
+                {
+                    case ActionSlotType.None:
+                        break;
+                    case ActionSlotType.Item1:
+                    case ActionSlotType.Skill:
+                    case ActionSlotType.Unk5:
+                    case ActionSlotType.Unk6:
+                        stream.Write((uint)s.ActionId);
+                        break;
+                    case ActionSlotType.Item4:
+                        stream.Write(s.ActionId); // itemId
+                        break;
+                    default:
+                        _log.Error("SCActionSlotsPacket, Unknown ActionSlotType!");
+                        break;
+                }
             }
+
 
             return stream;
         }
-        
+
         // TODO if i miss data
         /*
               v3 = 85;

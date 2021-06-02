@@ -491,7 +491,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 //character.ArmorKindBuffId = 0;               //TODO: get from saved buffs
                 //character.ArmorGradeBuffId = 0;              //TODO: get from saved buffs
                 //character.ArmorSetBuffIds = new List<uint>();//TODO: get from saved buffs
-                character.Slots = new ActionSlot[85];       // 85 in 1.2 & 3.0.3.0, 133 in 3.5.0.3
+                character.Slots = new ActionSlot[121];       // 85 in 1.2, 121 in 3.0.3.0, 133 in 3.5.0.3
                 for (var i = 0; i < character.Slots.Length; i++)
                 {
                     character.Slots[i] = new ActionSlot();
@@ -529,7 +529,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     //var createdItem = ItemManager.Instance.Create(item.Id, item.Amount, item.Grade);
                     //character.Inventory.AddItem(Models.Game.Items.Actions.ItemTaskType.Invalid, createdItem);
 
-                    character.SetAction(slot, ActionSlotType.Item, item.Id);
+                    character.SetAction(slot, ActionSlotType.Item1, item.Id);
                     slot++;
                 }
 
@@ -542,7 +542,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         //var createdItem = ItemManager.Instance.Create(item.Id, item.Amount, item.Grade);
                         //character.Inventory.AddItem(ItemTaskType.Invalid, createdItem);
 
-                        character.SetAction(slot, ActionSlotType.Item, item.Id);
+                        character.SetAction(slot, ActionSlotType.Item1, item.Id);
                         slot++;
                     }
                 }

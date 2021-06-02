@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -178,7 +179,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                 return; //TODO send error?
             if (target.Buffs.CheckBuffImmune(Id))
                 return; //TODO  error of immune?
-            uint abLevel = 1;
+            ushort abLevel = 1;
             if (caster is Character character)
             {
                 if (source.Skill != null)
@@ -186,12 +187,12 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                     var template = source.Skill.Template;
                     var abilityLevel = character.GetAbLevel((AbilityType)source.Skill.Template.AbilityId);
                     if (template.LevelStep != 0)
-                        abLevel = (uint)((abilityLevel / template.LevelStep) * template.LevelStep);
+                        abLevel = (ushort)((abilityLevel / template.LevelStep) * template.LevelStep);
                     else
-                        abLevel = (uint)template.AbilityLevel;
+                        abLevel = (ushort)template.AbilityLevel;
 
                     //Dont allow lower than minimum ablevel for skill or infinite debuffs can happen
-                    abLevel = (uint)Math.Max(template.AbilityLevel, (int)abLevel);
+                    abLevel = (ushort)Math.Max(template.AbilityLevel, abLevel);
                 }
                 else if (source.Buff != null)
                 {
@@ -202,7 +203,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
             {
                 if (source.Skill != null)
                 {
-                    abLevel = (uint)source.Skill.Template.AbilityLevel;
+                    abLevel = (ushort)source.Skill.Template.AbilityLevel;
                 }
             }
             target.Buffs.AddBuff(new Buff(target, caster, casterObj, this, source?.Skill, time) { AbLevel = abLevel });
@@ -214,13 +215,13 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
             {
                 var bonus = new Bonus();
                 bonus.Template = template;
-                bonus.Value = (int) Math.Round(template.Value + (template.LinearLevelBonus * (buff.AbLevel / 100f)));
+                bonus.Value = (int)Math.Round(template.Value + (template.LinearLevelBonus * (buff.AbLevel / 100f)));
                 owner.AddBonus(buff.Index, bonus);
             }
 
             if (buff.Charge == 0)
                 buff.Charge = Rand.Next(InitMinCharge, InitMaxCharge);
-            
+
             if (!buff.Passive)
                 owner.BroadcastPacket(new SCBuffCreatedPacket(buff), true);
         }
@@ -257,7 +258,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
             var ownerUnit = owner as Unit;
             if (TickAreaExcludeSource)
             {
-                if(ownerUnit != null)
+                if (ownerUnit != null)
                     units.Remove(ownerUnit);
             }
             else
@@ -265,16 +266,16 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                 if (!units.Contains(owner) && ownerUnit != null)
                     units.Add(ownerUnit);
             }
-            
+
             units = SkillTargetingUtil.FilterWithRelation((SkillTargetRelation)TickAreaRelationId, caster, units).ToList();
 
             var source = caster;
             //if (TickAreaUseOriginSource)
-                //source = (Unit)owner;
+            //source = (Unit)owner;
             var skillObj = new SkillObject(); // TODO ?
 
 
-            foreach(var tickEff in TickEffects)
+            foreach (var tickEff in TickEffects)
             {
                 var eff = SkillManager.Instance.GetEffectTemplate(tickEff.EffectId);
 
@@ -288,7 +289,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                         continue;
 
                     var targetObj = new SkillCastUnitTarget(trg.ObjId);
-                    eff.Apply((Unit)source, buff.SkillCaster, trg, targetObj, new CastBuff(buff), new EffectSource(this), skillObj, DateTime.Now);
+                    eff.Apply(source, buff.SkillCaster, trg, targetObj, new CastBuff(buff), new EffectSource(this), skillObj, DateTime.Now);
                 }
             }
         }
@@ -300,14 +301,14 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
             var requiringBuffs = owner.Buffs.GetBuffsRequiring(buff.Template.Id);
             foreach (var requiringBuff in requiringBuffs.ToList())
                 requiringBuff.Exit();
-            
+
             if (!buff.Passive && !replaced)
                 owner.BroadcastPacket(new SCBuffRemovedPacket(owner.ObjId, buff.Index), true);
         }
 
         public void WriteData(PacketStream stream, uint abLevel)
         {
-            stream.WritePisc(0, GetDuration(abLevel) / 10, 0, (long) (Tick / 10)); // unk, Duration, unk / 10, Tick
+            stream.WritePisc(0, GetDuration(abLevel) / 10, 0, (long)(Tick / 10)); // unk, Duration, unk / 10, Tick
         }
 
         public int GetDuration(uint abLevel)

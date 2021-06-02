@@ -1,8 +1,8 @@
 ﻿using System;
+
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Skills.Buffs;
-using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -36,9 +36,9 @@ namespace AAEmu.Game.Models.Game.Skills
         public DateTime EndTime { get; set; }
         public int Charge { get; set; }
         public bool Passive { get; set; }
-        public uint AbLevel { get; set; }
-        public BuffEvents Events { get;}
-        public BuffTriggersHandler Triggers { get;}
+        public ushort AbLevel { get; set; } // in 1.2 uint, in 3.0.3.0 ushort
+        public BuffEvents Events { get; }
+        public BuffTriggersHandler Triggers { get; }
 
         public Buff(BaseUnit owner, Unit caster, SkillCaster skillCaster, BuffTemplate template, Skill skill, DateTime time)
         {
@@ -71,7 +71,7 @@ namespace AAEmu.Game.Models.Game.Skills
             {
                 var time = GetTimeLeft();
                 if (time > 0)
-                    _count = (int) (time / Tick + 0.5f + 1);
+                    _count = (int)(time / Tick + 0.5f + 1);
                 else
                     _count = -1;
                 EffectTaskManager.Instance.AddDispelTask(this, Tick);
@@ -85,60 +85,60 @@ namespace AAEmu.Game.Models.Game.Skills
             switch (State)
             {
                 case EffectState.Created:
-                {
-                    State = EffectState.Acting;
-
-                    Template.Start(Caster, Owner, this);
-
-                    if (Duration == 0)
-                        Duration = Template.GetDuration(AbLevel);
-                    if (StartTime == DateTime.MinValue)
                     {
-                        StartTime = DateTime.Now;
-                        EndTime = StartTime.AddMilliseconds(Duration);
-                    }
+                        State = EffectState.Acting;
 
-                    Tick = Template.GetTick();
+                        Template.Start(Caster, Owner, this);
 
-                    if (Tick > 0)
-                    {
-                        var time = GetTimeLeft();
-                        if (time > 0)
-                            _count = (int) (time / Tick + 0.5f + 1);
+                        if (Duration == 0)
+                            Duration = Template.GetDuration(AbLevel);
+                        if (StartTime == DateTime.MinValue)
+                        {
+                            StartTime = DateTime.Now;
+                            EndTime = StartTime.AddMilliseconds(Duration);
+                        }
+
+                        Tick = Template.GetTick();
+
+                        if (Tick > 0)
+                        {
+                            var time = GetTimeLeft();
+                            if (time > 0)
+                                _count = (int)(time / Tick + 0.5f + 1);
+                            else
+                                _count = -1;
+                            EffectTaskManager.Instance.AddDispelTask(this, Tick);
+                        }
                         else
-                            _count = -1;
-                        EffectTaskManager.Instance.AddDispelTask(this, Tick);
-                    }
-                    else
-                        EffectTaskManager.Instance.AddDispelTask(this, GetTimeLeft());
+                            EffectTaskManager.Instance.AddDispelTask(this, GetTimeLeft());
 
-                    return;
-                }
+                        return;
+                    }
                 case EffectState.Acting:
-                {
-                    if (_count == -1)
                     {
-                        if (Template.OnActionTime)
+                        if (_count == -1)
                         {
-                            Template.TimeToTimeApply(Caster, Owner, this);
-                            return;
+                            if (Template.OnActionTime)
+                            {
+                                Template.TimeToTimeApply(Caster, Owner, this);
+                                return;
+                            }
                         }
-                    }
-                    else if (_count > 0)
-                    {
-                        _count--;
-                        if (Template.OnActionTime && _count > 0)
+                        else if (_count > 0)
                         {
-                            Template.TimeToTimeApply(Caster, Owner, this);
-                            return;
+                            _count--;
+                            if (Template.OnActionTime && _count > 0)
+                            {
+                                Template.TimeToTimeApply(Caster, Owner, this);
+                                return;
+                            }
                         }
-                    }
 
-                    //Buff seems to come to natural expiration here
-                    Events.OnTimeout(this, new OnTimeoutArgs());
-                    State = EffectState.Finishing;
-                    break;
-                }
+                        //Buff seems to come to natural expiration here
+                        Events.OnTimeout(this, new OnTimeoutArgs());
+                        State = EffectState.Finishing;
+                        break;
+                    }
             }
 
             if (State == EffectState.Finishing)
@@ -192,13 +192,13 @@ namespace AAEmu.Game.Models.Game.Skills
         {
             if (Duration == 0)
                 return -1;
-            var time = (long) (StartTime.AddMilliseconds(Duration) - DateTime.Now).TotalMilliseconds;
+            var time = (long)(StartTime.AddMilliseconds(Duration) - DateTime.Now).TotalMilliseconds;
             return time > 0 ? time : 0;
         }
 
         public uint GetTimeElapsed()
         {
-            var time = (uint) (DateTime.Now - StartTime).TotalMilliseconds;
+            var time = (uint)(DateTime.Now - StartTime).TotalMilliseconds;
             return time > 0 ? time : 0;
         }
 
@@ -206,7 +206,7 @@ namespace AAEmu.Game.Models.Game.Skills
         {
             stream.WritePisc(Charge, Duration / 10, 0, (long)(Template.Tick / 10));
         }
-        
+
         /// <summary>
         /// Consumes as much charge as possible. Remainder is returned
         /// </summary>
@@ -222,7 +222,7 @@ namespace AAEmu.Game.Models.Game.Skills
             {
                 Exit(false);
             }
-            
+
             return value;
         }
     }

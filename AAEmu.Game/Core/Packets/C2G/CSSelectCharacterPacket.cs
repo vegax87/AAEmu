@@ -43,6 +43,7 @@ namespace AAEmu.Game.Core.Packets.C2G
                 Connection.ActiveChar.Simulation = new Simulation(character);
 
                 Connection.SendPacket(new SCCharacterStatePacket(character));
+
                 Connection.SendPacket(new SCCharacterGamePointsPacket(character));
                 Connection.ActiveChar.Inventory.Send();
                 Connection.SendPacket(new SCActionSlotsPacket(Connection.ActiveChar.Slots));

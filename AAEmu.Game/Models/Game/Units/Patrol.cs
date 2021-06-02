@@ -103,7 +103,8 @@ namespace AAEmu.Game.Models.Game.Units
                 }
                 ++Count;
                 //++Seq;
-                Seq = (uint)Rand.Next(0, 10000);
+                //Seq = (uint)Rand.Next(0, 10000);
+                Seq = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
                 Running = true;
                 npc.Patrol = this;
                 Execute(npc);

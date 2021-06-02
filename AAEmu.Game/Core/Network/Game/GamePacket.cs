@@ -80,8 +80,8 @@ namespace AAEmu.Game.Core.Network.Game
             // SC here you can set the filter to hide packets
             if (!(TypeId == PPOffsets.PongPacket && Level == 2) && // Pong
                 !(TypeId == PPOffsets.FastPongPacket && Level == 2) && // FastPong
-                !(TypeId == SCOffsets.SCUnitMovementsPacket && Level == 1) && // SCUnitMovements
-                !(TypeId == SCOffsets.SCOneUnitMovementPacket && Level == 1)) // SCOneUnitMovement
+                !(TypeId == SCOffsets.SCUnitMovementsPacket && Level == 5) && // SCUnitMovements
+                !(TypeId == SCOffsets.SCOneUnitMovementPacket && Level == 5)) // SCOneUnitMovement
             {
                 //_log.Debug("GamePacket: S->C type {0:X} {2}\n{1}", TypeId, ps, this.ToString().Substring(23));
                 //_log.Trace("GamePacket: S->C type {0:X3} {1}", TypeId, this.ToString().Substring(23));
@@ -103,7 +103,7 @@ namespace AAEmu.Game.Core.Network.Game
             // CS here you can set the filter to hide packets
             if (!(TypeId == PPOffsets.PingPacket && Level == 2) && // Ping
                 !(TypeId == PPOffsets.FastPingPacket && Level == 2) && // FastPing
-                !(TypeId == CSOffsets.CSMoveUnitPacket && Level == 1)) // CSMoveUnit
+                !(TypeId == CSOffsets.CSMoveUnitPacket && Level == 5)) // CSMoveUnit
             {
                 //_log.Debug("GamePacket: C->S type {0:X} {2}\n{1}", TypeId, ps, this.ToString().Substring(23));
                 //_log.Trace("GamePacket: C->S type {0:X3} {1}", TypeId, this.ToString().Substring(23));

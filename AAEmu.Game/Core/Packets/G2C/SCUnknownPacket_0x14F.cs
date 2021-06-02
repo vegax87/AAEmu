@@ -20,7 +20,7 @@ namespace AAEmu.Game.Core.Packets.G2C
             _extraKind = 0;
             _worldId = 0x1;
             _count = 0;
-            _startDate = DateTime.UtcNow;
+            _startDate = DateTime.Now;
             _endData = DateTime.MinValue;
         }
 

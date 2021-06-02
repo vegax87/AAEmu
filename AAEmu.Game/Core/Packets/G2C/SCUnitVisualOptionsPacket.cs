@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
 
@@ -19,6 +19,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         {
             stream.WriteBc(_id);
             stream.Write(_visualOptions);
+
             return stream;
         }
     }

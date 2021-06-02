@@ -856,15 +856,15 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
-            moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = (ActorMoveType)flags;     // 5-walk, 4-run, 3-stand still
             moveType.Flags = 4;
 
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Combat;    // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
 
             SetPosition(Position);
@@ -887,15 +887,15 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
-            moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = (ActorMoveType)flags;     // 5-walk, 4-run, 3-stand still
             moveType.Flags = 4;
 
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Combat;    // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
 
             SetPosition(Position);
@@ -916,8 +916,8 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = (sbyte)(CurrentAggroTarget > 0 ? 0 : 1);    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = (CurrentAggroTarget > 0 ? EStance.Combat : EStance.Idle);    // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
             BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
         }
