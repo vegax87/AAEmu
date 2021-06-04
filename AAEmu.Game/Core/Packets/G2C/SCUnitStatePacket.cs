@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
@@ -137,7 +139,8 @@ namespace AAEmu.Game.Core.Packets.G2C
 
             stream.Write(_unit.ModelId); // modelRef
 
-            Inventory_Equip0(stream, _unit); // Equip character
+            //Inventory_Equip(stream, _unit); // Equip character
+            Inventory_Equip(stream, _unit, _baseUnitType); // Equip character
 
             stream.Write(_unit.ModelParams); // CustomModel_3570
 
@@ -263,66 +266,89 @@ namespace AAEmu.Game.Core.Packets.G2C
                         break;
                     }
                 case Npc npc:
-                    stream.Write((byte)npc.Template.Skills.Count);       // learnedSkillCount
-                    if (npc.Template.Skills.Count >= 0)
+                    var learnedSkillCount = npc.Template.Skills.Values.Sum(skills => skills.Count);
+                    learnedSkillCount++; // add BaseSkillId
+                    stream.Write((byte)learnedSkillCount); // learnedSkillCount
+                    if (learnedSkillCount >= 0)
                     {
-                        _log.Warn("Warning! npc.learnedSkillCount = {0}", npc.Template.Skills.Count);
+                        _log.Warn("Warning! npc.learnedSkillCount = {0}", learnedSkillCount);
                     }
-                    stream.Write((byte)npc.Template.PassiveBuffs.Count); // passiveBuffCount
-                    if (npc.Template.PassiveBuffs.Count >= 0)
-                    {
-                        _log.Warn("Warning! npc.passiveBuffCount = {0}", npc.Template.PassiveBuffs.Count);
-                    }
-                    stream.Write(npc.HighAbilityRsc);                    // highAbilityRsc
-                    foreach (var skills in npc.Template.Skills.Values)
-                    {
-                        /*
-                            <!--  pish --> 
-                            <mov val="14" dst="hcount" /> 
-                            <loop>
-                                <mov val="4" dst="pcount" /> 
-                                <iflt arg1="#hcount" arg2="4">
-                                    <mov val="#hcount" dst="pcount" /> 
-                                </iflt>
-                                <chunk type="pish" count="#pcount" name="pisc" /> 
-                                <sub arg1="#hcount" arg2="#pcount" dst="hcount" /> 
-                                <ifz arg="#hcount">
-                                    <break /> 
-                                </ifz>
-                            </loop>
-                            <!--  end pish --> 
-                        */
-                        var hcount = skills.Count;
-                        var index = 0;
-                        var pcount = 4;
-                        do
-                        {
-                            if (hcount < 4)
-                                pcount = hcount;
 
-                            switch (pcount)
-                            {
-                                case 1:
-                                    stream.WritePisc(skills[index].Id);
-                                    index += 1;
-                                    break;
-                                case 2:
-                                    stream.WritePisc(skills[index].Id, skills[index + 1].Id);
-                                    index += 2;
-                                    break;
-                                case 3:
-                                    stream.WritePisc(skills[index].Id, skills[index + 1].Id, skills[index + 2].Id);
-                                    index += 3;
-                                    break;
-                                case 4:
-                                    stream.WritePisc(skills[index].Id, skills[index + 1].Id, skills[index + 2].Id, skills[index + 3].Id);
-                                    index += 4;
-                                    break;
-                            }
-                            hcount -= pcount;
-                        } while (hcount > 0);
+                    var passiveBuffCount = npc.Template.PassiveBuffs.Count;
+                    stream.Write((byte)npc.Template.PassiveBuffs.Count); // passiveBuffCount
+                    if (passiveBuffCount >= 0)
+                    {
+                        _log.Warn("Warning! npc.passiveBuffCount = {0}", passiveBuffCount);
                     }
-                    var hcount2 = npc.Template.PassiveBuffs.Count;
+
+                    stream.Write(npc.HighAbilityRsc); // highAbilityRsc
+
+                    var meleeAttackWithOtherSkill = new List<NpcSkill>(); // BaseSkillId for all NPC
+                    meleeAttackWithOtherSkill.Add(new NpcSkill { SkillId = (uint)npc.Template.BaseSkillId });
+
+                    var once = true;
+                    if (learnedSkillCount == 1)
+                    {
+                        stream.WritePisc(npc.Template.BaseSkillId); // BaseSkillId for all NPC
+                    }
+                    else
+                    {
+                        var skills = new List<NpcSkill>();
+                        skills.AddRange(meleeAttackWithOtherSkill);
+                        foreach (var lns in npc.Template.Skills.Values)
+                        {
+                                skills.AddRange(lns);
+                        }
+
+                        //foreach (var sl in npc.Template.Skills.Values)
+                        //{
+                        //    var skills = new List<NpcSkill>();
+                        //    if (once)
+                        //    {
+                        //        skills.AddRange(meleeAttackWithOtherSkill);
+                        //        skills.AddRange(sl);
+                        //        once = false;
+                        //    }
+                        //    else
+                        //    {
+                        //        skills.AddRange(sl);
+                        //    }
+
+                            var hcount = skills.Count;
+                            var index = 0;
+                            var pcount = 4;
+                            do
+                            {
+                                if (hcount < 4)
+                                    pcount = hcount;
+
+                                switch (pcount)
+                                {
+                                    case 1:
+                                        stream.WritePisc(skills[index].SkillId);
+                                        index += 1;
+                                        break;
+                                    case 2:
+                                        stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId);
+                                        index += 2;
+                                        break;
+                                    case 3:
+                                        stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId,
+                                            skills[index + 2].SkillId);
+                                        index += 3;
+                                        break;
+                                    case 4:
+                                        stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId,
+                                            skills[index + 2].SkillId, skills[index + 3].SkillId);
+                                        index += 4;
+                                        break;
+                                }
+
+                                hcount -= pcount;
+                            } while (hcount > 0);
+                        //}
+                    }
+                    var hcount2 = passiveBuffCount;
                     var index2 = 0;
                     var pcount2 = 4;
                     do
@@ -333,19 +359,19 @@ namespace AAEmu.Game.Core.Packets.G2C
                         switch (pcount2)
                         {
                             case 1:
-                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id);
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].PassiveBuffId);
                                 index2 += 1;
                                 break;
                             case 2:
-                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id, npc.Template.PassiveBuffs[index2 + 1].Id);
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].PassiveBuffId, npc.Template.PassiveBuffs[index2 + 1].PassiveBuffId);
                                 index2 += 2;
                                 break;
                             case 3:
-                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id, npc.Template.PassiveBuffs[index2 + 1].Id, npc.Template.PassiveBuffs[index2 + 2].Id);
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].PassiveBuffId, npc.Template.PassiveBuffs[index2 + 1].PassiveBuffId, npc.Template.PassiveBuffs[index2 + 2].PassiveBuffId);
                                 index2 += 3;
                                 break;
                             case 4:
-                                stream.WritePisc(npc.Template.PassiveBuffs[index2].Id, npc.Template.PassiveBuffs[index2 + 1].Id, npc.Template.PassiveBuffs[index2 + 2].Id, npc.Template.PassiveBuffs[index2 + 3].Id);
+                                stream.WritePisc(npc.Template.PassiveBuffs[index2].PassiveBuffId, npc.Template.PassiveBuffs[index2 + 1].PassiveBuffId, npc.Template.PassiveBuffs[index2 + 2].PassiveBuffId, npc.Template.PassiveBuffs[index2 + 3].PassiveBuffId);
                                 index2 += 4;
                                 break;
                         }
@@ -717,6 +743,126 @@ namespace AAEmu.Game.Core.Packets.G2C
                 }
                 stream.Write(ItemFlags); //  ItemFlags flags for 3.0.3.0
             }
+            #endregion Inventory_Equip
+        }
+        private void Inventory_Equip(PacketStream stream, Unit unit0, BaseUnitType baseUnitType)
+        {
+            #region Inventory_Equip
+
+            var unit = new Unit();
+            switch (baseUnitType)
+            {
+                case BaseUnitType.Character:
+                    unit = (Character)unit0;
+                    break;
+                case BaseUnitType.Npc:
+                    unit = (Npc)unit0;
+                    break;
+                case BaseUnitType.Slave:
+                    unit = (Slave)_unit;
+                    break;
+                case BaseUnitType.Housing:
+                    unit = (House)_unit;
+                    break;
+                case BaseUnitType.Transfer:
+                    unit = (Transfer)_unit;
+                    break;
+                case BaseUnitType.Mate:
+                    unit = (Mate)_unit;
+                    break;
+                case BaseUnitType.Shipyard:
+                    unit = (Shipyard)_unit;
+                    break;
+                default:
+                    break;
+            }
+
+            // calculate validFlags
+            var index = 0;
+            var validFlags = 0;
+            var items = unit.Equipment.GetSlottedItemsList();
+            foreach (var item in items)
+            {
+                if (item != null)
+                {
+                    validFlags |= 1 << index;
+                }
+
+                index++;
+            }
+
+            stream.Write((uint)validFlags); // validFlags for 3.0.3.0
+
+            if (validFlags <= 0)
+            {
+                unit.ModelParams.SetType(UnitCustomModelType.Skin); // дополнительная проверка, что у NPC нет тела и лица
+                return;
+            }
+
+            index = 0;
+            do
+            {
+                if (((validFlags >> index) & 1) != 0)
+                {
+                    Item item;
+                    //if ((index - 19 >= 0 && index - 19 <= 6) || baseUnitType == BaseUnitType.Slave) // Slave
+                    if (index - 19 < 0 || index - 19 > 6)
+                    {
+                        //if (index != 27 || baseUnitType != BaseUnitType.Npc)  // not CosPlay || not Npc
+                        if (index != 27) // not CosPlay
+                        {
+                            switch (baseUnitType)
+                            {
+                                case BaseUnitType.Character: // Character
+                                case BaseUnitType.Housing: // Housing
+                                case BaseUnitType.Mate: // Mate
+                                case BaseUnitType.Slave: // Slave
+                                    item = unit.Equipment.GetItemBySlot(index);
+                                    stream.Write(item);
+                                    break;
+                                case BaseUnitType.Npc: // Npc
+                                    item = unit.Equipment.GetItemBySlot(index);
+                                    stream.Write(item.TemplateId);
+                                    stream.Write(item.Id);
+                                    stream.Write(item.Grade);
+                                    break;
+                                case BaseUnitType.Transfer:
+                                case BaseUnitType.Shipyard:
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            item = unit.Equipment.GetItemBySlot(index);
+                            stream.Write(item); // Cosplay [27]
+                        }
+                    }
+                    else
+                    {
+                        item = unit.Equipment.GetItemBySlot(index);
+                        stream.Write(item.TemplateId); // somehow_special [19..26]
+                    }
+                }
+
+                ++index;
+            } while (index < 29);
+
+            if (baseUnitType != BaseUnitType.Character) { return; }
+
+            index = 0;
+            validFlags = 0;
+            foreach (var tmp in unit.Equipment.GetSlottedItemsList()
+                .Where(item => item != null)
+                .Select(item => (int)item.ItemFlags << index))
+            {
+                ++index;
+                validFlags |= tmp;
+            }
+
+            stream.Write(validFlags); //  ItemFlags flags for 3.0.3.0
+
             #endregion Inventory_Equip
         }
 

@@ -32,7 +32,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
         private Dictionary<uint, Dictionary<uint, List<BodyPartTemplate>>> _itemBodyParts;
         private Dictionary<uint, List<uint>> _tccLookup;
         // you can provide a seed here if you want NPCs to more reliable retain their appearance between reboots, or leave out the seed to get it random every time
-        private Random _loadCustomRandom = new Random(123456789);
+        private Random _loadCustomRandom = new Random(330995);
 
         public bool Exist(uint templateId)
         {
@@ -79,6 +79,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 // load random hairstyles
                 var templ = LoadCustom(template);
                 template.HairId = templ.HairId;
+                template.HornId = templ.HornId;
                 template.ModelParams = templ.ModelParams;
                 template.BodyItems = templ.BodyItems;
             }
@@ -92,22 +93,37 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             SetEquipItemTemplate(npc, template.Items.Shoes, EquipmentItemSlot.Feet);
             SetEquipItemTemplate(npc, template.Items.Bracelet, EquipmentItemSlot.Arms);
             SetEquipItemTemplate(npc, template.Items.Back, EquipmentItemSlot.Back);
+            // EquipmentItemSlot.Ear1:
+            // EquipmentItemSlot.Ear2:
+            // EquipmentItemSlot.Finger1:
+            // EquipmentItemSlot.Finger2:
             SetEquipItemTemplate(npc, template.Items.Undershirts, EquipmentItemSlot.Undershirt);
             SetEquipItemTemplate(npc, template.Items.Underpants, EquipmentItemSlot.Underpants);
             SetEquipItemTemplate(npc, template.Items.Mainhand, EquipmentItemSlot.Mainhand);
             SetEquipItemTemplate(npc, template.Items.Offhand, EquipmentItemSlot.Offhand);
             SetEquipItemTemplate(npc, template.Items.Ranged, EquipmentItemSlot.Ranged);
             SetEquipItemTemplate(npc, template.Items.Musical, EquipmentItemSlot.Musical);
-            SetEquipItemTemplate(npc, template.Items.Cosplay, EquipmentItemSlot.Cosplay);
 
-            for (var i = 0; i < 7; i++)
-            {
-                var slot = (EquipmentItemSlot)(i + 19);
-                if ((slot == EquipmentItemSlot.Hair) && (template.ModelParams != null))
-                    SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
-                else
-                    SetEquipItemTemplate(npc, template.BodyItems[i].ItemId, slot, 0, template.BodyItems[i].NpcOnly);
-            }
+            SetEquipItemTemplate(npc, template.BodyItems[0].ItemId, EquipmentItemSlot.Face, 0, template.BodyItems[0].NpcOnly);
+            SetEquipItemTemplate(npc, template.BodyItems[1].ItemId, EquipmentItemSlot.Hair, 0, template.BodyItems[1].NpcOnly);
+            SetEquipItemTemplate(npc, template.BodyItems[2].ItemId, EquipmentItemSlot.Glasses, 0, template.BodyItems[2].NpcOnly);
+            SetEquipItemTemplate(npc, template.BodyItems[3].ItemId, EquipmentItemSlot.Horns, 0, template.BodyItems[3].NpcOnly);
+            SetEquipItemTemplate(npc, template.BodyItems[4].ItemId, EquipmentItemSlot.Tail, 0, template.BodyItems[4].NpcOnly);
+            SetEquipItemTemplate(npc, template.BodyItems[5].ItemId, EquipmentItemSlot.Body, 0, template.BodyItems[5].NpcOnly);
+            SetEquipItemTemplate(npc, template.BodyItems[6].ItemId, EquipmentItemSlot.Beard, 0, template.BodyItems[6].NpcOnly);
+
+            // EquipmentItemSlot.Backpack:
+            SetEquipItemTemplate(npc, template.Items.Cosplay, EquipmentItemSlot.Cosplay);
+            //SetEquipItemTemplate(npc, template.Items.Stabilizer, EquipmentItemSlot.Stabilizer);
+
+            //for (var i = 0; i < 7; i++)
+            //{
+            //    var slot = (EquipmentItemSlot)(i + 19);
+            //    if ((slot == EquipmentItemSlot.Hair) && (template.ModelParams != null))
+            //        SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
+            //    else
+            //        SetEquipItemTemplate(npc, template.BodyItems[i].ItemId, slot, 0, template.BodyItems[i].NpcOnly);
+            //}
 
             foreach (var buffId in template.Buffs)
             {
@@ -158,10 +174,10 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             var _template = new NpcTemplate();
             var totalCustomId = template.TotalCustomId;
 
-            if (totalCustomId != 0 || template.FactionId == 115 || template.FactionId == 116) // 115 - Monstrosity, 116 - Animal
-            {
-                return template;
-            }
+            //if (totalCustomId != 0 || template.FactionId == 115 || template.FactionId == 116) // 115 - Monstrosity, 116 - Animal
+            //{
+            //    return template;
+            //}
 
             //_log.Info("Loading random npc {0} custom templates...", template.ModelId);
             var modelParamsId = 0u;
@@ -172,7 +188,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)10 : (byte)11;
                     break;
                 case Race.Dwarf: // Dwarf male
-                                 //modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)14 : (byte)15;
+                    //modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)14 : (byte)15;
                     break;
                 case Race.Elf: // Elf male
                     modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)16 : (byte)17;
@@ -184,7 +200,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)20 : (byte)21;
                     break;
                 case Race.Warborn: // Warborn male
-                                   //modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)24 : (byte)25;
+                    //modelParamsId = (Gender)template.Gender == Gender.Male ? (byte)24 : (byte)25;
                     break;
                 case Race.Fairy:
                     break;
@@ -211,12 +227,20 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 var tc = _totalCharacterCustoms[totalCustomId];
 
                 _template.HairId = tc.HairId;
+                _template.HornId = tc.HornId;
 
                 _template.ModelParams = new UnitCustomModelParams(UnitCustomModelType.Face);
                 _template.ModelParams
                     .SetModelId(tc.ModelId)
+                    .SetBodyNormalMapId(tc.BodyNormalMapId)
+                    .SetBodyNormalMapWeight(tc.BodyNormalMapWeight)
+                    .SetDefaultHairColor(tc.DefaultHairColor)
                     .SetHairColorId(tc.HairColorId)
-                    .SetSkinColorId(tc.SkinColorId);
+                    .SetHornColorId(tc.HornColorId)
+                    .SetSkinColorId(tc.SkinColorId)
+                    .SetTwoToneFirstWidth(tc.TwoToneFirstWidth)
+                    .SetTwoToneHair(tc.TwoToneHairColor)
+                    .SetTwoToneSecondWidth(tc.TwoToneSecondWidth);
 
                 _template.ModelParams.Face.MovableDecalAssetId = tc.FaceMovableDecalAssetId;
                 _template.ModelParams.Face.MovableDecalScale = tc.FaceMovableDecalScale;
@@ -228,6 +252,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 _template.ModelParams.Face.SetFixedDecalAsset(1, tc.FaceFixedDecalAsset1Id, tc.FaceFixedDecalAsset1Weight);
                 _template.ModelParams.Face.SetFixedDecalAsset(2, tc.FaceFixedDecalAsset2Id, tc.FaceFixedDecalAsset2Weight);
                 _template.ModelParams.Face.SetFixedDecalAsset(3, tc.FaceFixedDecalAsset3Id, tc.FaceFixedDecalAsset3Weight);
+                _template.ModelParams.Face.SetFixedDecalAsset(4, tc.FaceFixedDecalAsset4Id, tc.FaceFixedDecalAsset4Weight);
+                _template.ModelParams.Face.SetFixedDecalAsset(5, tc.FaceFixedDecalAsset5Id, tc.FaceFixedDecalAsset5Weight);
 
                 _template.ModelParams.Face.DiffuseMapId = tc.FaceDiffuseMapId;
                 _template.ModelParams.Face.NormalMapId = tc.FaceNormalMapId;
@@ -240,6 +266,10 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 _template.ModelParams.Face.NormalMapWeight = tc.FaceNormalMapWeight;
                 _template.ModelParams.Face.DecoColor = tc.DecoColor;
                 _template.ModelParams.Face.Modifier = tc.Modifier;
+
+                _template.Name = tc.Name;
+                _template.NpcOnly = tc.NpcOnly;
+                _template.OwnerTypeId = tc.OwnerTypeId;
             }
             else
             {
@@ -252,31 +282,41 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
                 foreach (var (slotTypeId, bp) in ibp)
                 {
-                    var rbp = bp[bp.Count - 1];
-                    if (modelId != template.ModelId) { continue; }
+                    // возьмем случайный itemBodyParts
+                    var index = _loadCustomRandom.Next(bp.Count);
+                    var rbp = bp[index];
+
+                    //if (modelId != template.ModelId) { continue; }
 
                     switch (slotTypeId)
                     {
                         case (byte)EquipmentItemSlotType.Face:
-                            _template.BodyItems[rbp.SlotTypeId - 23] = (rbp.ItemId, rbp.NpcOnly);
+                            if (template.Race == (byte)Race.Dwarf || template.Race == (byte)Race.Warborn) // && rbp.LeftEyeHeight != 0)
+                            {
+                                rbp = bp[0]; // для гномов всегда 0 itemBodyParts
+                                _template.BodyItems[rbp.SlotTypeId - 23] = (rbp.ItemId, rbp.NpcOnly);
+                            }
+                            else //if (template.Race != (byte)Race.Dwarf && template.Race != (byte)Race.Warborn)
+                            {
+                                rbp = bp[bp.Count - 1]; // для остальных всегда последнее itemBodyParts
+                                _template.BodyItems[rbp.SlotTypeId - 23] = (rbp.ItemId, rbp.NpcOnly);
+                            }
+
                             break;
                         case (byte)EquipmentItemSlotType.Hair:
-                            if (rbp.ItemId == template.HairId)
+                            if (_template.HairId != 0)
                             {
-                                _template.BodyItems[rbp.SlotTypeId - 23] = (rbp.ItemId, rbp.NpcOnly);
+                                _template.BodyItems[rbp.SlotTypeId - 23] = (_template.HairId, rbp.NpcOnly);
                             }
                             else
                             {
-                                if (template.HairId != 0)
-                                {
-                                    _template.BodyItems[rbp.SlotTypeId - 23] = (template.HairId, rbp.NpcOnly);
-                                }
+                                _template.BodyItems[rbp.SlotTypeId - 23] = (rbp.ItemId, rbp.NpcOnly);
                             }
-
                             break;
                         case (byte)EquipmentItemSlotType.Beard:
                         case (byte)EquipmentItemSlotType.Body:
                         case (byte)EquipmentItemSlotType.Glasses:
+                        case (byte)EquipmentItemSlotType.Horns:
                         case (byte)EquipmentItemSlotType.Tail:
                             _template.BodyItems[rbp.SlotTypeId - 23] = (rbp.ItemId, rbp.NpcOnly);
                             break;

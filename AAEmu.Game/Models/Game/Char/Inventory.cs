@@ -1,21 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using AAEmu.Commons.Network;
+
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Packets.C2G;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Items.Templates;
-using AAEmu.Game.Models.Tasks;
-using AAEmu.Game.Utils.DB;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using MySql.Data.MySqlClient;
+
 using NLog;
-using NLog.Targets;
 
 namespace AAEmu.Game.Models.Game.Char
 {
@@ -48,19 +43,17 @@ namespace AAEmu.Game.Models.Game.Char
                     Equipment = Owner.Equipment;
                     Equipment.Owner = Owner;
                     Equipment.PartOfPlayerInventory = true;
-                    _itemContainers.Add(st,Equipment);
+                    _itemContainers.Add(st, Equipment);
                     continue;
                 }
                 var newContainer = new ItemContainer(owner, st, true);
                 _itemContainers.Add(st, newContainer);
                 switch (st)
                 {
-                    /*
                     case SlotType.Equipment:
-                        newContainer.ContainerSize = 28; // 28 equipment slots for 1.2 client
+                        newContainer.ContainerSize = 29; // 28 equipment slots for 1.2 client, 29 for 3.0.3.0
                         Equipment = newContainer;
                         break;
-                    */
                     case SlotType.Inventory:
                         newContainer.ContainerSize = Owner.NumInventorySlots;
                         Bag = newContainer;
@@ -102,7 +95,7 @@ namespace AAEmu.Game.Models.Game.Char
                     if (!container.AddOrMoveExistingItem(ItemTaskType.Invalid, item, item.Slot))
                     {
                         item._holdingContainer?.RemoveItem(ItemTaskType.Invalid, item, true);
-                        _log.Error("LoadInventory found unused item type for item, Id {0} ({1}) at {2}:{3} for {1}", item.Id, item.TemplateId, item.SlotType, item.Slot, Owner?.Name ?? "Id:"+item.OwnerId.ToString());
+                        _log.Error("LoadInventory found unused item type for item, Id {0} ({1}) at {2}:{3} for {1}", item.Id, item.TemplateId, item.SlotType, item.Slot, Owner?.Name ?? "Id:" + item.OwnerId.ToString());
                         // throw new Exception(string.Format("Was unable to add item {0} to container {1} for player {2} using the defined slot.", item?.Template.Name ?? item.TemplateId.ToString(), item.Slot.ToString(), Owner?.Name ?? "???"));
                     }
                 }
@@ -146,7 +139,7 @@ namespace AAEmu.Game.Models.Game.Char
             if (containersToCheck != null)
                 containerList = containersToCheck;
             else
-                containerList = new SlotType[3] {SlotType.Inventory, SlotType.Equipment, SlotType.Bank};
+                containerList = new SlotType[3] { SlotType.Inventory, SlotType.Equipment, SlotType.Bank };
             var res = 0;
             foreach (var cli in containerList)
             {
@@ -203,9 +196,9 @@ namespace AAEmu.Game.Models.Game.Char
             unitsOfItemFound = 0;
             if ((inContainerTypes == null) || (inContainerTypes.Length <= 0))
             {
-                inContainerTypes = new SlotType[3] { SlotType.Inventory, SlotType.Equipment, SlotType.Bank};
+                inContainerTypes = new SlotType[3] { SlotType.Inventory, SlotType.Equipment, SlotType.Bank };
             }
-            foreach(var ct in inContainerTypes)
+            foreach (var ct in inContainerTypes)
             {
                 if (_itemContainers.TryGetValue(ct, out var c))
                 {
@@ -375,7 +368,7 @@ namespace AAEmu.Game.Models.Game.Char
                             break;
                     }
                 }
-                
+
                 var isMain2H = false;
                 if ((mainHandWeapon != null) && (mainHandWeapon.Template is WeaponTemplate mainWeapon))
                 {
@@ -396,7 +389,7 @@ namespace AAEmu.Game.Models.Game.Char
                             break;
                     }
                 }
-                
+
                 if (isTo2H && (sourceContainer.ContainerType == SlotType.Equipment) && (fromSlot == (int)EquipmentItemSlot.Mainhand))
                     doUnEquipOffhand = true;
                 if (isMain2H && (sourceContainer.ContainerType == SlotType.Equipment) && (fromSlot == (int)EquipmentItemSlot.Offhand))
@@ -407,7 +400,7 @@ namespace AAEmu.Game.Models.Game.Char
                     doUnEquipOffhand = true;
                 if (isMain2H && (targetContainer.ContainerType == SlotType.Equipment) && (toSlot == (int)EquipmentItemSlot.Offhand))
                     doUnEquipMainhand = true;
-                
+
             }
 
             if ((doUnEquipOffhand) && (offHandWeapon != null))
@@ -480,7 +473,7 @@ namespace AAEmu.Game.Models.Game.Char
                     // Merge x amount into target
                     var toAddCount = Math.Min(count, itemInTargetSlot.Template.MaxCount - itemInTargetSlot.Count);
                     if (toAddCount < count)
-                        _log.Trace(string.Format("SplitOrMoveItem supplied more than target can take, changed {0} to {1}",count,toAddCount));
+                        _log.Trace(string.Format("SplitOrMoveItem supplied more than target can take, changed {0} to {1}", count, toAddCount));
                     itemInTargetSlot.Count += toAddCount;
                     fromItem.Count -= toAddCount;
                     itemTasks.Add(new ItemCountUpdate(itemInTargetSlot, toAddCount));
@@ -534,7 +527,7 @@ namespace AAEmu.Game.Models.Game.Char
                 Owner.BroadcastPacket(
                     new SCUnitEquipmentsChangedPacket(Owner.ObjId, toSlot, Equipment.GetItemBySlot(toSlot)), false);
             }
-            
+
             if (fromType == SlotType.Equipment || toType == SlotType.Equipment) // Used for gear bonuses and gear buffs
                 Owner.UpdateGearBonuses(itemInTargetSlot, fromItem);
 
@@ -549,7 +542,7 @@ namespace AAEmu.Game.Models.Game.Char
         }
 
 
-        public bool TakeoffBackpack(ItemTaskType taskType,bool glidersOnly = false)
+        public bool TakeoffBackpack(ItemTaskType taskType, bool glidersOnly = false)
         {
             var backpack = GetEquippedBySlot(EquipmentItemSlot.Backpack);
             if (backpack == null) return true;
@@ -559,9 +552,9 @@ namespace AAEmu.Game.Models.Game.Char
                 return false;
 
             // Move to first available slot
-            if (Bag.FreeSlotCount <= 0) 
+            if (Bag.FreeSlotCount <= 0)
                 return false;
-            
+
             Bag.AddOrMoveExistingItem(taskType, backpack);
 
             return true;
@@ -580,14 +573,14 @@ namespace AAEmu.Game.Models.Game.Char
 
         public Item GetItemById(ulong id)
         {
-            foreach(var c in _itemContainers)
+            foreach (var c in _itemContainers)
             {
                 if ((c.Key == SlotType.Equipment) || (c.Key == SlotType.Inventory) || (c.Key == SlotType.Bank))
                 {
-                    foreach(var i in c.Value.Items)
+                    foreach (var i in c.Value.Items)
                     {
                         if ((i != null) && (i.Id == id))
-                            return i ;
+                            return i;
                     }
                 }
             }
@@ -684,7 +677,7 @@ namespace AAEmu.Game.Models.Game.Char
 
             if (expand.ItemId != 0 && expand.ItemCount != 0)
             {
-                Bag.ConsumeItem(isBank ? ItemTaskType.ExpandBank : ItemTaskType.ExpandBag, expand.ItemId, expand.ItemCount,null);
+                Bag.ConsumeItem(isBank ? ItemTaskType.ExpandBank : ItemTaskType.ExpandBag, expand.ItemId, expand.ItemCount, null);
             }
 
             if (isBank)
@@ -712,7 +705,7 @@ namespace AAEmu.Game.Models.Game.Char
         /// <param name="item"></param>
         /// <param name="count"></param>
         /// <param name="onlyUpdatedCount"></param>
-        public void OnAcquiredItem(Item item,int count,bool onlyUpdatedCount = false)
+        public void OnAcquiredItem(Item item, int count, bool onlyUpdatedCount = false)
         {
             // Quests
             if ((item?.Template.LootQuestId > 0) && (count != 0))

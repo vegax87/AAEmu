@@ -53,7 +53,17 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write((short)(_skill.Template.ChannelingTime / 10 + 10));
             stream.Write((byte)0); // f - When changed to 1 when firing an auto-casting skill, will make the little blue arrow.
             if (_skill.Template.Id != 2) // TODO: rotate between mainhand and offhand animation?
-                stream.WritePisc(_id, _skill.Template.FireAnim.Id); // added skill type here in 3.0.3.0
+            {
+                // TODO костыль, возможно ошибка из-за базы 1.2
+                if (_skill.Template.FireAnim != null && _skill.Template != null && _skill != null)
+                {
+                    stream.WritePisc(_id, _skill.Template.FireAnim.Id); // added skill type here in 3.0.3.0
+                }
+                else
+                {
+                    stream.WritePisc(_id, 2);
+                }
+            }
             else
                 stream.WritePisc(_id, 2); // added skill type here in 3.0.3.0
             stream.Write((byte)0); // flag

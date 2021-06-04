@@ -103,10 +103,9 @@ namespace AAEmu.Game.Models.Game.World.Zones
         public void SendSwitchZoneState()
         {
             //broadcast to all online clients in server
-            WorldManager.Instance.BroadcastPacketToServer(new SCConflictZoneStatePacket(ZoneGroupId, CurrentZoneState, NextStateTime));
-
             // TODO test
-            //SetTimerTask();
+            WorldManager.Instance.BroadcastPacketToServer(new SCConflictZoneStatePacket(ZoneGroupId, CurrentZoneState, NextStateTime));
+            SetTimerTask();
         }
 
         public void CheckTimer()
