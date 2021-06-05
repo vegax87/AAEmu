@@ -2,7 +2,6 @@
  * by uranusq https://github.com/NL0bP/aaa_emulator
  * by Nikes
  * by NLObP: оригинальный метод шифрации (как в crynetwork.dll)
-
  */
 using System;
 using System.Collections.Generic;
@@ -82,13 +81,25 @@ namespace AAEmu.Commons.Cryptography
         public byte GetSCMessageCount(uint connectionId, ulong accountId)
         {
             var keys = GetConnectionKeys(connectionId, accountId);
-            return keys.SCMessageCount;
+            var mc = keys.SCMessageCount;
+            _log.Warn("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
+
+            return mc;
         }
 
         public void IncSCMsgCount(uint connectionId, ulong accountId)
         {
             var keys = GetConnectionKeys(connectionId, accountId);
             keys.SCMessageCount++;
+        }
+
+        public byte GetAndIncSCMessageCount(uint connectionId, ulong accountId)
+        {
+            var keys = GetConnectionKeys(connectionId, accountId);
+            var mc = keys.SCMessageCount++;
+            _log.Warn("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
+
+            return mc;
         }
 
         #region S->C Encryption

@@ -857,7 +857,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
             moveType.ActorFlags = (ActorMoveType)flags;     // 5-walk, 4-run, 3-stand still
-            moveType.Flags = 4;
+            moveType.Flags = 0;
 
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
@@ -868,6 +868,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
 
             SetPosition(Position);
+            //AIManager.Instance.Movements.Add((ObjId, moveType));
             BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
         }
 
@@ -888,7 +889,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
             moveType.ActorFlags = (ActorMoveType)flags;     // 5-walk, 4-run, 3-stand still
-            moveType.Flags = 4;
+            moveType.Flags = 0;
 
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
@@ -911,7 +912,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
-            moveType.Flags = 4;
+            moveType.Flags = 0;
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
@@ -919,6 +920,8 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.Stance = (CurrentAggroTarget > 0 ? EStance.Combat : EStance.Idle);    // COMBAT = 0x0, IDLE = 0x1
             moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
+           
+            SetPosition(Position);
             BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
         }
 

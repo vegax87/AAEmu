@@ -536,18 +536,18 @@ namespace AAEmu.Game.Core.Packets.G2C
             #region NetBuff
 
             // TODO: Fix the patron and auction house license buff issue
-            if (_unit is Character)
-            {
-                if (!_unit.Buffs.CheckBuff(8000011)) //TODO Wrong place
-                {
-                    _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000011), null, System.DateTime.Now));
-                }
+            //if (_unit is Character)
+            //{
+            //    if (!_unit.Buffs.CheckBuff(8000011)) //TODO Wrong place
+            //    {
+            //        _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000011), null, System.DateTime.Now));
+            //    }
 
-                if (!_unit.Buffs.CheckBuff(8000012)) //TODO Wrong place
-                {
-                    _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000012), null, System.DateTime.Now));
-                }
-            }
+            //    if (!_unit.Buffs.CheckBuff(8000012)) //TODO Wrong place
+            //    {
+            //        _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000012), null, System.DateTime.Now));
+            //    }
+            //}
 
             var goodBuffs = new List<Buff>();
             var badBuffs = new List<Buff>();

@@ -105,7 +105,7 @@ namespace AAEmu.Game.Models.Game.Skills.SkillControllers
             moveType.RotationY = 0;
             moveType.RotationZ = Owner.Position.RotationZ;
             moveType.ActorFlags = (ActorMoveType)flags;     // 5-walk, 4-run, 3-stand still
-            moveType.Flags = 0x14;//SC move flag
+            moveType.Flags = 0; // TODO check 0x14;//SC move flag
             moveType.ScType = Template.Id;
 
             moveType.DeltaMovement = new sbyte[3];
