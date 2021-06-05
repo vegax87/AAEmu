@@ -12,7 +12,6 @@ namespace AAEmu.Game.Core.Network.Game
     public abstract class GamePacket : PacketBase<GameConnection>
     {
         public byte Level { get; set; }
-        public readonly object Lock = new object();
 
         protected GamePacket(ushort typeId, byte level) : base(typeId)
         {
