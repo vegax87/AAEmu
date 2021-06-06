@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
@@ -158,7 +157,7 @@ namespace AAEmu.Game.Models.Game.Quests
                                         var questItemGather = (QuestActObjItemGather)QuestManager.Instance.GetActTemplate(qa.DetailId, "QuestActObjItemGather");
                                         switch (qa.DetailType)
                                         {
-                                            case "QuestActObjItemGather" when (questSupplyItem.ItemId == questItemGather.ItemId):
+                                            case "QuestActObjItemGather" when questSupplyItem.ItemId == questItemGather.ItemId:
                                                 res = acts[i].Use(Owner, this, SupplyItem);
                                                 break;
                                             default:
@@ -350,7 +349,7 @@ namespace AAEmu.Game.Models.Game.Quests
                 Objectives[i] = 0;
             }
 
-            if(update)
+            if (update)
                 Owner.SendPacket(new SCQuestContextUpdatedPacket(this, 0));
             RemoveQuestItems();
         }
@@ -545,18 +544,18 @@ namespace AAEmu.Game.Models.Game.Quests
                     }
                     if (act.DetailType == "QuestActObjItemGather")
                     {
-                        var template = acts[i].GetTemplate<QuestActObjItemGather>();                        
+                        var template = acts[i].GetTemplate<QuestActObjItemGather>();
                         Objectives[i] = Owner.Inventory.GetItemsCount(template.ItemId);
                         if (Objectives[i] >= template.Count) // TODO check to overtime
                         {
                             Objectives[i] = template.Count;
                             res = true;
-                        }                       
+                        }
                     }
                 }
             }
-        
-    
+
+
             Update(res);
         }
 

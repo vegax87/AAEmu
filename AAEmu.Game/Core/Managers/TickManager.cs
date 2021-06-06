@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using AAEmu.Commons.Utils;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers
@@ -22,12 +23,12 @@ namespace AAEmu.Game.Core.Managers
         {
             var sw = new Stopwatch();
             sw.Start();
-            while(DoTickLoop)
+            while (DoTickLoop)
             {
                 var before = sw.Elapsed;
                 OnTick.Invoke();
                 var time = sw.Elapsed - before;
-                if(time > TimeSpan.FromMilliseconds(100))
+                if (time > TimeSpan.FromMilliseconds(100))
                     _log.Warn("Tick took {0}ms to finish", time.TotalMilliseconds);
                 Thread.Sleep(20);
             }
@@ -36,7 +37,9 @@ namespace AAEmu.Game.Core.Managers
 
         public void Initialize()
         {
-            new Thread(() => TickLoop()).Start();
+            TickThread = new Thread(() => TickLoop());
+            TickThread.Start();
+            // new Thread(() => TickLoop()).Start();
         }
 
         public void Stop()
@@ -48,7 +51,7 @@ namespace AAEmu.Game.Core.Managers
     public class TickEventEntity
     {
         public TickEventHandler.OnTickEvent Event { get; }
-        public TimeSpan LastExecution {get; set;}
+        public TimeSpan LastExecution { get; set; }
         public TimeSpan TickRate { get; }
         public Task ActiveTask { get; set; }
         public bool UseAsync { get; }
@@ -103,17 +106,18 @@ namespace AAEmu.Game.Core.Managers
                 var delta = ev.LastExecution != default ? _sw.Elapsed - ev.LastExecution : ev.TickRate.Add(TimeSpan.FromMilliseconds(1));
                 if (delta > ev.TickRate)
                 {
-                    if(ev.UseAsync)
+                    if (ev.UseAsync)
                     {
                         if (ev.ActiveTask == null || ev.ActiveTask.IsCompleted)
                         {
                             ev.LastExecution = _sw.Elapsed;
-                            ev.ActiveTask = Task.Run(() => {
+                            ev.ActiveTask = Task.Run(() =>
+                            {
                                 try
                                 {
                                     ev.Event(delta);
                                 }
-                                catch(Exception e)
+                                catch (Exception e)
                                 {
                                     _log.Error("{0}\n{1}", e.Message, e.StackTrace);
                                 }

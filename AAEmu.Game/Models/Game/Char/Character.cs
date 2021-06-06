@@ -587,7 +587,7 @@ namespace AAEmu.Game.Models.Game.Char
                 res += Str / 5f * 1000f;
                 res = (float)CalculateWithBonuses(res, UnitAttribute.MainhandDps);
 
-                return (int)(res);
+                return (int)res;
             }
         }
 
@@ -673,7 +673,7 @@ namespace AAEmu.Game.Models.Game.Char
                 res += Int / 5f * 1000f;
                 res = (float)CalculateWithBonuses(res, UnitAttribute.SpellDps);
 
-                return (int)(res);
+                return (int)res;
             }
         }
 
@@ -740,8 +740,8 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["spi"] = Spi;
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.MeleeAntiMiss);
-                res = (1f - ((Facets / 10f) - res) * (1f / Facets)) * 100f;
-                res = ((res + 100f) - Math.Abs((res - 100f))) / 2f;
+                res = (1f - (Facets / 10f - res) * (1f / Facets)) * 100f;
+                res = (res + 100f - Math.Abs(res - 100f)) / 2f;
                 res = (Math.Abs(res) + res) / 2f;
                 return (float)res;
             }
@@ -760,7 +760,7 @@ namespace AAEmu.Game.Models.Game.Char
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.MeleeCritical);
                 res = res * (1f / Facets) * 100;
-                res = res + (MeleeCriticalMul / 10);
+                res = res + MeleeCriticalMul / 10;
                 return (float)res;
             }
         }
@@ -799,8 +799,8 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["spi"] = Spi;
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.RangedAntiMiss);
-                res = (1f - ((Facets / 10f) - res) * (1f / Facets)) * 100f;
-                res = ((res + 100f) - Math.Abs((res - 100f))) / 2f;
+                res = (1f - (Facets / 10f - res) * (1f / Facets)) * 100f;
+                res = (res + 100f - Math.Abs(res - 100f)) / 2f;
                 res = (Math.Abs(res) + res) / 2f;
                 return (float)res;
             }
@@ -819,7 +819,7 @@ namespace AAEmu.Game.Models.Game.Char
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.RangedCritical);
                 res = res * (1f / Facets) * 100;
-                res = res + (RangedCriticalMul / 10);
+                res = res + RangedCriticalMul / 10;
                 return (float)res;
             }
         }
@@ -858,8 +858,8 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["spi"] = Spi;
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.SpellAntiMiss);
-                res = (1f - ((Facets / 10f) - res) * (1f / Facets)) * 100f;
-                res = ((res + 100f) - Math.Abs((res - 100f))) / 2f;
+                res = (1f - (Facets / 10f - res) * (1f / Facets)) * 100f;
+                res = (res + 100f - Math.Abs(res - 100f)) / 2f;
                 res = (Math.Abs(res) + res) / 2f;
                 return (float)res;
             }
@@ -878,7 +878,7 @@ namespace AAEmu.Game.Models.Game.Char
                 res = CalculateWithBonuses(res, UnitAttribute.SpellCritical);
                 res = (float)CalculateWithBonuses(res, UnitAttribute.SpellDamageCritical);
                 res = res * (1f / Facets) * 100;
-                res = res + (SpellCriticalMul / 10);
+                res = res + SpellCriticalMul / 10;
                 return (float)res;
             }
         }
@@ -919,7 +919,7 @@ namespace AAEmu.Game.Models.Game.Char
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.HealCritical);
                 res = res * (1f / Facets) * 100;
-                res = res + (HealCriticalMul / 10);
+                res = res + HealCriticalMul / 10;
                 return (float)res;
             }
         }
@@ -1095,7 +1095,7 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["int"] = Int;
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.Dodge);
-                res = (res * (1f / Facets) * 100f);
+                res = res * (1f / Facets) * 100f;
                 res += CalculateWithBonuses(0f, UnitAttribute.DodgeMul) / 10f;
                 return (float)res;
             }
@@ -1113,7 +1113,7 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["sta"] = Sta;
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.MeleeParry);
-                res = (res * (1f / Facets) * 100f);
+                res = res * (1f / Facets) * 100f;
                 res += CalculateWithBonuses(0f, UnitAttribute.MeleeParryMul) / 10f;
                 return (float)res;
             }
@@ -1127,7 +1127,7 @@ namespace AAEmu.Game.Models.Game.Char
                 //RangedParry Formula == 0
                 double res = 0;
                 res = CalculateWithBonuses(res, UnitAttribute.RangedParry);
-                res = (res * (1f / Facets) * 100f);
+                res = res * (1f / Facets) * 100f;
                 res += CalculateWithBonuses(0f, UnitAttribute.RangedParryMul) / 10f;
                 return (float)res;
             }
@@ -1153,7 +1153,7 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["str"] = Str;
                 var res = formula.Evaluate(parameters);
                 res = CalculateWithBonuses(res, UnitAttribute.Block);
-                res = (res * (1f / Facets) * 100f);
+                res = res * (1f / Facets) * 100f;
                 res += CalculateWithBonuses(0f, UnitAttribute.BlockMul) / 10f;
                 return (float)res;
             }
@@ -1431,7 +1431,7 @@ namespace AAEmu.Game.Models.Game.Char
             {
                 // Remove the old zone buff if needed
                 var lastZoneGroup = ZoneManager.Instance.GetZoneGroupById(lastZone.GroupId);
-                if ((lastZoneGroup != null) && (lastZoneGroup.BuffId != 0))
+                if (lastZoneGroup != null && lastZoneGroup.BuffId != 0)
                 {
                     // Remove the applied buff from last zonegroup
                     Buffs.RemoveBuff(lastZoneGroup.BuffId);
@@ -1441,7 +1441,7 @@ namespace AAEmu.Game.Models.Game.Char
             {
                 // Apply the new zone buff if needed
                 var newZoneGroup = ZoneManager.Instance.GetZoneGroupById(newZone.GroupId);
-                if ((newZoneGroup != null) && (newZoneGroup.BuffId != 0))
+                if (newZoneGroup != null && newZoneGroup.BuffId != 0)
                 {
                     // Add buff from new zonegroup
                     var buffTemplate = SkillManager.Instance.GetBuffTemplate(newZoneGroup.BuffId);
@@ -1461,7 +1461,7 @@ namespace AAEmu.Game.Models.Game.Char
             if (newZoneGroupId != 0)
                 ChatManager.Instance.GetZoneChat(Position.ZoneId).JoinChannel(this);
 
-            if (newZone != null && (!newZone.Closed))
+            if (newZone != null && !newZone.Closed)
                 return;
 
             // Entered a forbidden zone
@@ -1596,7 +1596,7 @@ namespace AAEmu.Game.Models.Game.Char
 
         public bool IsDrowning
         {
-            get { return (Breath <= 0); }
+            get { return Breath <= 0; }
         }
 
         public void DoChangeBreath()
@@ -1863,7 +1863,7 @@ namespace AAEmu.Game.Models.Game.Char
                     {
                         if (reader.Read())
                         {
-                            var slots = (PacketStream)((byte[])reader.GetValue("slots"));
+                            var slots = (PacketStream)(byte[])reader.GetValue("slots");
                             foreach (var slot in Slots)
                             {
                                 slot.Type = (ActionSlotType)slots.ReadByte();

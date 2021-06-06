@@ -46,7 +46,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                     var template = source.Skill.Template;
                     var abilityLevel = character.GetAbLevel((AbilityType)source.Skill.Template.AbilityId);
                     if (template.LevelStep != 0)
-                        abLevel = (ushort)((abilityLevel / template.LevelStep) * template.LevelStep);
+                        abLevel = (ushort)(abilityLevel / template.LevelStep * template.LevelStep);
                     else
                         abLevel = (ushort)template.AbilityLevel;
 

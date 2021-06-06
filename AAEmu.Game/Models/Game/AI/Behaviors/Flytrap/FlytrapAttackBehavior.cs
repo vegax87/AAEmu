@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.AI.Params.Flytrap;
 using AAEmu.Game.Models.Game.Skills;
@@ -58,7 +59,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Flytrap
                     .Where(s =>
                     {
                         var template = SkillManager.Instance.GetSkillTemplate(s);
-                        return (template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self));
+                        return template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self);
                     }).FirstOrDefault();
                 if (skillId != 0)
                     return skillId;
@@ -70,7 +71,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Flytrap
                     .Where(s =>
                     {
                         var template = SkillManager.Instance.GetSkillTemplate(s);
-                        return (template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self));
+                        return template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self);
                     }).FirstOrDefault();
                 if (skillId != 0)
                     return skillId;

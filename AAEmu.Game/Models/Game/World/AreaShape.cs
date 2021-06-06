@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Skills;
@@ -9,6 +10,7 @@ using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Skills.Utils;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.World
@@ -30,10 +32,10 @@ namespace AAEmu.Game.Models.Game.World
         {
             // Z check
             var zOffset = Value3;
-            toCheck = toCheck.Where(o => (o.Position.Z >= origin.Position.Z - zOffset) && (o.Position.Z <= origin.Position.Z + zOffset)).ToList();
+            toCheck = toCheck.Where(o => o.Position.Z >= origin.Position.Z - zOffset && o.Position.Z <= origin.Position.Z + zOffset).ToList();
             if (toCheck.Count == 0)
                 return toCheck;
-            
+
             // Triangle check
             var vertices = MathUtil.GetCuboidVertices(Value1, Value2, origin.Position.X, origin.Position.Y,
                 origin.Position.RotationZ);
@@ -42,13 +44,13 @@ namespace AAEmu.Game.Models.Game.World
             {
                 var tri1 = MathUtil.PointInTriangle((o.Position.X, o.Position.Y), vertices[0], vertices[1],
                     vertices[2]);
-                
+
                 var tri2 = MathUtil.PointInTriangle((o.Position.X, o.Position.Y), vertices[1], vertices[2],
                     vertices[3]);
 
                 return tri1 || tri2;
             }).ToList();
-            
+
             return toCheck;
         }
     }
@@ -60,8 +62,8 @@ namespace AAEmu.Game.Models.Game.World
         public Doodad Owner { get; set; }
         public Unit Caster { get; set; }
         private List<Unit> Units { get; set; }
-        
-        
+
+
         public uint SkillId { get; set; }
         public uint TlId { get; set; }
         public SkillTargetRelation TargetRelation { get; set; }
@@ -74,7 +76,7 @@ namespace AAEmu.Game.Models.Game.World
         {
             Units = new List<Unit>();
         }
-        
+
         public void UpdateUnits()
         {
             if (Owner == null || !Owner.IsVisible)
@@ -82,17 +84,17 @@ namespace AAEmu.Game.Models.Game.World
                 AreaTriggerManager.Instance.RemoveAreaTrigger(this);
                 return;
             }
-            
+
             var units = WorldManager.Instance.GetAroundByShape<Unit>(Owner, Shape);
 
             var leftUnits = Units.Where(u => units.All(u2 => u.ObjId != u2.ObjId));
             var newUnits = units.Where(u => Units.All(u2 => u.ObjId != u2.ObjId));
-            
+
             foreach (var newUnit in newUnits)
             {
                 OnEnter(newUnit);
             }
-            
+
             foreach (var leftUnit in leftUnits)
             {
                 OnLeave(leftUnit);
@@ -131,7 +133,7 @@ namespace AAEmu.Game.Models.Game.World
                 return;
             if (Caster == null)
                 return;
-            
+
             var unitsToApply = SkillTargetingUtil.FilterWithRelation(TargetRelation, Caster, Units);
             foreach (var unit in unitsToApply)
             {
@@ -145,7 +147,7 @@ namespace AAEmu.Game.Models.Game.World
                         castAction = new CastBuff(eff);
                     else
                         castAction = new CastSkill(SkillId, 0);
-                    
+
                     effect.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), castAction, new EffectSource(), new SkillObject(), DateTime.Now);
                 }
             }

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Text;
+
 using AAEmu.Commons.Cryptography;
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Network.Game
@@ -29,14 +31,14 @@ namespace AAEmu.Game.Core.Network.Game
 
         public override void OnConnect(Session session)
         {
-            _log.Info("Connect from {0} established, session id: {1}", session.Ip.ToString(), session.Id.ToString());
+            _log.Info("Connect from {0} established, session id: {1}", session.Ip.ToString(), session.SessionId.ToString());
             try
             {
                 var con = new GameConnection(session);
                 con.OnConnect();
                 GameConnectionTable.Instance.AddConnection(con);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 session.Close();
                 _log.Error(e);
@@ -47,7 +49,7 @@ namespace AAEmu.Game.Core.Network.Game
         {
             try
             {
-                var con = GameConnectionTable.Instance.GetConnection(session.Id);
+                var con = GameConnectionTable.Instance.GetConnection(session.SessionId);
                 if (con != null)
                 {
                     if (con.ActiveChar != null)
@@ -58,7 +60,7 @@ namespace AAEmu.Game.Core.Network.Game
                     }
                     con.OnDisconnect();
                     StreamManager.Instance.RemoveToken(con.Id);
-                    GameConnectionTable.Instance.RemoveConnection(session.Id);
+                    GameConnectionTable.Instance.RemoveConnection(session.SessionId);
                 }
             }
             catch (Exception e)
@@ -74,12 +76,12 @@ namespace AAEmu.Game.Core.Network.Game
         {
             try
             {
-                var connection = GameConnectionTable.Instance.GetConnection(session.Id);
-                if(connection == null)
+                var connection = GameConnectionTable.Instance.GetConnection(session.SessionId);
+                if (connection == null)
                     return;
                 OnReceive(connection, buf, bytes);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 session.Close();
                 _log.Error(e);
@@ -92,20 +94,20 @@ namespace AAEmu.Game.Core.Network.Game
             try
             {
                 var stream = new PacketStream();
-                if(connection.LastPacket != null)
+                if (connection.LastPacket != null)
                 {
                     stream.Insert(0, connection.LastPacket);
                     connection.LastPacket = null;
                 }
                 stream.Insert(stream.Count, buf, 0, bytes);
-                while(stream != null && stream.Count > 0)
+                while (stream != null && stream.Count > 0)
                 {
                     ushort len;
                     try
                     {
                         len = stream.ReadUInt16();
                     }
-                    catch(MarshalException)
+                    catch (MarshalException)
                     {
                         //_log.Warn("Error on reading type {0}", type);
                         stream.Rollback();
@@ -114,12 +116,12 @@ namespace AAEmu.Game.Core.Network.Game
                         continue;
                     }
                     var packetLen = len + stream.Pos;
-                    if(packetLen <= stream.Count)
+                    if (packetLen <= stream.Count)
                     {
                         stream.Rollback();
                         var stream2 = new PacketStream();
                         stream2.Replace(stream, 0, packetLen);
-                        if(stream.Count > packetLen)
+                        if (stream.Count > packetLen)
                         {
                             var stream3 = new PacketStream();
                             stream3.Replace(stream, packetLen, stream.Count - packetLen);
@@ -130,7 +132,7 @@ namespace AAEmu.Game.Core.Network.Game
                         stream2.ReadUInt16(); //len
                         stream2.ReadByte(); //unk
                         var level = stream2.ReadByte();
-                        
+
                         byte crc = 0;
                         byte counter = 0;
                         if (level == 1)
@@ -154,10 +156,10 @@ namespace AAEmu.Game.Core.Network.Game
                             stream2.Replace(strm, 0, OutBytes.Length);
                             stream2.ReadUInt16();
                         }
-                        
+
                         var type = stream2.ReadUInt16();
                         _packets[level].TryGetValue(type, out var classType);
-                        if(classType == null)
+                        if (classType == null)
                         {
                             HandleUnknownPacket(connection, type, level, stream2);
                         }
@@ -177,7 +179,7 @@ namespace AAEmu.Game.Core.Network.Game
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 connection?.Shutdown();
                 _log.Error(e);
@@ -186,7 +188,7 @@ namespace AAEmu.Game.Core.Network.Game
 
         public void RegisterPacket(uint type, byte level, Type classType)
         {
-            if(_packets[level].ContainsKey(type))
+            if (_packets[level].ContainsKey(type))
                 _packets[level].TryRemove(type, out _);
             _packets[level].TryAdd(type, classType);
         }
@@ -196,7 +198,7 @@ namespace AAEmu.Game.Core.Network.Game
             var dump = new StringBuilder();
             for (var i = stream.Pos; i < stream.Count; i++)
                 dump.AppendFormat("{0:x2} ", stream.Buffer[i]);
-            _log.Error("Unknown packet 0x{0:x2}({3}) from {1}:\n{2}", (object)type, (object)connection.Ip, (object)dump, level);
+            _log.Error("Unknown packet 0x{0:x2}({3}) from {1}:\n{2}", type, connection.Ip, dump, level);
         }
     }
 }

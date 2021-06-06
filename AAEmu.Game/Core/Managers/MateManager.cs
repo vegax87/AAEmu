@@ -141,7 +141,7 @@ namespace AAEmu.Game.Core.Managers
                 unMounted = 2;
             }
 
-            if ((unMounted != 1 && unMounted != 2) || targetObj == null) return;
+            if (unMounted != 1 && unMounted != 2 || targetObj == null) return;
 
             character.BroadcastPacket(new SCUnitDetachedPacket(targetObj.ObjId, reason), true);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Items.Templates;
@@ -28,7 +29,7 @@ namespace AAEmu.Game.Models.Game.Items
             {
                 var template = (EquipItemTemplate)Template;
                 var grade = ItemManager.Instance.GetGradeTemplate(Grade);
-                var cost = (ItemManager.Instance.GetDurabilityRepairCostFactor() * 0.0099999998f) *
+                var cost = ItemManager.Instance.GetDurabilityRepairCostFactor() * 0.0099999998f *
                            (1f - Durability * 1f / MaxDurability) * template.Price;
                 cost = cost * grade.RefundMultiplier * 0.0099999998f;
                 cost = (float)Math.Ceiling(cost);

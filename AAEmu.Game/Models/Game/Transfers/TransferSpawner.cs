@@ -96,7 +96,7 @@ namespace AAEmu.Game.Models.Game.Transfers
 
                         //transfer.Position.RotationZ = MathUtil.ConvertDegreeToDirection(MathUtil.RadianToDegree(transfer.Angle));
                         //var quat = Quaternion.CreateFromYawPitchRoll((float)transfer.Angle, 0.0f, 0.0f);
-                        
+
                         transfer.Position.RotationZ = Helpers.ConvertRadianToSbyteDirection((float)transfer.Angle);
                         var quat = MathUtil.ConvertRadianToDirectionShort(transfer.Angle);
 
@@ -155,7 +155,7 @@ namespace AAEmu.Game.Models.Game.Transfers
         {
             _spawnCount--;
             _spawned.Remove(transfer);
-            if (RespawnTime > 0 && (_spawnCount + _scheduledCount) < Count)
+            if (RespawnTime > 0 && _spawnCount + _scheduledCount < Count)
             {
                 transfer.Respawn = DateTime.Now.AddSeconds(RespawnTime);
                 SpawnManager.Instance.AddRespawn(transfer);

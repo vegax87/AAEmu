@@ -40,7 +40,7 @@ namespace AAEmu.Game.Core.Managers
 
         public Portal GetPortalById(uint id)
         {
-            return _allDistrictPortalsKey.ContainsKey(id) ? (_allDistrictPortals.ContainsKey(_allDistrictPortalsKey[id]) ? _allDistrictPortals[_allDistrictPortalsKey[id]] : null) : null;
+            return _allDistrictPortalsKey.ContainsKey(id) ? _allDistrictPortals.ContainsKey(_allDistrictPortalsKey[id]) ? _allDistrictPortals[_allDistrictPortalsKey[id]] : null : null;
         }
 
         public void Load()

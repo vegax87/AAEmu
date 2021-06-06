@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+
 using Jitter;
 using Jitter.Collision;
 using Jitter.Collision.Shapes;
@@ -132,21 +133,21 @@ namespace AAEmu.Game.Physics.Forces
                 {
                     for (var k = 0; k < subdivisions; k++)
                     {
-                        testVector.X = body.Shape.BoundingBox.Min.X + (diff.X / (float)(subdivisions - 1)) * ((float)i);
-                        testVector.Y = body.Shape.BoundingBox.Min.Y + (diff.Y / (float)(subdivisions - 1)) * ((float)e);
-                        testVector.Z = body.Shape.BoundingBox.Min.Z + (diff.Z / (float)(subdivisions - 1)) * ((float)k);
+                        testVector.X = body.Shape.BoundingBox.Min.X + diff.X / (subdivisions - 1) * i;
+                        testVector.Y = body.Shape.BoundingBox.Min.Y + diff.Y / (subdivisions - 1) * e;
+                        testVector.Z = body.Shape.BoundingBox.Min.Z + diff.Z / (subdivisions - 1) * k;
 
                         var ident = JMatrix.Identity;
                         var zero = JVector.Zero;
 
                         if (ms != null)
                         {
-     
+
                             for (var j = 0; j < values; j++)
                             {
                                 ms.SetCurrentShape(j);
 
-               
+
                                 if (GJKCollide.Pointcast(body.Shape, ref ident,
                                     ref zero, ref testVector))
                                 {
@@ -156,7 +157,7 @@ namespace AAEmu.Game.Physics.Forces
                         }
                         else
                         {
-                            if (GJKCollide.Pointcast(body.Shape,ref ident,
+                            if (GJKCollide.Pointcast(body.Shape, ref ident,
                                 ref zero, ref testVector))
                             {
                                 massPoints.Add(testVector);
@@ -200,7 +201,7 @@ namespace AAEmu.Game.Physics.Forces
 
                         if (containsCoord)
                         {
-                            body.AddForce((1.0f / positions.Length) * body.Mass * Flow);
+                            body.AddForce(1.0f / positions.Length * body.Mass * Flow);
                             body.AddForce(-(1.0f / positions.Length) * body.Shape.Mass * Density * world.Gravity, currentCoord);
                             frac += 1.0f / positions.Length;
                         }

@@ -11,9 +11,6 @@ using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Utils;
-
-using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
@@ -44,19 +41,19 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
 
             // Get Player
-            if ((!(caster is Character character)) || (character == null))
+            if (!(caster is Character character) || character == null)
             {
                 return;
             }
 
             // Get Regrade Scroll Item
-            if ((!(casterObj is SkillItem scroll)) || (scroll == null))
+            if (!(casterObj is SkillItem scroll) || scroll == null)
             {
                 return;
             }
 
             // Get Item to regrade
-            if ((!(targetObj is SkillCastItemTarget itemTarget)) || (itemTarget == null))
+            if (!(targetObj is SkillCastItemTarget itemTarget) || itemTarget == null)
             {
                 return;
             }
@@ -67,7 +64,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             if (skillObject is SkillObjectItemGradeEnchantingSupport)
             {
                 charm = (SkillObjectItemGradeEnchantingSupport)skillObject;
-                if ((charm != null) && (charm.SupportItemId != 0))
+                if (charm != null && charm.SupportItemId != 0)
                 {
                     useCharm = true;
                 }
@@ -98,7 +95,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                 return;
             }
 
-            if (!character.Inventory.CheckItems(SlotType.Inventory,scroll.ItemTemplateId, 1))
+            if (!character.Inventory.CheckItems(SlotType.Inventory, scroll.ItemTemplateId, 1))
             {
                 // No scroll
                 character.SendErrorMessage(ErrorMessageType.NotEnoughRequiredItem);
@@ -268,7 +265,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 
         private int GetCharmChance(int baseChance, int charmRatio, int charmMul)
         {
-            return (baseChance + charmRatio) + (int)(baseChance * (charmMul / 100.0));
+            return baseChance + charmRatio + (int)(baseChance * (charmMul / 100.0));
         }
     }
 }

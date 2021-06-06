@@ -1,19 +1,19 @@
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+
 using NetCoreServer;
 
 namespace AAEmu.Commons.Network.Core
 {
-    public class Session: TcpSession
+    public class Session : TcpSession
     {
         public BaseProtocolHandler ProtocolHandler { get; private set; }
         public IPEndPoint RemoteEndPoint { get; set; }
         private readonly Dictionary<string, object> _attributes = new Dictionary<string, object>();
-        public uint Id { get; set; }
+        public uint SessionId { get; set; }
         public IPAddress Ip { get; private set; }
-        
+
         public Client Client { get; set; }
 
         public Session(Server server) : base(server)
@@ -26,13 +26,13 @@ namespace AAEmu.Commons.Network.Core
             Client = client;
             ProtocolHandler = client.GetHandler();
             Ip = client.Endpoint.Address;
-            Id = (uint) client.Endpoint.GetHashCode();
+            SessionId = (uint)client.Endpoint.GetHashCode();
         }
 
         protected override void OnConnected()
         {
             RemoteEndPoint = (IPEndPoint)Socket.RemoteEndPoint;
-            Id = (uint)RemoteEndPoint.GetHashCode();
+            SessionId = (uint)RemoteEndPoint.GetHashCode();
             Ip = RemoteEndPoint.Address;
             ProtocolHandler?.OnConnect(this);
         }
@@ -44,7 +44,7 @@ namespace AAEmu.Commons.Network.Core
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
         {
-            ProtocolHandler?.OnReceive(this, buffer, (int) size);
+            ProtocolHandler?.OnReceive(this, buffer, (int)size);
         }
 
         protected override void OnSent(long sent, long pending)
@@ -67,18 +67,18 @@ namespace AAEmu.Commons.Network.Core
             // TODO send to queue
             return SendAsync(buffer, 0L, buffer.Length);
         }
-        
+
         public void AddAttribute(string name, object attribute)
         {
             _attributes.Add(name, attribute);
         }
-        
+
         public object GetAttribute(string name)
         {
             _attributes.TryGetValue(name, out var attribute);
             return attribute;
         }
-        
+
         public void ClearAttribute(string name)
         {
             _attributes.Remove(name);

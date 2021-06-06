@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
-using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Models.Game.Items.Actions;
 
 namespace AAEmu.Game.Models.Game.Mails
 {
@@ -32,7 +27,7 @@ namespace AAEmu.Game.Models.Game.Mails
             _house = house;
 
             MailType = MailType.Billing;
-            Body.RecvDate = DateTime.Now ;
+            Body.RecvDate = DateTime.Now;
         }
 
         public static bool UpdateTaxInfo(BaseMail mail, House house)
@@ -43,7 +38,7 @@ namespace AAEmu.Game.Models.Game.Mails
                 return false;
             mail.Header.ReceiverId = house.OwnerId;
             mail.ReceiverName = ownerName;
-            
+
             // Grab the zone the house is in
             var zone = ZoneManager.Instance.GetZoneByKey(house.Position.ZoneId);
             if (zone == null)
@@ -55,9 +50,9 @@ namespace AAEmu.Game.Models.Game.Mails
             // Get Tax info
             if (!HousingManager.Instance.CalculateBuildingTaxInfo(house.AccountId, house.Template, false, out var totalTaxAmountDue, out var heavyTaxHouseCount, out var normalTaxHouseCount, out var hostileTaxRate))
                 return false;
-            
+
             var weeksDelta = house.TaxDueDate - DateTime.Now;
-            var weeks = 0 ;
+            var weeks = 0;
             if (weeksDelta.TotalSeconds <= 0)
             {
                 weeks = (int)Math.Ceiling(weeksDelta.TotalDays / -7f);
@@ -84,7 +79,7 @@ namespace AAEmu.Game.Models.Game.Mails
 
             // Extra tag
             ushort extraUnknown = 0;
-            mail.Header.Extra = ((long)zone.GroupId << 48) + ((long)extraUnknown << 32) + ((long)house.Id);
+            mail.Header.Extra = ((long)zone.GroupId << 48) + ((long)extraUnknown << 32) + house.Id;
             mail.Header.Status = MailStatus.Unpaid;
 
             return true;
@@ -99,7 +94,7 @@ namespace AAEmu.Game.Models.Game.Mails
             Header.SenderId = 0;
             Header.SenderName = TaxSenderName;
 
-            if (!UpdateTaxInfo(this,_house))
+            if (!UpdateTaxInfo(this, _house))
                 return false;
 
             return true;

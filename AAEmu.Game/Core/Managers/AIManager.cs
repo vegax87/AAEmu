@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.AI.Framework;
 using AAEmu.Game.Models.Game.Units.Movements;
-using AAEmu.Game.Models.Game.World;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers
@@ -17,7 +16,7 @@ namespace AAEmu.Game.Core.Managers
 
         private List<NpcAi> _npcAis;
         private object _aiLock;
-        public List<(uint, MoveType)>  Movements;
+        public List<(uint, MoveType)> Movements;
 
         public void Initialize()
         {
@@ -47,7 +46,7 @@ namespace AAEmu.Game.Core.Managers
                     }
                     catch (Exception e)
                     {
-                        _log.Error("{0}", e);
+                        _log.Error(e, "{0}", e.Message);
                     }
                 }
                 //GameObject.BroadcastPacket(new SCUnitMovementsPacket(Instance.Movements.ToArray()), true);

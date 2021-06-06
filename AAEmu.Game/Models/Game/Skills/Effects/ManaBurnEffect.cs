@@ -30,14 +30,14 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             min += BaseMin;
             max += BaseMax;
 
-            var levelMin = 0.0f;
-            var levelMax = 0.0f;
+            //var levelMin = 0.0f;
+            //var levelMax = 0.0f;
 
             var lvlMd = caster.LevelDps * LevelMd;
             // Hack null-check on skill
             var levelModifier = (((source.Skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
 
-            min += (lvlMd - levelModifier * lvlMd) + 0.5f;
+            min += lvlMd - levelModifier * lvlMd + 0.5f;
             max += (levelModifier + 1) * lvlMd + 0.5f;
 
             if (source.Buff?.TickEffects.Count > 0)

@@ -1,11 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Utils.DB;
+
 using Jace;
 using Jace.Execution;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers
@@ -43,7 +46,8 @@ namespace AAEmu.Game.Core.Managers
             return _wearableFormulas.ContainsKey(type) ? _wearableFormulas[type] : null;
         }
 
-        public Formula GetFormula(uint id) {
+        public Formula GetFormula(uint id)
+        {
             return _formulas.ContainsKey(id) ? _formulas[id] : null;
         }
 
@@ -51,14 +55,14 @@ namespace AAEmu.Game.Core.Managers
         {
             // TODO Funcs: min, max, clamp, if_zero, if_positive, if_negative, floor, log, sqrt
             CalculationEngine = new CalculationEngine(CultureInfo.InvariantCulture, ExecutionMode.Compiled, true, true, false);
-            CalculationEngine.AddFunction("clamp", (a, b, c) => a < b ? b : (a > c ? c : a));
+            CalculationEngine.AddFunction("clamp", (a, b, c) => a < b ? b : a > c ? c : a);
             CalculationEngine.AddFunction("if_negative", (a, b, c) => a < 0 ? b : c);
             CalculationEngine.AddFunction("if_positive", (a, b, c) => a > 0 ? b : c);
             CalculationEngine.AddFunction("if_zero", (a, b, c) => a == 0 ? b : c);
 
             _unitFormulas = new Dictionary<FormulaOwnerType, Dictionary<UnitFormulaKind, UnitFormula>>();
             foreach (var owner in Enum.GetValues(typeof(FormulaOwnerType)))
-                _unitFormulas.Add((FormulaOwnerType) owner, new Dictionary<UnitFormulaKind, UnitFormula>());
+                _unitFormulas.Add((FormulaOwnerType)owner, new Dictionary<UnitFormulaKind, UnitFormula>());
             _wearableFormulas = new Dictionary<WearableFormulaType, WearableFormula>();
             _unitVariables =
                 new Dictionary<uint, Dictionary<UnitFormulaVariableType, Dictionary<uint, UnitFormulaVariable>>>();
@@ -80,8 +84,8 @@ namespace AAEmu.Game.Core.Managers
                             {
                                 Id = reader.GetUInt32("id"),
                                 TextFormula = reader.GetString("formula"),
-                                Kind = (UnitFormulaKind) reader.GetByte("kind_id"),
-                                Owner = (FormulaOwnerType) reader.GetByte("owner_type_id")
+                                Kind = (UnitFormulaKind)reader.GetByte("kind_id"),
+                                Owner = (FormulaOwnerType)reader.GetByte("owner_type_id")
                             };
                             if (formula.Prepare())
                                 _unitFormulas[formula.Owner].Add(formula.Kind, formula);
@@ -101,7 +105,7 @@ namespace AAEmu.Game.Core.Managers
                             var variable = new UnitFormulaVariable
                             {
                                 FormulaId = reader.GetUInt32("unit_formula_id"),
-                                Type = (UnitFormulaVariableType) reader.GetByte("variable_kind_id"),
+                                Type = (UnitFormulaVariableType)reader.GetByte("variable_kind_id"),
                                 Key = reader.GetUInt32("key"),
                                 Value = reader.GetFloat("value")
                             };
@@ -128,7 +132,7 @@ namespace AAEmu.Game.Core.Managers
                             var formula = new WearableFormula
                             {
                                 Id = reader.GetUInt32("id"),
-                                Type = (WearableFormulaType) reader.GetByte("kind_id"),
+                                Type = (WearableFormulaType)reader.GetByte("kind_id"),
                                 TextFormula = reader.GetString("formula")
                             };
                             if (formula.Prepare())

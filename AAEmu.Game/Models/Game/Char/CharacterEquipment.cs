@@ -88,7 +88,7 @@ namespace AAEmu.Game.Models.Game.Char
 
                     if (!setNumPieces.ContainsKey(equipItemSetId))
                     {
-                        setNumPieces.Add(equipItemSetId, (1));
+                        setNumPieces.Add(equipItemSetId, 1);
                         itemLevels.Add(equipItemSetId, (uint)item.Template.Level);
                     }
                     else
@@ -143,7 +143,7 @@ namespace AAEmu.Game.Models.Game.Char
 
         private void ApplyArmorGradeBuff(Item itemAdded, Item itemRemoved)
         {
-            if ((itemAdded != null || itemRemoved != null) && (!(itemAdded is Armor) && !(itemRemoved is Armor)))
+            if ((itemAdded != null || itemRemoved != null) && !(itemAdded is Armor) && !(itemRemoved is Armor))
                 return;
 
             // Clear any existing armor grade buffs
@@ -233,7 +233,7 @@ namespace AAEmu.Game.Models.Game.Char
 
             // This const was calculated by hand, it might make no sense.
             var abLevel = totalLevel * 0.40670554f;
-            var gradeBuffAbLevel = (abLevel * abLevel) / 15 + 30;
+            var gradeBuffAbLevel = abLevel * abLevel / 15 + 30;
             var lowestGrade = piecesAboveArcane.Min(a => a.Grade);
 
             // Apply buff 

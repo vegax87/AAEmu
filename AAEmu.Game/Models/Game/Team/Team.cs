@@ -49,7 +49,7 @@ namespace AAEmu.Game.Models.Game.Team
         {
             var count = 0;
             foreach (var member in Members)
-                if ((member?.Character != null) && (member.Character.IsOnline))
+                if (member?.Character != null && member.Character.IsOnline)
                     count++;
             return count;
         }

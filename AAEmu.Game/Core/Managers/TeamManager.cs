@@ -320,7 +320,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             // Disband if only one member left in a Party (not raid)
-            if ((activeTeam.IsParty) && (activeTeam.MembersCount() <= 1))
+            if (activeTeam.IsParty && activeTeam.MembersCount() <= 1)
                 isAutoDisband = true;
 
             // If everybody is offline, also disband regardless of raid or party status
@@ -358,7 +358,7 @@ namespace AAEmu.Game.Core.Managers
         public void MakeTeamOwner(Character unit, uint teamId, uint memberId)
         {
             var activeTeam = GetActiveTeam(teamId);
-            if ((activeTeam?.OwnerId != unit.Id) || activeTeam.OwnerId == memberId) return;
+            if (activeTeam?.OwnerId != unit.Id || activeTeam.OwnerId == memberId) return;
 
             if (activeTeam.IsMember(memberId)) activeTeam.OwnerId = memberId;
             activeTeam.BroadcastPacket(new SCTeamOwnerChangedPacket(activeTeam.Id, activeTeam.OwnerId));
@@ -373,7 +373,7 @@ namespace AAEmu.Game.Core.Managers
             activeTeam.IsParty = false;
             activeTeam.BroadcastPacket(new SCTeamBecameRaidTeamPacket(activeTeam.Id));
             foreach (var m in activeTeam.Members)
-                if ((m != null) && (m.Character != null))
+                if (m != null && m.Character != null)
                     ChatManager.Instance.GetRaidChat(activeTeam).JoinChannel(m.Character);
         }
 

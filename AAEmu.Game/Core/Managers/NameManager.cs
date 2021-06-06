@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models;
 using AAEmu.Game.Utils.DB;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers
@@ -24,8 +26,8 @@ namespace AAEmu.Game.Core.Managers
 
         public uint GetCharacterId(string characterName)
         {
-            var res = (from x in _characterNames where (x.Value.ToLower() == characterName.ToLower()) select x.Key).FirstOrDefault();
-            return res ;
+            var res = (from x in _characterNames where x.Value.ToLower() == characterName.ToLower() select x.Key).FirstOrDefault();
+            return res;
         }
 
         public NameManager()

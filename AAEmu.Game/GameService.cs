@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+
 using AAEmu.Commons.Cryptography;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
@@ -14,7 +15,9 @@ using AAEmu.Game.Core.Network.Login;
 using AAEmu.Game.Core.Network.Stream;
 using AAEmu.Game.GameData.Framework;
 using AAEmu.Game.Utils.Scripts;
+
 using Microsoft.Extensions.Hosting;
+
 using NLog;
 
 namespace AAEmu.Game
@@ -113,7 +116,7 @@ namespace AAEmu.Game
 
             TimeManager.Instance.Start();
             TaskManager.Instance.Start();
-            
+
             SaveManager.Instance.Initialize();
             AreaTriggerManager.Instance.Initialize();
             SpecialtyManager.Instance.Initialize();
@@ -125,7 +128,7 @@ namespace AAEmu.Game
             GameDataManager.Instance.PostLoadGameData();
 
             await heightmapTask;
-            
+
             var spawnSw = new Stopwatch();
             _log.Info("Spawning units...");
             spawnSw.Start();
@@ -134,11 +137,11 @@ namespace AAEmu.Game
             TransferManager.Instance.SpawnAll();
             spawnSw.Stop();
             _log.Info("Units spawned in {0}", spawnSw.Elapsed);
-            
+
             GameNetwork.Instance.Start();
             StreamNetwork.Instance.Start();
             LoginNetwork.Instance.Start();
-            
+
             stopWatch.Stop();
             _log.Info("Server started! Took {0}", stopWatch.Elapsed);
         }

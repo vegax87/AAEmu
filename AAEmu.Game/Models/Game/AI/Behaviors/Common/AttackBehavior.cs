@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.NPChar;
@@ -41,7 +42,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
                 .Where(s =>
                 {
                     var template = SkillManager.Instance.GetSkillTemplate(s.SkillId);
-                    return (template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self));
+                    return template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self);
                 }).ToList();
 
             var pickedSkillId = (uint)Ai.Owner.Template.BaseSkillId;

@@ -1,5 +1,6 @@
-﻿using AAEmu.Game.Core.Managers.World;
-using System;
+﻿using System;
+
+using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Models.Game.World
 {
@@ -21,8 +22,8 @@ namespace AAEmu.Game.Models.Game.World
         public float GetRawHeightMapHeight(int x, int y)
         {
             // This is the old GetHeight()
-            var sx = (int)(x / 2);
-            var sy = (int)(y / 2);
+            var sx = x / 2;
+            var sy = y / 2;
             return (float)(HeightMaps[sx, sy] / HeightMaxCoefficient);
         }
 
@@ -38,7 +39,7 @@ namespace AAEmu.Game.Models.Game.World
 
         private System.Drawing.Rectangle FindNearestSignificantPoints(int x, int y)
         {
-            return new System.Drawing.Rectangle(x - (x % 2), y - (y % 2), 2, 2);
+            return new System.Drawing.Rectangle(x - x % 2, y - y % 2, 2, 2);
         }
 
         public float GetHeight(float x, float y)

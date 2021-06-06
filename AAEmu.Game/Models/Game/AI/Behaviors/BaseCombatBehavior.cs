@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Linq;
+
 using AAEmu.Game.Models.Game.AI.Framework;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils;
+
 using static AAEmu.Game.Models.Game.Skills.SkillControllers.SkillController;
 
 namespace AAEmu.Game.Models.Game.AI.Behaviors
@@ -129,7 +131,9 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors
             {
                 _delayEnd = DateTime.UtcNow.AddSeconds(_nextTimeToDelay);
             }
-            catch (Exception e) { }
+            catch
+            {
+            }
         }
 
         // Check if can pick a new skill (delay, already casting)

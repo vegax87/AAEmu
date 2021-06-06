@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
-using AAEmu.Game.Core.Packets.G2C;
+
 using NLog;
+
 using InstanceWorld = AAEmu.Game.Models.Game.World.World;
-using AAEmu.Game.Models.Game.Housing;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using AAEmu.Game.Models.Game.Gimmicks;
-using AAEmu.Game.Models.Game.Shipyard;
 
 namespace AAEmu.Game.Core.Managers.World
 {
@@ -70,9 +70,9 @@ namespace AAEmu.Game.Core.Managers.World
             var sw = new Stopwatch();
             sw.Start();
             var activeRegions = new HashSet<Region>();
-            foreach(var world in _worlds.Values)
+            foreach (var world in _worlds.Values)
             {
-                foreach(var region in world.Regions)
+                foreach (var region in world.Regions)
                 {
                     if (region == null)
                         continue;
@@ -81,7 +81,7 @@ namespace AAEmu.Game.Core.Managers.World
                     //region.HasPlayerActivity = false;
                     if (!region.IsEmpty())
                     {
-                        foreach(var activeRegion in region.GetNeighbors())
+                        foreach (var activeRegion in region.GetNeighbors())
                         {
                             //activeRegion.HasPlayerActivity = true;
                             activeRegions.Add(activeRegion);
@@ -379,7 +379,7 @@ namespace AAEmu.Game.Core.Managers.World
         public Character GetTargetOrSelf(Character character, string TargetName, out int FirstNonNameArgument)
         {
             FirstNonNameArgument = 0;
-            if ((TargetName != null) && (TargetName != string.Empty))
+            if (TargetName != null && TargetName != string.Empty)
             {
                 var player = WorldManager.Instance.GetCharacter(TargetName);
                 if (player != null)
@@ -388,7 +388,7 @@ namespace AAEmu.Game.Core.Managers.World
                     return player;
                 }
             }
-            if ((character.CurrentTarget != null) && (character.CurrentTarget is Character))
+            if (character.CurrentTarget != null && character.CurrentTarget is Character)
                 return (Character)character.CurrentTarget;
             return character;
         }
@@ -575,17 +575,17 @@ namespace AAEmu.Game.Core.Managers.World
         {
             if (shape.Value1 == 0 && shape.Value2 == 0 && shape.Value3 == 0)
                 _log.Warn("AreaShape with no size values was used");
-            if(shape.Type == AreaShapeType.Sphere)
+            if (shape.Type == AreaShapeType.Sphere)
             {
                 var radius = shape.Value1;
                 var height = shape.Value2;
                 return GetAround<T>(obj, radius, true);
             }
 
-            if(shape.Type == AreaShapeType.Cuboid)
+            if (shape.Type == AreaShapeType.Cuboid)
             {
                 var diagonal = Math.Sqrt(shape.Value1 * shape.Value1 + shape.Value2 * shape.Value2);
-                var res = GetAround<T>(obj, (float) diagonal, true);
+                var res = GetAround<T>(obj, (float)diagonal, true);
                 res = shape.ComputeCuboid(obj, res);
                 return res;
             }
@@ -613,10 +613,10 @@ namespace AAEmu.Game.Core.Managers.World
         [Obsolete("Please use ChatManager.Instance.GetNationChat(race).SendPacker(packet) instead.")]
         public void BroadcastPacketToNation(GamePacket packet, Race race)
         {
-            var mRace = (((byte)race - 1) & 0xFC); // some bit magic that makes raceId into some kind of birth continent id
+            var mRace = ((byte)race - 1) & 0xFC; // some bit magic that makes raceId into some kind of birth continent id
             foreach (var character in _characters.Values)
             {
-                var cmRace = (((byte)character.Race - 1) & 0xFC);
+                var cmRace = ((byte)character.Race - 1) & 0xFC;
                 if (mRace != cmRace)
                     continue;
                 character.SendPacket(packet);
@@ -707,10 +707,10 @@ namespace AAEmu.Game.Core.Managers.World
             }
 
             var doodads = WorldManager.Instance.GetAround<Doodad>(character, 1000f).ToArray();
-            for (var i = 0; i < doodads.Length; i += 30)
+            for (var i = 0; i < doodads.Length; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
             {
                 var count = doodads.Length - i;
-                var temp = new Doodad[count <= 30 ? count : 30];
+                var temp = new Doodad[count <= SCDoodadsCreatedPacket.MaxCountPerPacket ? count : SCDoodadsCreatedPacket.MaxCountPerPacket];
                 Array.Copy(doodads, i, temp, 0, temp.Length);
                 character.SendPacket(new SCDoodadsCreatedPacket(temp));
             }
@@ -719,6 +719,11 @@ namespace AAEmu.Game.Core.Managers.World
         public List<Character> GetAllCharacters()
         {
             return _characters.Values.ToList();
+        }
+
+        public List<Npc> GetAllNpcs()
+        {
+            return _npcs.Values.ToList();
         }
 
         public AreaShape GetAreaShapeById(uint id)

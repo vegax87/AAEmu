@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using AAEmu.Commons.Network;
@@ -286,7 +285,6 @@ namespace AAEmu.Game.Core.Packets.G2C
                     var meleeAttackWithOtherSkill = new List<NpcSkill>(); // BaseSkillId for all NPC
                     meleeAttackWithOtherSkill.Add(new NpcSkill { SkillId = (uint)npc.Template.BaseSkillId });
 
-                    var once = true;
                     if (learnedSkillCount == 1)
                     {
                         stream.WritePisc(npc.Template.BaseSkillId); // BaseSkillId for all NPC
@@ -297,55 +295,40 @@ namespace AAEmu.Game.Core.Packets.G2C
                         skills.AddRange(meleeAttackWithOtherSkill);
                         foreach (var lns in npc.Template.Skills.Values)
                         {
-                                skills.AddRange(lns);
+                            skills.AddRange(lns);
                         }
+                        var hcount = skills.Count;
+                        var index = 0;
+                        var pcount = 4;
+                        do
+                        {
+                            if (hcount < 4)
+                                pcount = hcount;
 
-                        //foreach (var sl in npc.Template.Skills.Values)
-                        //{
-                        //    var skills = new List<NpcSkill>();
-                        //    if (once)
-                        //    {
-                        //        skills.AddRange(meleeAttackWithOtherSkill);
-                        //        skills.AddRange(sl);
-                        //        once = false;
-                        //    }
-                        //    else
-                        //    {
-                        //        skills.AddRange(sl);
-                        //    }
-
-                            var hcount = skills.Count;
-                            var index = 0;
-                            var pcount = 4;
-                            do
+                            switch (pcount)
                             {
-                                if (hcount < 4)
-                                    pcount = hcount;
+                                case 1:
+                                    stream.WritePisc(skills[index].SkillId);
+                                    index += 1;
+                                    break;
+                                case 2:
+                                    stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId);
+                                    index += 2;
+                                    break;
+                                case 3:
+                                    stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId,
+                                        skills[index + 2].SkillId);
+                                    index += 3;
+                                    break;
+                                case 4:
+                                    stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId,
+                                        skills[index + 2].SkillId, skills[index + 3].SkillId);
+                                    index += 4;
+                                    break;
+                            }
 
-                                switch (pcount)
-                                {
-                                    case 1:
-                                        stream.WritePisc(skills[index].SkillId);
-                                        index += 1;
-                                        break;
-                                    case 2:
-                                        stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId);
-                                        index += 2;
-                                        break;
-                                    case 3:
-                                        stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId,
-                                            skills[index + 2].SkillId);
-                                        index += 3;
-                                        break;
-                                    case 4:
-                                        stream.WritePisc(skills[index].SkillId, skills[index + 1].SkillId,
-                                            skills[index + 2].SkillId, skills[index + 3].SkillId);
-                                        index += 4;
-                                        break;
-                                }
-
-                                hcount -= pcount;
-                            } while (hcount > 0);
+                            hcount -= pcount;
+                        } while (hcount > 0);
                         //}
                     }
                     var hcount2 = passiveBuffCount;

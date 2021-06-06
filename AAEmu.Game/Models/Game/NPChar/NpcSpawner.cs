@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.World;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.NPChar
@@ -46,7 +48,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                 _log.Warn("Npc {0}, from spawn not exist at db", UnitId);
                 return null;
             }
-            
+
             npc.Spawner = this;
             npc.Position = Position.Clone();
             if (npc.Position == null)
@@ -88,7 +90,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         {
             _spawnCount--;
             _spawned.Remove(npc);
-            if (RespawnTime > 0 && (_spawnCount + _scheduledCount) < Count)
+            if (RespawnTime > 0 && _spawnCount + _scheduledCount < Count)
             {
                 npc.Respawn = DateTime.Now.AddSeconds(RespawnTime);
                 SpawnManager.Instance.AddRespawn(npc);

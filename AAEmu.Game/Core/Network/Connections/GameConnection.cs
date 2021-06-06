@@ -26,7 +26,7 @@ namespace AAEmu.Game.Core.Network.Connections
     {
         private Session _session;
 
-        public uint Id => _session.Id;
+        public uint Id => _session.SessionId;
         public ulong AccountId { get; set; }
         public IPAddress Ip => _session.Ip;
         public PacketStream LastPacket { get; set; }
@@ -40,7 +40,7 @@ namespace AAEmu.Game.Core.Network.Connections
         public Character ActiveChar { get; set; }
         public readonly Dictionary<uint, Character> Characters;
         public Dictionary<uint, House> Houses;
-        public object Lock  { get; set; }
+        public object Lock { get; set; }
 
         public Task LeaveTask { get; set; }
         public DateTime LastPing { get; set; }
@@ -131,7 +131,7 @@ namespace AAEmu.Game.Core.Network.Connections
                         continue; // TODO ...
 
                     // Mark characters marked for deletion as deleted after their time is finished
-                    if ((character.DeleteTime > DateTime.MinValue) && (character.DeleteTime < DateTime.Now))
+                    if (character.DeleteTime > DateTime.MinValue && character.DeleteTime < DateTime.Now)
                     {
                         // Console.WriteLine("\n---\nWe need to delete: {0} - {1}\n---\n", character.Id, character.Name);
                         using (var command = connection.CreateCommand())

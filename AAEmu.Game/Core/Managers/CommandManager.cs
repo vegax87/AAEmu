@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
@@ -11,7 +12,7 @@ namespace AAEmu.Game.Core.Managers
 {
     public class CommandManager : Singleton<CommandManager>
     {
-        public const string CommandPrefix = "/" ;
+        public const string CommandPrefix = "/";
 
         private Dictionary<string, ICommand> _commands;
         private Dictionary<string, string> _commandAliases;
@@ -84,7 +85,7 @@ namespace AAEmu.Game.Core.Managers
 
             // Only enable the force_scripts_reload when we don't have anything loaded, this is simply a failsafe function in case
             // things aren't working out when live-editing scripts
-            if ((thisCommand == "force_scripts_reload") && (_commands.Count <= 0))
+            if (thisCommand == "force_scripts_reload" && _commands.Count <= 0)
             {
                 ForceScriptsReload(character);
                 return true;
@@ -100,7 +101,7 @@ namespace AAEmu.Game.Core.Managers
             if (command == null)
             {
                 _commandAliases.TryGetValue(thisCommand, out var alias);
-                if ((alias != null) && (alias != string.Empty))
+                if (alias != null && alias != string.Empty)
                 {
                     _commands.TryGetValue(alias, out command);
                     thisCommand = alias;

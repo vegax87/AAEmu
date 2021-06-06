@@ -108,7 +108,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
 
         private List<AiSkillList> RequestAvailableSkillList(float trgDist)
         {
-            int healthRatio = (int)(((float)Ai.Owner.Hp / Ai.Owner.MaxHp) * 100);
+            int healthRatio = (int)((float)Ai.Owner.Hp / Ai.Owner.MaxHp * 100);
 
             var baseList = _aiParams.AiSkillLists.AsEnumerable();
             var timeElapsed = (DateTime.UtcNow - _combatStartTime).TotalSeconds;
@@ -120,13 +120,13 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
                 return s.Skills.All(skill =>
                 {
                     var template = SkillManager.Instance.GetSkillTemplate(skill.SkillId);
-                    return (template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self));
+                    return template != null && (trgDist >= template.MinRange && trgDist <= template.MaxRange || template.TargetType == SkillTargetType.Self);
                 });
             });
 
-            baseList = baseList.Where(s => ((s.TimeRangeStart >= 0 && s.TimeRangeEnd > 0) || (s.TimeRangeStart > 0 && s.TimeRangeEnd >= 0)) // (0, x) or (x, 0), conditions for skils to be eligible for timerange
-                                            && ((s.TimeRangeStart <= timeElapsed && timeElapsed <= s.TimeRangeEnd) || // (timeStart <= x >= timeEnd) => (x, x), (0, x)
-                                                (s.TimeRangeStart <= timeElapsed && s.TimeRangeEnd == 0)));  // timeStart <= x && timeEnd == 0 => (x, 0)
+            baseList = baseList.Where(s => (s.TimeRangeStart >= 0 && s.TimeRangeEnd > 0 || s.TimeRangeStart > 0 && s.TimeRangeEnd >= 0) // (0, x) or (x, 0), conditions for skils to be eligible for timerange
+                                            && (s.TimeRangeStart <= timeElapsed && timeElapsed <= s.TimeRangeEnd || // (timeStart <= x >= timeEnd) => (x, x), (0, x)
+                                                s.TimeRangeStart <= timeElapsed && s.TimeRangeEnd == 0));  // timeStart <= x && timeEnd == 0 => (x, 0)
             var test2 = baseList.ToList();
             return baseList.ToList();
         }

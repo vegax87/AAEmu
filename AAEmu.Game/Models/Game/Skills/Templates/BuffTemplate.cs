@@ -187,7 +187,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                     var template = source.Skill.Template;
                     var abilityLevel = character.GetAbLevel((AbilityType)source.Skill.Template.AbilityId);
                     if (template.LevelStep != 0)
-                        abLevel = (ushort)((abilityLevel / template.LevelStep) * template.LevelStep);
+                        abLevel = (ushort)(abilityLevel / template.LevelStep * template.LevelStep);
                     else
                         abLevel = (ushort)template.AbilityLevel;
 
@@ -215,7 +215,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
             {
                 var bonus = new Bonus();
                 bonus.Template = template;
-                bonus.Value = (int)Math.Round(template.Value + (template.LinearLevelBonus * (buff.AbLevel / 100f)));
+                bonus.Value = (int)Math.Round(template.Value + template.LinearLevelBonus * (buff.AbLevel / 100f));
                 owner.AddBonus(buff.Index, bonus);
             }
 
@@ -313,7 +313,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
 
         public int GetDuration(uint abLevel)
         {
-            return Math.Max(0, (LevelDuration * (int)abLevel) + Duration);
+            return Math.Max(0, LevelDuration * (int)abLevel + Duration);
         }
 
         public double GetTick()

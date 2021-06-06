@@ -90,7 +90,7 @@ namespace AAEmu.Game.Models.Game.Char
             // Place loaded items list in correct containers
             foreach (var item in playeritems)
             {
-                if ((item.SlotType != SlotType.None) && (_itemContainers.TryGetValue(item.SlotType, out var container)))
+                if (item.SlotType != SlotType.None && _itemContainers.TryGetValue(item.SlotType, out var container))
                 {
                     if (!container.AddOrMoveExistingItem(ItemTaskType.Invalid, item, item.Slot))
                     {
@@ -161,7 +161,7 @@ namespace AAEmu.Game.Models.Game.Char
                 if (c.GetAllItemsByTemplate(templateId, -1, out _, out var itemCount))
                     totalCount += itemCount;
             }
-            return (totalCount >= count);
+            return totalCount >= count;
         }
 
         public int GetItemsCount(uint templateId, int gradeToCount = -1)
@@ -194,7 +194,7 @@ namespace AAEmu.Game.Models.Game.Char
             var res = false;
             foundItems = new List<Item>();
             unitsOfItemFound = 0;
-            if ((inContainerTypes == null) || (inContainerTypes.Length <= 0))
+            if (inContainerTypes == null || inContainerTypes.Length <= 0)
             {
                 inContainerTypes = new SlotType[3] { SlotType.Inventory, SlotType.Equipment, SlotType.Bank };
             }
@@ -227,7 +227,7 @@ namespace AAEmu.Game.Models.Game.Char
                 fromSlot, toItemId, toType, toSlot, count);
             _log.Trace(info);
             var fromItem = GetItemById(fromItemId);
-            if ((fromItem == null) && (fromItemId != 0))
+            if (fromItem == null && fromItemId != 0)
             {
                 _log.Error(string.Format("SplitOrMoveItem - ItemId {0} no longer exists, possibly a phantom item.",
                     fromItemId));
@@ -236,7 +236,7 @@ namespace AAEmu.Game.Models.Game.Char
 
             var itemInTargetSlot = GetItemById(toItemId);
             var action = SwapAction.doNothing;
-            if ((count <= 0) && (fromItem != null))
+            if (count <= 0 && fromItem != null)
                 count = fromItem.Count;
 
             // Grab target container for easy manipulation
@@ -251,33 +251,33 @@ namespace AAEmu.Game.Models.Game.Char
                 itemInTargetSlot = targetContainer.GetItemBySlot(toSlot);
 
             // Are we equipping into a empty slot ? For whatever reason the client will send FROM empty equipment slot => TO item to equip
-            if ((fromItemId == 0) && (fromType == SlotType.Equipment) && (toType != SlotType.Equipment) &&
-                (itemInTargetSlot != null))
+            if (fromItemId == 0 && fromType == SlotType.Equipment && toType != SlotType.Equipment &&
+                itemInTargetSlot != null)
             {
                 action = SwapAction.doEquipInEmptySlot;
                 sourceContainer = Equipment;
             }
 
             // Check some conditions when we are not equipping into a empty slot
-            if ((action != SwapAction.doEquipInEmptySlot) && (fromItem == null))
+            if (action != SwapAction.doEquipInEmptySlot && fromItem == null)
             {
                 _log.Error("SplitOrMoveItem didn't provide a source itemId");
                 return false;
             }
 
-            if ((action != SwapAction.doEquipInEmptySlot) && (fromItem?._holdingContainer?.ContainerType != fromType))
+            if (action != SwapAction.doEquipInEmptySlot && fromItem?._holdingContainer?.ContainerType != fromType)
             {
                 _log.Error("SplitOrMoveItem Source Item Container did not match what the client asked");
                 return false;
             }
 
-            if ((action != SwapAction.doEquipInEmptySlot) && (fromItem.Slot != fromSlot))
+            if (action != SwapAction.doEquipInEmptySlot && fromItem.Slot != fromSlot)
             {
                 _log.Error("SplitOrMoveItem Source Item slot did not match what the client asked");
                 return false;
             }
 
-            if ((action != SwapAction.doEquipInEmptySlot) && (count > fromItem.Count))
+            if (action != SwapAction.doEquipInEmptySlot && count > fromItem.Count)
             {
                 _log.Error("SplitOrMoveItem Source Item has less item count than is requested to be moved");
                 return false;
@@ -298,8 +298,8 @@ namespace AAEmu.Game.Models.Game.Char
                     return false;
                 }
 
-                if ((action != SwapAction.doEquipInEmptySlot) && (itemInTargetSlot.TemplateId == fromItem.TemplateId) &&
-                    (itemInTargetSlot.Count + count > fromItem.Template.MaxCount) && (fromItem.Template.MaxCount > 1))
+                if (action != SwapAction.doEquipInEmptySlot && itemInTargetSlot.TemplateId == fromItem.TemplateId &&
+                    itemInTargetSlot.Count + count > fromItem.Template.MaxCount && fromItem.Template.MaxCount > 1)
                 {
                     _log.Error("SplitOrMoveItem Target Item stack does not have enough room to take source");
                     return false;
@@ -309,11 +309,11 @@ namespace AAEmu.Game.Models.Game.Char
             // Decide what type of thing we need to do
             if (action != SwapAction.doEquipInEmptySlot)
             {
-                if ((itemInTargetSlot == null) && (fromItem.Count > count))
+                if (itemInTargetSlot == null && fromItem.Count > count)
                     action = SwapAction.doSplit;
-                else if ((itemInTargetSlot == null) && (fromItem.Count == count))
+                else if (itemInTargetSlot == null && fromItem.Count == count)
                     action = SwapAction.doMoveAllToEmpty;
-                else if ((itemInTargetSlot != null) && (itemInTargetSlot.TemplateId == fromItem.TemplateId) && (itemInTargetSlot.Template.MaxCount > 1))
+                else if (itemInTargetSlot != null && itemInTargetSlot.TemplateId == fromItem.TemplateId && itemInTargetSlot.Template.MaxCount > 1)
                     action = SwapAction.doMerge;
                 else
                     action = SwapAction.doSwap;
@@ -324,14 +324,14 @@ namespace AAEmu.Game.Models.Game.Char
             Item mainHandWeapon = null;
             Item offHandWeapon = null;
 
-            if ((action == SwapAction.doSwap) || (action == SwapAction.doEquipInEmptySlot))
+            if (action == SwapAction.doSwap || action == SwapAction.doEquipInEmptySlot)
             {
                 mainHandWeapon = Equipment.GetItemBySlot((int)EquipmentItemSlot.Mainhand);
                 offHandWeapon = Equipment.GetItemBySlot((int)EquipmentItemSlot.Offhand);
                 // Check for equipping weapons by swapping (and if it's a 2-handed one)
-                var isFromNon2HWeapon = false;
+                //var isFromNon2HWeapon = false;
                 var isFrom2H = false;
-                if ((fromItem != null) && (fromItem.Template is WeaponTemplate weaponFrom))
+                if (fromItem != null && fromItem.Template is WeaponTemplate weaponFrom)
                 {
                     switch ((EquipmentItemSlotType)weaponFrom.HoldableTemplate.SlotTypeId)
                     {
@@ -342,16 +342,16 @@ namespace AAEmu.Game.Models.Game.Char
                         case EquipmentItemSlotType.Offhand:
                         case EquipmentItemSlotType.Shield:
                         case EquipmentItemSlotType.OneHanded:
-                            isFromNon2HWeapon = true;
+                            //isFromNon2HWeapon = true;
                             break;
                         default:
                             break;
                     }
                 }
 
-                var isToNon2HWeapon = false;
+                //var isToNon2HWeapon = false;
                 var isTo2H = false;
-                if ((itemInTargetSlot != null) && (itemInTargetSlot.Template is WeaponTemplate weaponTo))
+                if (itemInTargetSlot != null && itemInTargetSlot.Template is WeaponTemplate weaponTo)
                 {
                     switch ((EquipmentItemSlotType)weaponTo.HoldableTemplate.SlotTypeId)
                     {
@@ -362,7 +362,7 @@ namespace AAEmu.Game.Models.Game.Char
                         case EquipmentItemSlotType.Offhand:
                         case EquipmentItemSlotType.Shield:
                         case EquipmentItemSlotType.OneHanded:
-                            isToNon2HWeapon = true;
+                            //isToNon2HWeapon = true;
                             break;
                         default:
                             break;
@@ -370,7 +370,7 @@ namespace AAEmu.Game.Models.Game.Char
                 }
 
                 var isMain2H = false;
-                if ((mainHandWeapon != null) && (mainHandWeapon.Template is WeaponTemplate mainWeapon))
+                if (mainHandWeapon != null && mainHandWeapon.Template is WeaponTemplate mainWeapon)
                 {
                     switch ((EquipmentItemSlotType)mainWeapon.HoldableTemplate.SlotTypeId)
                     {
@@ -390,20 +390,20 @@ namespace AAEmu.Game.Models.Game.Char
                     }
                 }
 
-                if (isTo2H && (sourceContainer.ContainerType == SlotType.Equipment) && (fromSlot == (int)EquipmentItemSlot.Mainhand))
+                if (isTo2H && sourceContainer.ContainerType == SlotType.Equipment && fromSlot == (int)EquipmentItemSlot.Mainhand)
                     doUnEquipOffhand = true;
-                if (isMain2H && (sourceContainer.ContainerType == SlotType.Equipment) && (fromSlot == (int)EquipmentItemSlot.Offhand))
+                if (isMain2H && sourceContainer.ContainerType == SlotType.Equipment && fromSlot == (int)EquipmentItemSlot.Offhand)
                     doUnEquipMainhand = true;
 
                 // Client actually always sends from equipment => inventory no matter how you click it, this is just a safety if it ever changes
-                if (isFrom2H && (targetContainer.ContainerType == SlotType.Equipment) && (toSlot == (int)EquipmentItemSlot.Mainhand))
+                if (isFrom2H && targetContainer.ContainerType == SlotType.Equipment && toSlot == (int)EquipmentItemSlot.Mainhand)
                     doUnEquipOffhand = true;
-                if (isMain2H && (targetContainer.ContainerType == SlotType.Equipment) && (toSlot == (int)EquipmentItemSlot.Offhand))
+                if (isMain2H && targetContainer.ContainerType == SlotType.Equipment && toSlot == (int)EquipmentItemSlot.Offhand)
                     doUnEquipMainhand = true;
 
             }
 
-            if ((doUnEquipOffhand) && (offHandWeapon != null))
+            if (doUnEquipOffhand && offHandWeapon != null)
             {
                 //_log.Trace("SplitOrMoveItem - UnEquip OffHand required!");
                 // Check if we have enough space to unequip the offhand
@@ -414,7 +414,7 @@ namespace AAEmu.Game.Models.Game.Char
                     return false;
             }
 
-            if ((doUnEquipMainhand) && (mainHandWeapon != null))
+            if (doUnEquipMainhand && mainHandWeapon != null)
             {
                 //_log.Trace("SplitOrMoveItem - UnEquip MainHand required!");
                 // Check if we have enough space to unequip the mainhand
@@ -538,7 +538,7 @@ namespace AAEmu.Game.Models.Game.Char
             if (targetContainer != sourceContainer)
                 targetContainer.ApplyBindRules(taskType);
 
-            return (itemTasks.Count > 0);
+            return itemTasks.Count > 0;
         }
 
 
@@ -548,7 +548,7 @@ namespace AAEmu.Game.Models.Game.Char
             if (backpack == null) return true;
 
             // Check glider if needed
-            if ((glidersOnly) && (backpack.Template is BackpackTemplate bt) && (bt.BackpackType != BackpackType.Glider))
+            if (glidersOnly && backpack.Template is BackpackTemplate bt && bt.BackpackType != BackpackType.Glider)
                 return false;
 
             // Move to first available slot
@@ -575,11 +575,11 @@ namespace AAEmu.Game.Models.Game.Char
         {
             foreach (var c in _itemContainers)
             {
-                if ((c.Key == SlotType.Equipment) || (c.Key == SlotType.Inventory) || (c.Key == SlotType.Bank))
+                if (c.Key == SlotType.Equipment || c.Key == SlotType.Inventory || c.Key == SlotType.Bank)
                 {
                     foreach (var i in c.Value.Items)
                     {
-                        if ((i != null) && (i.Id == id))
+                        if (i != null && i.Id == id)
                             return i;
                     }
                 }
@@ -633,12 +633,12 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var tempItem = new Item[10];
 
-            if ((numItems % 10) != 0)
+            if (numItems % 10 != 0)
                 _log.Warn("SendFragmentedInventory: Inventory Size not a multiple of 10 ({0})", numItems);
             if (bag.Length != numItems)
                 _log.Warn("SendFragmentedInventory: Inventory Size Mismatch; expected {0} got {1}", numItems, bag.Length);
 
-            for (byte chunk = 0; chunk < (numItems / 10); chunk++)
+            for (byte chunk = 0; chunk < numItems / 10; chunk++)
             {
                 Array.Copy(bag, chunk * 10, tempItem, 0, 10);
                 Owner.SendPacket(new SCCharacterInvenContentsPacket(slotType, 1, chunk, tempItem));
@@ -708,7 +708,7 @@ namespace AAEmu.Game.Models.Game.Char
         public void OnAcquiredItem(Item item, int count, bool onlyUpdatedCount = false)
         {
             // Quests
-            if ((item?.Template.LootQuestId > 0) && (count != 0))
+            if (item?.Template.LootQuestId > 0 && count != 0)
                 Owner?.Quests?.OnItemGather(item, count);
         }
 
@@ -721,7 +721,7 @@ namespace AAEmu.Game.Models.Game.Char
         public void OnConsumedItem(Item item, int count, bool onlyUpdatedCount = false)
         {
             // Quests
-            if ((item?.Template.LootQuestId > 0) && (count != 0))
+            if (item?.Template.LootQuestId > 0 && count != 0)
                 Owner?.Quests?.OnItemGather(item, -count);
         }
 

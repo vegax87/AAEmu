@@ -1,9 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Text;
+
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Login.Core.Network.Connections;
+
 using NLog;
 
 namespace AAEmu.Login.Core.Network.Login
@@ -21,7 +23,7 @@ namespace AAEmu.Login.Core.Network.Login
 
         public override void OnConnect(Session session)
         {
-            _log.Info("Connect from {0} established, session id: {1}", session.Ip.ToString(), session.Id.ToString());
+            _log.Info("Connect from {0} established, session id: {1}", session.Ip.ToString(), session.SessionId.ToString());
             try
             {
                 var con = new LoginConnection(session);
@@ -39,9 +41,9 @@ namespace AAEmu.Login.Core.Network.Login
         {
             try
             {
-                var con = LoginConnectionTable.Instance.GetConnection(session.Id);
+                var con = LoginConnectionTable.Instance.GetConnection(session.SessionId);
                 if (con != null)
-                    LoginConnectionTable.Instance.RemoveConnection(session.Id);
+                    LoginConnectionTable.Instance.RemoveConnection(session.SessionId);
             }
             catch (Exception e)
             {
@@ -56,7 +58,7 @@ namespace AAEmu.Login.Core.Network.Login
         {
             try
             {
-                var connection = LoginConnectionTable.Instance.GetConnection(session.Id);
+                var connection = LoginConnectionTable.Instance.GetConnection(session.SessionId);
                 if (connection == null)
                     return;
                 OnReceive(connection, buf, bytes);
@@ -120,7 +122,7 @@ namespace AAEmu.Login.Core.Network.Login
                         }
                         else
                         {
-                            var packet = (LoginPacket) Activator.CreateInstance(classType);
+                            var packet = (LoginPacket)Activator.CreateInstance(classType);
                             packet.Connection = connection;
                             packet.Decode(stream2);
                         }
@@ -153,7 +155,7 @@ namespace AAEmu.Login.Core.Network.Login
             var dump = new StringBuilder();
             for (var i = stream.Pos; i < stream.Count; i++)
                 dump.AppendFormat("{0:x2} ", stream.Buffer[i]);
-            _log.Error("Unknown packet 0x{0:x2} from {1}:\n{2}", (object) type, (object) connection.Ip, (object) dump);
+            _log.Error("Unknown packet 0x{0:x2} from {1}:\n{2}", (object)type, (object)connection.Ip, (object)dump);
         }
     }
 }

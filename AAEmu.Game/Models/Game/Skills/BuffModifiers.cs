@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Skills.Static;
@@ -35,7 +36,7 @@ namespace AAEmu.Game.Models.Game.Skills
                 switch (modifier.UnitModifierType)
                 {
                     case UnitModifierType.Percent:
-                        endValue += (endValue * (modifier.Value / 100.0f));
+                        endValue += endValue * (modifier.Value / 100.0f);
                         break;
                     case UnitModifierType.Value:
                         endValue += modifier.Value;

@@ -625,7 +625,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             // Skip this char in the list if it's read to be deleted
                             var deleteTime = reader.GetDateTime("delete_time");
-                            if ((deleteTime > DateTime.MinValue) && (deleteTime < DateTime.Now))
+                            if (deleteTime > DateTime.MinValue && deleteTime < DateTime.Now)
                                 continue;
 
                             var character = new LoginCharacterInfo();

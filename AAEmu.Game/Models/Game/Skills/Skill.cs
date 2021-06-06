@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
@@ -20,7 +18,6 @@ using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.Effects.Enums;
-using AAEmu.Game.Models.Game.Skills.Plots;
 using AAEmu.Game.Models.Game.Skills.Plots.Tree;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Skills.Static;
@@ -64,7 +61,7 @@ namespace AAEmu.Game.Models.Game.Skills
             Id = template.Id;
             Template = template;
             if (owner != null)
-                Level = (template.LevelStep > 0 ? (byte)(((owner.GetAbLevel((AbilityType)template.AbilityId) - (template.AbilityLevel)) / template.LevelStep) + 1) : (byte)1);
+                Level = template.LevelStep > 0 ? (byte)((owner.GetAbLevel((AbilityType)template.AbilityId) - template.AbilityLevel) / template.LevelStep + 1) : (byte)1;
             else
                 Level = 1;
         }
@@ -178,7 +175,7 @@ namespace AAEmu.Game.Models.Game.Skills
         {
             var target = (BaseUnit)caster;
             // HACKFIX : Mounts and Turbulence
-            if (skillCaster.Type == SkillCasterType.Unk3 || ((caster == null) && (skillCaster.Type == SkillCasterType.Unit)))
+            if (skillCaster.Type == SkillCasterType.Unk3 || caster == null && skillCaster.Type == SkillCasterType.Unit)
                 target = WorldManager.Instance.GetUnit(skillCaster.ObjId);
 
             if (Template.TargetType == SkillTargetType.Self)
@@ -399,8 +396,8 @@ namespace AAEmu.Game.Models.Game.Skills
                             return; //Failed to consume?
                     }
                 }
-            }     
-            
+            }
+
             if (Template.ChannelingTime > 0)
             {
                 StartChanneling(caster, casterCaster, target, targetCaster, skillObject);
@@ -479,7 +476,7 @@ namespace AAEmu.Game.Models.Game.Skills
             if (Template.EffectDelay > 0)
                 totalDelay += Template.EffectDelay;
             if (Template.EffectSpeed > 0)
-                totalDelay += (int)((caster.GetDistanceTo(target) / Template.EffectSpeed) * 1000.0f);
+                totalDelay += (int)(caster.GetDistanceTo(target) / Template.EffectSpeed * 1000.0f);
             if (Template.FireAnim != null && Template.UseAnimTime)
                 totalDelay += (int)(Template.FireAnim.CombatSyncTime * (caster.GlobalCooldownMul / 100));
 
@@ -576,7 +573,7 @@ namespace AAEmu.Game.Models.Game.Skills
 
                     if (!effect.Friendly && effect.NonFriendly && relationState != RelationState.Hostile)
                     {
-                        if ((relationState == RelationState.Friendly && !caster.ForceAttack) || caster.ObjId == target.ObjId)
+                        if (relationState == RelationState.Friendly && !caster.ForceAttack || caster.ObjId == target.ObjId)
                         {
                             continue;
                         }
@@ -624,7 +621,7 @@ namespace AAEmu.Game.Models.Game.Skills
                             player.Inventory.Bag.ConsumeItem(ItemTaskType.SkillReagents, castItem.ItemTemplateId, effect.ConsumeItemCount, null);
 
                         var castItemTemplate = ItemManager.Instance.GetTemplate(castItem.ItemTemplateId);
-                        if ((castItemTemplate.UseSkillAsReagent) && player != null)
+                        if (castItemTemplate.UseSkillAsReagent && player != null)
                             player.Inventory.Bag.ConsumeItem(ItemTaskType.SkillReagents, castItemTemplate.Id, effect.ConsumeItemCount, null);
                     }
 
@@ -749,7 +746,7 @@ namespace AAEmu.Game.Models.Game.Skills
             //  -Check for AlwaysHit?
             //  -Only Parry if sword equipped?
             var damageType = (DamageType)Template.DamageTypeId;
-            var bullsEyeMod = (((attacker.BullsEye / 1000f) * 3f) / 100f);
+            var bullsEyeMod = attacker.BullsEye / 1000f * 3f / 100f;
 
             //TODO Check immmunity a better way!!!
             //if (target.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId(361)))
@@ -759,21 +756,21 @@ namespace AAEmu.Game.Models.Game.Skills
             if (!MathUtil.IsFront(attacker, target))
                 goto AlwaysHit;
 
-            if (Rand.Next(0f, 100f) < (target.DodgeRate - bullsEyeMod))
+            if (Rand.Next(0f, 100f) < target.DodgeRate - bullsEyeMod)
             {
                 if (damageType == DamageType.Melee)
                     return SkillHitType.MeleeDodge;
                 else if (damageType == DamageType.Ranged)
                     return SkillHitType.RangedDodge;
             }
-            if (Rand.Next(0f, 100f) < (target.BlockRate - bullsEyeMod))
+            if (Rand.Next(0f, 100f) < target.BlockRate - bullsEyeMod)
             {
                 if (damageType == DamageType.Melee)
                     return SkillHitType.MeleeBlock;
                 else if (damageType == DamageType.Ranged)
                     return SkillHitType.RangedBlock;
             }
-            if (Rand.Next(0F, 100f) < (target.MeleeParryRate - bullsEyeMod))
+            if (Rand.Next(0F, 100f) < target.MeleeParryRate - bullsEyeMod)
             {
                 if (damageType == DamageType.Melee)
                     return SkillHitType.MeleeParry;
@@ -784,7 +781,7 @@ namespace AAEmu.Game.Models.Game.Skills
                     return SkillHitType.MeleeParry;
                 }
             }
-            if (Rand.Next(0f, 100f) < (target.RangedParryRate - bullsEyeMod))
+            if (Rand.Next(0f, 100f) < target.RangedParryRate - bullsEyeMod)
             {
                 if (damageType == DamageType.Ranged)
                     return SkillHitType.RangedParry;
@@ -835,7 +832,7 @@ AlwaysHit:
 
         public void ConsumeMana(Unit caster)
         {
-            var baseCost = (((caster.GetAbLevel((AbilityType)Template.AbilityId) - 1) * 1.6 + 8) * 3) / 3.65;
+            var baseCost = ((caster.GetAbLevel((AbilityType)Template.AbilityId) - 1) * 1.6 + 8) * 3 / 3.65;
             var cost2 = baseCost * Template.ManaLevelMd + Template.ManaCost;
             var manaCost = (int)caster.SkillModifiersCache.ApplyModifiers(this, SkillAttribute.ManaCost, cost2);
             caster.ReduceCurrentMp(null, manaCost);

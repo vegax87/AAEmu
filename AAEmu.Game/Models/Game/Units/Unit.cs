@@ -213,7 +213,7 @@ namespace AAEmu.Game.Models.Game.Units
             Cooldowns = new UnitCooldowns();
         }
 
-        public virtual void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
+        public override void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
         {
             var moved = !Position.X.Equals(x) || !Position.Y.Equals(y) || !Position.Z.Equals(z);
             if (moved)
@@ -429,7 +429,7 @@ namespace AAEmu.Game.Models.Game.Units
             foreach (var bonus in GetBonuses(attr))
             {
                 if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                    value += (value * bonus.Value / 100f);
+                    value += value * bonus.Value / 100f;
                 else
                     value += bonus.Value;
             }

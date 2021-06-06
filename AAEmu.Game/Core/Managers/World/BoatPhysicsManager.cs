@@ -86,7 +86,7 @@ namespace AAEmu.Game.Core.Managers.World
 
             var rigidBody = new RigidBody(new BoxShape(shipModel.MassBoxSizeX, shipModel.MassBoxSizeZ, shipModel.MassBoxSizeY))
             {
-                Position = new JVector(slave.Position.X - (shipModel.MassBoxSizeX / 2.0f), slave.Position.Z - (shipModel.MassBoxSizeZ / 2.0f), slave.Position.Y - (shipModel.MassBoxSizeY / 2.0f)),
+                Position = new JVector(slave.Position.X - shipModel.MassBoxSizeX / 2.0f, slave.Position.Z - shipModel.MassBoxSizeZ / 2.0f, slave.Position.Y - shipModel.MassBoxSizeY / 2.0f),
                 // Mass = shipModel.Mass
                 Orientation = JMatrix.CreateRotationY((float)((float)oriY * (Math.PI / 180.0f)))
             };
@@ -121,22 +121,22 @@ namespace AAEmu.Game.Core.Managers.World
             ComputeSteering(slave);
             slave.RigidBody.IsActive = true;
 
-            slave.Speed += (slave.Throttle * 0.00787401575f) * (velAccel / 20f);
+            slave.Speed += slave.Throttle * 0.00787401575f * (velAccel / 20f);
             slave.Speed = Math.Min(slave.Speed, maxVelForward);
             slave.Speed = Math.Max(slave.Speed, maxVelBackward);
 
-            slave.RotSpeed += (slave.Steering * 0.00787401575f) * (velAccel / 20f);
+            slave.RotSpeed += slave.Steering * 0.00787401575f * (velAccel / 20f);
             slave.RotSpeed = Math.Min(slave.RotSpeed, 1);
             slave.RotSpeed = Math.Max(slave.RotSpeed, -1);
 
             if (slave.Steering == 0)
-                slave.RotSpeed -= (slave.RotSpeed / 20);
+                slave.RotSpeed -= slave.RotSpeed / 20;
             if (slave.Throttle == 0) // this needs to be fixed : ships need to apply a static drag, and slowly ship away at the speed instead of doing it like this
-                slave.Speed -= (slave.Speed / 45);
+                slave.Speed -= slave.Speed / 45;
 
 
             var ypr = PhysicsUtil.GetYawPitchRollFromMatrix(rigidBody.Orientation);
-            var slaveRotRad = ypr.Item1 + (90 * (Math.PI / 180.0f));
+            var slaveRotRad = ypr.Item1 + 90 * (Math.PI / 180.0f);
 
             rigidBody.AddForce(new JVector(slave.Throttle * rigidBody.Mass * (float)Math.Cos(slaveRotRad), 0.0f, slave.Throttle * rigidBody.Mass * (float)Math.Sin(slaveRotRad)));
             rigidBody.AddTorque(new JVector(0, -slave.Steering * (rigidBody.Mass * 2), 0));

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Skills.Plots.Type;
@@ -10,6 +10,7 @@ using AAEmu.Game.Models.Game.Skills.Utils;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
@@ -45,7 +46,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
             UpdateSource(template, state);
             UpdateTargets(template, state);
         }
-        
+
         public void UpdateSource(PlotEventTemplate template, PlotState state)
         {
             switch ((PlotSourceUpdateMethodType)template.SourceUpdateMethodId)
@@ -113,14 +114,14 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
 
             float x, y;
             if (args.Distance != 0)
-                (x, y) = MathUtil.AddDistanceToFront((args.Distance / 1000.0f) - 0.01f, Target.Position.X, Target.Position.Y, rotZ);
+                (x, y) = MathUtil.AddDistanceToFront(args.Distance / 1000.0f - 0.01f, Target.Position.X, Target.Position.Y, rotZ);
             // We substract 0.1 here to help with floating point errors
             else
                 (x, y) = (Target.Position.X, Target.Position.Y);
 
             posUnit.Position.X = x;
             posUnit.Position.Y = y;
-            posUnit.Position.Z = Target.Position.Z + (args.HeightOffset / 1000f);
+            posUnit.Position.Z = Target.Position.Z + args.HeightOffset / 1000f;
             posUnit.Position.RotationZ = rotZ;
             // TODO use heightmap for Z coord 
 
@@ -128,13 +129,13 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
             {
                 _log.Warn("X:{0} Y:{1}   -----   {2},{3}", x, y, state.Caster.Position.X, state.Caster.Position.Y);
             }
-            
+
             if (args.MaxTargets == 0)
             {
                 EffectedTargets.Add(posUnit);
                 return posUnit;
             }
-            
+
             // posUnit.Position.Z = get heightmap value for x:y     
             //TODO: Get Targets around posUnit?
             var unitsInRange = FilterTargets(WorldManager.Instance.GetAroundByShape<Unit>(posUnit, args.Shape), state, args, plotEvent);
@@ -180,7 +181,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
             }
             else
             {
-                state.HitObjects.Add(plotEvent.Id, new List<GameObject>{ randomUnit });
+                state.HitObjects.Add(plotEvent.Id, new List<GameObject> { randomUnit });
             }
 
             return randomUnit;
@@ -210,7 +211,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
 
             posUnit.Position.X = x;
             posUnit.Position.Y = y;
-            posUnit.Position.Z = PreviousTarget.Position.Z + (args.HeightOffset / 1000f);
+            posUnit.Position.Z = PreviousTarget.Position.Z + args.HeightOffset / 1000f;
             posUnit.Position.RotationZ = rotZ;
             // TODO use heightmap for Z coord 
 
@@ -261,8 +262,8 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
                         return true;
                 });
             }
-            
-            filtered = filtered 
+
+            filtered = filtered
                 .Where(o =>
                 {
                     var relationState = state.Caster.GetRelationStateTo(o);
@@ -270,7 +271,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
                         return false;
                     return true;
                 });
-            
+
             filtered = SkillTargetingUtil.FilterWithRelation(args.UnitRelationType, state.Caster, filtered);
             filtered = filtered.Where(o => ((byte)o.TypeFlag & args.UnitTypeFlag) != 0);
 

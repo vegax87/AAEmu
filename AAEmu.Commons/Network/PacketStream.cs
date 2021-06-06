@@ -1,11 +1,13 @@
 ﻿using System;
-using SBuffer = System.Buffer;
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+
 using AAEmu.Commons.Conversion;
 using AAEmu.Commons.Utils;
+
+using SBuffer = System.Buffer;
 
 namespace AAEmu.Commons.Network
 {
@@ -41,7 +43,7 @@ namespace AAEmu.Commons.Network
         public int LeftBytes => Count - Pos;
 
         public EndianBitConverter Converter =>
-            (IsLittleEndian ? EndianBitConverter.Little : (EndianBitConverter) EndianBitConverter.Big);
+            (IsLittleEndian ? EndianBitConverter.Little : (EndianBitConverter)EndianBitConverter.Big);
 
         #endregion // Properties
 
@@ -321,7 +323,7 @@ namespace AAEmu.Commons.Network
         {
             if (Pos + 1 > Count)
                 throw new MarshalException();
-            return (sbyte) this[Pos++];
+            return (sbyte)this[Pos++];
         }
 
         public byte[] ReadBytes(int count)
@@ -433,7 +435,7 @@ namespace AAEmu.Commons.Network
 
             var result = ReadUInt16() + (ReadByte() << 16);
 
-            return (uint) result;
+            return (uint)result;
         }
 
         public ulong ReadUInt64()
@@ -527,7 +529,7 @@ namespace AAEmu.Commons.Network
         public long[] ReadPisc(int count)
         {
             var result = new long[count];
-            var pish = new BitArray(new[] {ReadByte()});
+            var pish = new BitArray(new[] { ReadByte() });
             for (var index = 0; index < count * 2; index += 2)
             {
                 if (pish[index] && pish[index + 1]) // uint
@@ -542,7 +544,7 @@ namespace AAEmu.Commons.Network
 
             return result;
         }
-        
+
         public (float x, float y, float z) ReadPosition()
         {
             var position = ReadBytes(9);
@@ -575,7 +577,7 @@ namespace AAEmu.Commons.Network
             var temp = new Vector3(x, y, z);
             return temp;
         }
-        
+
         public Vector3 ReadVector3Short()
         {
             var x = Convert.ToSingle(ReadInt16()) * 0.000030518509f;
@@ -609,7 +611,7 @@ namespace AAEmu.Commons.Network
 
         public PacketStream Write(bool value)
         {
-            return Write(value ? (byte) 0x01 : (byte) 0x00);
+            return Write(value ? (byte)0x01 : (byte)0x00);
         }
 
         public PacketStream Write(byte value)
@@ -621,13 +623,13 @@ namespace AAEmu.Commons.Network
         public PacketStream Write(byte[] value, bool appendSize = false)
         {
             if (appendSize)
-                Write((ushort) value.Length);
+                Write((ushort)value.Length);
             return Insert(Count, value);
         }
 
         public PacketStream Write(sbyte value)
         {
-            return Write((byte) value);
+            return Write((byte)value);
         }
 
         public PacketStream Write(char value)
@@ -727,22 +729,22 @@ namespace AAEmu.Commons.Network
             foreach (var value in values)
             {
                 if (value <= byte.MaxValue)
-                    temp.Write((byte) value);
+                    temp.Write((byte)value);
                 else if (value <= ushort.MaxValue)
                 {
                     pish[index] = true;
-                    temp.Write((ushort) value);
+                    temp.Write((ushort)value);
                 }
                 else if (value <= 0xffffff)
                 {
                     pish[index + 1] = true;
-                    temp.WriteBc((uint) value);
+                    temp.WriteBc((uint)value);
                 }
                 else
                 {
                     pish[index] = true;
                     pish[index + 1] = true;
-                    temp.Write((uint) value);
+                    temp.Write((uint)value);
                 }
 
                 index += 2;
@@ -761,7 +763,7 @@ namespace AAEmu.Commons.Network
             Write(res);
             return this;
         }
-        
+
         public PacketStream WriteQuaternionShort(Quaternion values, bool scalar = false)
         {
             var temp = new PacketStream();
@@ -771,7 +773,7 @@ namespace AAEmu.Commons.Network
                 temp.Write(Convert.ToInt16(values.Y * 32767f));
                 temp.Write(Convert.ToInt16(values.Z * 32767f));
             }
-            catch (Exception e)
+            catch
             {
                 var res = new byte[6];
                 temp.Write(res);

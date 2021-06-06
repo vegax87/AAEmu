@@ -466,7 +466,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                 foreach (var bonus in GetBonuses(UnitAttribute.MeleeDpsInc))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                        res += (res * bonus.Value / 100f);
+                        res += res * bonus.Value / 100f;
                     else
                         res += bonus.Value;
                 }
@@ -540,7 +540,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                 foreach (var bonus in GetBonuses(UnitAttribute.RangedDpsInc))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                        res += (res * bonus.Value / 100f);
+                        res += res * bonus.Value / 100f;
                     else
                         res += bonus.Value;
                 }
@@ -594,7 +594,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                 foreach (var bonus in GetBonuses(UnitAttribute.SpellDpsInc))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                        res += (res * bonus.Value / 100f);
+                        res += res * bonus.Value / 100f;
                     else
                         res += bonus.Value;
                 }
@@ -917,10 +917,10 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = (CurrentAggroTarget > 0 ? EStance.Combat : EStance.Idle);    // COMBAT = 0x0, IDLE = 0x1
+            moveType.Stance = CurrentAggroTarget > 0 ? EStance.Combat : EStance.Idle;    // COMBAT = 0x0, IDLE = 0x1
             moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
-           
+
             SetPosition(Position);
             BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
         }

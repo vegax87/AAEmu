@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
@@ -12,16 +13,17 @@ using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Models.Game.World;
-using AAEmu.Game.Utils;
-using AAEmu.Game.Utils.DB;
 using AAEmu.Game.Models.Game.Items.Actions;
-using MySql.Data.MySqlClient;
-using NLog;
 using AAEmu.Game.Models.Game.Mails;
+using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Tasks.Housing;
-using Microsoft.CodeAnalysis.Text;
+using AAEmu.Game.Utils;
+using AAEmu.Game.Utils.DB;
+
+using MySql.Data.MySqlClient;
+
+using NLog;
 
 namespace AAEmu.Game.Core.Managers
 {
@@ -269,11 +271,11 @@ namespace AAEmu.Game.Core.Managers
                             house.SellPrice = reader.GetUInt32("sell_price");
                             _houses.Add(house.Id, house);
                             _housesTl.Add(house.TlId, house);
-                            
+
                             // Manually placed houses (or after upgrading MySQL), will get 2 weeks for free as to not immediately trigger them into demolition
                             if (house.PlaceDate == house.ProtectionEndDate)
                                 house.ProtectionEndDate = house.PlaceDate.AddDays(14);
-                            
+
                             UpdateTaxInfo(house);
                             house.IsDirty = false;
                         }
@@ -282,7 +284,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             _log.Info("Loaded {0} Player Buildings", _houses.Count);
-            
+
             var houseCheckTask = new HousingTaxTask();
             TaskManager.Instance.Schedule(houseCheckTask, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(10));
 
@@ -440,7 +442,7 @@ namespace AAEmu.Game.Core.Managers
             // TODO minus moneyAmount
 
             var sourceDesignItem = connection.ActiveChar.Inventory.GetItemById(itemId);
-            if ((sourceDesignItem == null) && (sourceDesignItem.OwnerId != connection.ActiveChar.Id))
+            if (sourceDesignItem == null && sourceDesignItem.OwnerId != connection.ActiveChar.Id)
             {
                 // Invalid itemId supplied or the id is not owned by the user
                 connection.ActiveChar.SendErrorMessage(ErrorMessageType.BagInvalidItem);
@@ -473,7 +475,7 @@ namespace AAEmu.Game.Core.Managers
                 {
                     var c = consumedCerts;
                     // Use Bound First
-                    if ((userBoundTaxCount > 0) && (c > 0))
+                    if (userBoundTaxCount > 0 && c > 0)
                     {
                         if (c > userBoundTaxCount)
                             c = userBoundTaxCount;
@@ -481,7 +483,7 @@ namespace AAEmu.Game.Core.Managers
                         consumedCerts -= c;
                     }
                     c = consumedCerts;
-                    if ((userTaxCount > 0) && (c > 0))
+                    if (userTaxCount > 0 && c > 0)
                     {
                         if (c > userTaxCount)
                             c = userTaxCount;
@@ -492,7 +494,7 @@ namespace AAEmu.Game.Core.Managers
                     if (consumedCerts != 0)
                         _log.Error("Something went wrong when paying tax for new building for player {0}", connection.ActiveChar.Name);
                 }
-                
+
             }
             else
             {
@@ -503,7 +505,7 @@ namespace AAEmu.Game.Core.Managers
                     connection.ActiveChar.SendErrorMessage(ErrorMessageType.MailNotEnoughMoneyToPayTaxes);
                     return;
                 }
-                connection.ActiveChar.SubtractMoney(SlotType.Inventory, totalTaxAmountDue,Models.Game.Items.Actions.ItemTaskType.HouseCreation);
+                connection.ActiveChar.SubtractMoney(SlotType.Inventory, totalTaxAmountDue, Models.Game.Items.Actions.ItemTaskType.HouseCreation);
             }
 
 
@@ -514,7 +516,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             // Spawn the actual house
-            var house = Create(designId,connection.ActiveChar.Faction.Id);
+            var house = Create(designId, connection.ActiveChar.Faction.Id);
 
             // Fallback for un-translated buildings (en_us)
             if (house.Name == string.Empty)
@@ -597,7 +599,7 @@ namespace AAEmu.Game.Core.Managers
                 return;
             }
             // Check if owner
-            if ((connection == null) || (house.OwnerId == connection.ActiveChar.Id))
+            if (connection == null || house.OwnerId == connection.ActiveChar.Id)
             {
                 // VERIFY: check if tax payed, cannot manually demolish or sell a house with unpaid taxes ?
                 // Note - ZeromusXYZ: I'm disabling this "feature", as it would prevent you from demolishing freshly placed buildings that you want to move 
@@ -627,7 +629,7 @@ namespace AAEmu.Game.Core.Managers
 
                 ownerChar?.SendPacket(new SCMyHouseRemovedPacket(house.TlId));
                 // Make killable
-                UpdateHouseFaction(house, (uint)FactionsEnum.Monstrosity);
+                UpdateHouseFaction(house, FactionsEnum.Monstrosity);
                 house.IsDirty = true;
 
                 // TODO: better house killing handling
@@ -687,7 +689,7 @@ namespace AAEmu.Game.Core.Managers
             // Default Heavy Tax formula for 1.2
             var taxMultiplier = (heavyHouseCount < MAX_HEAVY_TAX_COUNTED ? heavyHouseCount : MAX_HEAVY_TAX_COUNTED) * 0.5f;
             // If less than 3 properties, or not a heavy tax peroperty, no extra multiplier needed
-            if ((heavyHouseCount < 3) || (newHouseTemplate.HeavyTax == false))
+            if (heavyHouseCount < 3 || newHouseTemplate.HeavyTax == false)
                 taxMultiplier = 1f;
 
             totalTaxToPay = (int)Math.Ceiling(newHouseTemplate.Taxation.Tax * taxMultiplier);
@@ -701,8 +703,8 @@ namespace AAEmu.Game.Core.Managers
 
         public void UpdateTaxInfo(House house)
         {
-            var isDemolished = (house.ProtectionEndDate <= DateTime.Now);
-            var isTaxDue = (house.TaxDueDate <= DateTime.Now);
+            var isDemolished = house.ProtectionEndDate <= DateTime.Now;
+            var isTaxDue = house.TaxDueDate <= DateTime.Now;
 
             // Update Buffs (if needed)
             SetUntouchable(house, !isDemolished);
@@ -710,7 +712,7 @@ namespace AAEmu.Game.Core.Managers
 
             if (house.OwnerId <= 0)
                 return;
-            
+
             // If expired, start demolition debuffs
             if (isDemolished)
             {
@@ -728,7 +730,7 @@ namespace AAEmu.Game.Core.Managers
                     var newMail = new MailForTax(house);
                     newMail.FinalizeMail();
                     newMail.Send();
-                    _log.Trace("New Tax Mail sent for {0} owned by {1}",house.Name, house.OwnerId);
+                    _log.Trace("New Tax Mail sent for {0} owned by {1}", house.Name, house.OwnerId);
                 }
                 else
                 {
@@ -753,7 +755,7 @@ namespace AAEmu.Game.Core.Managers
         {
             return _houses.TryGetValue(houseId, out var house) ? house : null;
         }
-        
+
         public House GetHouseByTlId(ushort houseTlId)
         {
             return _housesTl.TryGetValue(houseTlId, out var house) ? house : null;
@@ -769,8 +771,8 @@ namespace AAEmu.Game.Core.Managers
         {
             var myHouses = new Dictionary<uint, House>();
             GetByCharacterId(myHouses, characterId);
-            foreach(var h in myHouses)
-                if ((h.Value.Faction == null) || (h.Value.Faction.Id != factionId))
+            foreach (var h in myHouses)
+                if (h.Value.Faction == null || h.Value.Faction.Id != factionId)
                     UpdateHouseFaction(h.Value, factionId);
         }
 
@@ -812,7 +814,7 @@ namespace AAEmu.Game.Core.Managers
             for (var i = 0; i < returnedItems.Count; i++)
             {
                 // Split items into mails of maximum 10 attachemnts
-                if ((i % 10) == 0)
+                if (i % 10 == 0)
                 {
                     // TODO: proper mail handler
                     newMail = new BaseMail();
@@ -831,14 +833,14 @@ namespace AAEmu.Game.Core.Managers
                     newMail.Header.Extra = house.Id;
                 }
                 // Only attach money to first mail
-                if ((returnedMoney > 0) && (i == 0))
+                if (returnedMoney > 0 && i == 0)
                     newMail.AttachMoney(returnedMoney);
 
                 // Attach item
                 newMail.Body.Attachments.Add(returnedItems[i]);
 
                 // Send on last or 10th item of the mail
-                if (((i % 10) == 9) || (i == returnedItems.Count-1))
+                if (i % 10 == 9 || i == returnedItems.Count - 1)
                     newMail.Send();
             }
 
@@ -872,8 +874,8 @@ namespace AAEmu.Game.Core.Managers
 
         public bool SetForSale(ushort houseTlId, uint price, uint buyerId, Character seller) =>
             SetForSale(GetHouseByTlId(houseTlId), price, buyerId, seller);
-        
-        public bool SetForSale(House house,uint price, uint buyerId, Character seller)
+
+        public bool SetForSale(House house, uint price, uint buyerId, Character seller)
         {
             if (house == null)
                 return false;
@@ -883,12 +885,12 @@ namespace AAEmu.Game.Core.Managers
 
             // Check if buyer exists (we just check if the name exists)
             var buyerName = NameManager.Instance.GetCharacterName(buyerId);
-            if ((buyerId != 0) && (buyerName == null))
+            if (buyerId != 0 && buyerName == null)
                 return false;
 
             if (buyerName == null)
                 buyerName = "";
-            
+
             // Using the GM command does not send the seller (uses null), and thus will not require certificates 
             if (seller != null)
             {
@@ -903,8 +905,8 @@ namespace AAEmu.Game.Core.Managers
             house.SellPrice = price;
             house.SellToPlayerId = buyerId;
             // TODO: broadcast changes
-            house.BroadcastPacket(new SCHouseSetForSalePacket(house.TlId, price, house.SellToPlayerId, buyerName,house.Name),false);
-            
+            house.BroadcastPacket(new SCHouseSetForSalePacket(house.TlId, price, house.SellToPlayerId, buyerName, house.Name), false);
+
             // TODO: spawn for sale markers
             return true;
         }
@@ -918,9 +920,9 @@ namespace AAEmu.Game.Core.Managers
                 // TODO: mail certificates back to owner
             }
 
-            house.BroadcastPacket(new SCHouseResetForSalePacket(house.TlId,house.Name),false);
+            house.BroadcastPacket(new SCHouseResetForSalePacket(house.TlId, house.Name), false);
             // TODO: remove for sale markers
-            
+
             return true;
         }
 
@@ -934,7 +936,7 @@ namespace AAEmu.Game.Core.Managers
                 character.SendErrorMessage(ErrorMessageType.InvalidHouseInfo);
                 return false;
             }
-            
+
             if (house.SellPrice <= 0)
             {
                 // House wasn't for sale
@@ -949,7 +951,7 @@ namespace AAEmu.Game.Core.Managers
                 return false;
             }
 
-            if ((house.SellToPlayerId != 0) && (house.SellToPlayerId != character.Id))
+            if (house.SellToPlayerId != 0 && house.SellToPlayerId != character.Id)
             {
                 // Not a valid buyer
                 character.SendErrorMessage(ErrorMessageType.HouseCannotBuyAsNotDesignatedBuyer);
@@ -964,7 +966,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             // NOTE: check tax due maybe ?
-            
+
             if (!character.SubtractMoney(SlotType.Inventory, (int)house.SellPrice, ItemTaskType.BuyHouse))
             {
                 // Not enough money
@@ -973,7 +975,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             var previousOwner = house.OwnerId;
-            
+
             // TODO: MailProfit to previous owner
             // TODO: Return bound furniture back to owner
 
@@ -984,9 +986,9 @@ namespace AAEmu.Game.Core.Managers
             house.OwnerId = character.Id;
             house.CoOwnerId = character.Id;
             house.Permission = house.Template.AlwaysPublic ? HousingPermission.Public : HousingPermission.Private;
-            UpdateHouseFaction(house,character.Faction.Id);
+            UpdateHouseFaction(house, character.Faction.Id);
             UpdateTaxInfo(house); // send tax due mails etc if needed ...
-            
+
             // TODO: broadcast changes
             house.BroadcastPacket(
                 new SCHouseSoldPacket(house.TlId, previousOwner, character.Id, character.AccountId, character.Name,
@@ -1008,7 +1010,7 @@ namespace AAEmu.Game.Core.Managers
                 var expiredHouseList = new List<House>();
                 foreach (var house in _houses)
                 {
-                    if ((house.Value?.ProtectionEndDate <= DateTime.Now) && (house.Value?.OwnerId > 0))
+                    if (house.Value?.ProtectionEndDate <= DateTime.Now && house.Value?.OwnerId > 0)
                         expiredHouseList.Add(house.Value);
                     UpdateTaxInfo(house.Value);
                 }

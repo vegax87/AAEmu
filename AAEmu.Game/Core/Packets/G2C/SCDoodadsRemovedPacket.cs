@@ -7,6 +7,7 @@ namespace AAEmu.Game.Core.Packets.G2C
     {
         private readonly bool _last;
         private readonly uint[] _ids;
+        public const int MaxCountPerPacket = 400; // Suggested Maximum Size
 
         public SCDoodadsRemovedPacket(bool last, uint[] ids) : base(SCOffsets.SCDoodadsRemovedPacket, 5)
         {
@@ -17,7 +18,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         public override PacketStream Write(PacketStream stream)
         {
             var index = 0;
-            var doodadsToRemove = _ids.Length; // The calling code sends no more than 400 elements
+            var doodadsToRemove = _ids.Length;
             stream.Write((ushort)doodadsToRemove);
             stream.Write(_last);
             do

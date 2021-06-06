@@ -6,9 +6,6 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Utils;
-
-using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
@@ -29,12 +26,12 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
         {
             _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
 
-            if ((!(caster is Character character)) || (character == null))
+            if (!(caster is Character character) || character == null)
             {
                 return;
             }
 
-            if ((!(targetObj is SkillCastItemTarget itemTarget)) || (itemTarget == null))
+            if (!(targetObj is SkillCastItemTarget itemTarget) || itemTarget == null)
             {
                 return;
             }
@@ -51,7 +48,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                 return;
             }
 
-            if ((!(casterObj is SkillItem powderSkillItem)) || (powderSkillItem == null))
+            if (!(casterObj is SkillItem powderSkillItem) || powderSkillItem == null)
             {
                 return;
             }
@@ -68,7 +65,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             }
 
             itemToImage.SetFlag(ItemFlag.Skinized);
-            character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Sknize, new List<ItemTask> { new ItemUpdateBits(itemToImage) } , new List<ulong>()));
+            character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Sknize, new List<ItemTask> { new ItemUpdateBits(itemToImage) }, new List<ulong>()));
             powderItem._holdingContainer.ConsumeItem(ItemTaskType.Sknize, powderItem.TemplateId, 1, powderItem);
         }
     }

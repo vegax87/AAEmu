@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Char;
@@ -22,14 +23,14 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public float ChargedMul { get; set; }
 
         public override bool OnActionTime => false;
-        
+
         public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
             CastAction castObj,
             EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
             if (!(caster is Character character))
                 return;
-            
+
             if (!(target is Npc npc))
                 return;
 
@@ -39,9 +40,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             if (UseLevelAggro)
             {
                 var lvlMd = caster.LevelDps * LevelMd;
-                var levelModifier = (( (source.Skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
-            
-                min += (lvlMd - levelModifier * lvlMd) + 0.5f;
+                var levelModifier = (((source.Skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
+
+                min += lvlMd - levelModifier * lvlMd + 0.5f;
                 max += (levelModifier + 1) * lvlMd + 0.5f;
             }
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
+
 using AAEmu.Game.Models.Game.World;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace AAEmu.Game.Utils
 {
@@ -12,7 +12,7 @@ namespace AAEmu.Game.Utils
         {
             return CalculateAngleFrom(obj1.Position.X, obj1.Position.Y, obj2.Position.X, obj2.Position.Y);
         }
-        
+
         public static double CalculateAngleFrom(Point p1, Point p2)
         {
             return CalculateAngleFrom(p1.X, p1.Y, p2.X, p2.Y);
@@ -60,12 +60,12 @@ namespace AAEmu.Game.Utils
         {
             while (degree < 0f)
                 degree += 360f;
-            if ((degree > 90f) && (degree <= 180f))
-                return (sbyte)((((degree - 90f) / 90f * 37f) + 90f) * - 1); 
+            if (degree > 90f && degree <= 180f)
+                return (sbyte)(((degree - 90f) / 90f * 37f + 90f) * -1);
             if (degree > 180f)
-                return (sbyte)((((degree - 270f) / 90f * 37f) - 90f) * -1);
+                return (sbyte)(((degree - 270f) / 90f * 37f - 90f) * -1);
             // When range is between -90 and 90, no rotation scaling is applied for doodads
-            return (sbyte)(degree * - 1);
+            return (sbyte)(degree * -1);
         }
         public static bool IsFront(GameObject obj1, GameObject obj2)
         {
@@ -101,7 +101,7 @@ namespace AAEmu.Game.Utils
 
             return (roll, pitch, yaw);
         }
-        
+
         public static (float, float, float) GetSlaveRotationInDegrees(short rotX, short rotY, short rotZ)
         {
             var quatX = rotX * 0.00003052f;
@@ -139,7 +139,7 @@ namespace AAEmu.Game.Utils
             return ((short)(reverseQuat.X / 0.00003052f), (short)(reverseQuat.Z / 0.00003052f),
                 (short)(reverseQuat.Y / 0.00003052f));
         }
-        
+
         public static (short, short, short) GetSlaveRotationFromQuat(Quaternion quaternion)
         {
             return ((short)(quaternion.X / 0.00003052f), (short)(quaternion.Z / 0.00003052f),
@@ -149,58 +149,58 @@ namespace AAEmu.Game.Utils
         public static (float, float) AddDistanceToFrontDeg(float distance, float x, float y, float deg)
         {
             var rad = deg * Math.PI / 180.0;
-            var newX = (distance * (float)Math.Cos(rad)) + x;
-            var newY = (distance * (float)Math.Sin(rad)) + y;
+            var newX = distance * (float)Math.Cos(rad) + x;
+            var newY = distance * (float)Math.Sin(rad) + y;
             return (newX, newY);
         }
-        
+
         public static (float, float) AddDistanceToFront(float distance, float x, float y, sbyte rotZ)
         {
             var rad = ConvertDirectionToRadian(rotZ);
-            var newX = (distance * (float)Math.Cos(rad)) + x;
-            var newY = (distance * (float)Math.Sin(rad)) + y;
+            var newX = distance * (float)Math.Cos(rad) + x;
+            var newY = distance * (float)Math.Sin(rad) + y;
             return (newX, newY);
         }
 
         public static (float, float) AddDistanceToRight(float distance, float x, float y, sbyte rotZ)
         {
-            var rad = ConvertDirectionToRadian(rotZ) - (Math.PI / 2);
-            var newX = (distance * (float)Math.Cos(rad)) + x;
-            var newY = (distance * (float)Math.Sin(rad)) + y;
+            var rad = ConvertDirectionToRadian(rotZ) - Math.PI / 2;
+            var newX = distance * (float)Math.Cos(rad) + x;
+            var newY = distance * (float)Math.Sin(rad) + y;
             return (newX, newY);
         }
 
         public static (float, float)[] GetCuboidVertices(float length, float width, float x, float y, sbyte rotZ)
         {
             var radFront = ConvertDirectionToRadian(rotZ);
-            var radRight = ConvertDirectionToRadian(rotZ) - (Math.PI / 2);
+            var radRight = ConvertDirectionToRadian(rotZ) - Math.PI / 2;
 
             var cosFront = (float)Math.Cos(radFront);
             var sinFront = (float)Math.Sin(radFront);
             var cosRight = (float)Math.Cos(radRight);
             var sinRight = (float)Math.Sin(radRight);
-            
+
             var result = new (float, float)[4];
 
-            var p1 = ((width * cosFront) + x, (width * sinFront) + y);
-            p1 = ((length * cosRight) + p1.Item1, (length * sinRight) + p1.Item2);
+            var p1 = (width * cosFront + x, width * sinFront + y);
+            p1 = (length * cosRight + p1.Item1, length * sinRight + p1.Item2);
             result[0] = p1;
-            
-            var p2 = ((width * cosFront) + x, (width * sinFront) + y);
-            p2 = ((-length * cosRight) + p2.Item1, (-length * sinRight) + p2.Item2);
+
+            var p2 = (width * cosFront + x, width * sinFront + y);
+            p2 = (-length * cosRight + p2.Item1, -length * sinRight + p2.Item2);
             result[1] = p2;
-            
-            var p3 = ((-width * cosFront) + x, (-width * sinFront) + y);
-            p3 = ((-length * cosRight) + p3.Item1, (-length * sinRight) + p3.Item2);
+
+            var p3 = (-width * cosFront + x, -width * sinFront + y);
+            p3 = (-length * cosRight + p3.Item1, -length * sinRight + p3.Item2);
             result[2] = p3;
-            
-            var p4 = ((-width * cosFront) + x, (-width * sinFront) + y);
-            p4 = ((length * cosRight) + p4.Item1, (length * sinRight) + p4.Item2);
+
+            var p4 = (-width * cosFront + x, -width * sinFront + y);
+            p4 = (length * cosRight + p4.Item1, length * sinRight + p4.Item2);
             result[3] = p4;
-            
+
             return result;
         }
-        
+
         private static float Sign((float, float) p1, (float, float) p2, (float, float) p3)
         {
             return (p1.Item1 - p3.Item1) * (p2.Item2 - p3.Item2) - (p2.Item1 - p3.Item1) * (p1.Item2 - p3.Item2);
@@ -214,7 +214,7 @@ namespace AAEmu.Game.Utils
             b2 = Sign(point, v2, v3) < 0.0f;
             b3 = Sign(point, v3, v1) < 0.0f;
 
-            return ((b1 == b2) && (b2 == b3));
+            return b1 == b2 && b2 == b3;
         }
 
         public static sbyte ConvertRadianToDirection(double radian) // TODO float zRot
@@ -254,16 +254,16 @@ namespace AAEmu.Game.Utils
 
         public static Vector3 GetVectorFromQuat(Quaternion quat)
         {
-                double sqw = quat.W*quat.W;
-                double sqx = quat.X*quat.X;
-                double sqy = quat.Y*quat.Y;
-                double sqz = quat.Z*quat.Z;
-                
-                var rotX = (float)Math.Atan2(2.0 * (quat.X*quat.Y + quat.Z*quat.W),(sqx - sqy - sqz + sqw));
-                var rotY = (float)Math.Atan2(2.0 * (quat.Y*quat.Z + quat.X*quat.W),(-sqx - sqy + sqz + sqw));
-                var rotZ = (float)Math.Asin(-2.0 * (quat.X*quat.Z - quat.Y*quat.W)/(sqx + sqy + sqz + sqw));
+            double sqw = quat.W * quat.W;
+            double sqx = quat.X * quat.X;
+            double sqy = quat.Y * quat.Y;
+            double sqz = quat.Z * quat.Z;
 
-                return new Vector3(rotX, rotY, rotZ);
+            var rotX = (float)Math.Atan2(2.0 * (quat.X * quat.Y + quat.Z * quat.W), sqx - sqy - sqz + sqw);
+            var rotY = (float)Math.Atan2(2.0 * (quat.Y * quat.Z + quat.X * quat.W), -sqx - sqy + sqz + sqw);
+            var rotZ = (float)Math.Asin(-2.0 * (quat.X * quat.Z - quat.Y * quat.W) / (sqx + sqy + sqz + sqw));
+
+            return new Vector3(rotX, rotY, rotZ);
         }
 
         private const double Pi = 3.14159;
