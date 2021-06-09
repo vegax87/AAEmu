@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
@@ -57,8 +57,15 @@ namespace AAEmu.Game.Core.Managers
                                 SwimMoveUB = reader.GetString("swim_move_ub")
                             };
 
+                            if (_animationsByName.ContainsKey(template.Name)) continue;
+                            
                             _animations.Add(template.Id, template);
-                            _animationsByName.Add(template.Name, template);
+                            _animationsByName.Add(template.Name, template); // в наличии дубль Nam
+                            /*
+                             *  id                                                              Name
+                             *  835     4   wyvern_ac_coin_launch	0	wyvern_ac_coin_launch	wyvern_ac_coin_launch		wyvern_ac_coin_launch	wyvern_ac_coin_launch	wyvern_ac_coin_launch
+                             *  8000021	4   wyvern_ac_coin_launch	0	wyvern_ac_coin_launch	wyvern_ac_coin_launch		wyvern_ac_coin_launch	wyvern_ac_coin_launch	wyvern_ac_coin_launch
+                             */
                         }
                     }
                 }
@@ -81,8 +88,7 @@ namespace AAEmu.Game.Core.Managers
                         anim.CombatSyncTime = animDurations[key].combat_sync_time;
                     }
                 else
-                    throw new Exception(
-                        $"AnimationManager: Parse {FileManager.AppPath}Data/anim_durations.json file");
+                    throw new Exception($"AnimationManager: Parse {FileManager.AppPath}Data/anim_durations.json file");
             }
         }
     }

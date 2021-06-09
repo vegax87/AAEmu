@@ -1,10 +1,10 @@
 ﻿using System;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.Plots.Tree;
 using AAEmu.Game.Models.Game.Skills.Plots.Type;
-using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.Skills.Plots
@@ -16,7 +16,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots
         public PlotEffectTarget TargetId { get; set; }
         public uint ActualId { get; set; }
         public string ActualType { get; set; }
-        
+
         public void ApplyEffect(PlotState state, PlotTargetInfo targetInfo, PlotEventTemplate evt, ref byte flag, bool channeled = false, CompressedGamePackets gamePackets = null)
         {
             var template = SkillManager.Instance.GetEffectTemplate(ActualId, ActualType);
@@ -32,18 +32,18 @@ namespace AAEmu.Game.Models.Game.Skills.Plots
                     source = state.Caster;
                     break;
                 case PlotEffectSource.OriginalTarget:
-                    source = (Unit) state.Target;
+                    source = state.Target as Unit;
                     break;
                 case PlotEffectSource.Source:
-                    source = (Unit) targetInfo.Source;
+                    source = targetInfo.Source as Unit;
                     break;
                 case PlotEffectSource.Target:
-                    source = (Unit) targetInfo.Target;
+                    source = targetInfo.Target as Unit;
                     break;
                 default:
                     throw new InvalidOperationException("This can't happen");
             }
-            
+
             foreach (var newTarget in targetInfo.EffectedTargets)
             {
                 BaseUnit target;
@@ -77,7 +77,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots
                     target,
                     state.TargetCaster,
                     new CastPlot(evt.PlotId, state.ActiveSkill.TlId, evt.Id, state.ActiveSkill.Template.Id),
-                    new EffectSource(state.ActiveSkill), 
+                    new EffectSource(state.ActiveSkill),
                     state.SkillObject,
                     DateTime.Now,
                     gamePackets);

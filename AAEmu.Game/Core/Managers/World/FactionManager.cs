@@ -78,16 +78,19 @@ namespace AAEmu.Game.Core.Managers.World
                     {
                         while (reader.Read())
                         {
-                            var relation = new FactionRelation
-                            {
-                                Id = reader.GetUInt32("faction1_id"),
-                                Id2 = reader.GetUInt32("faction2_id"),
-                                State = (RelationState)reader.GetByte("state_id")
-                            };
+                            var relation = new FactionRelation();
+                            relation.Id = reader.GetUInt32("faction1_id");
+                            relation.Id2 = reader.GetUInt32("faction2_id");
+                            relation.State = (RelationState)reader.GetByte("state_id");
                             _relations.Add(relation);
 
                             var faction = _systemFactions[relation.Id];
+                            if (faction.Relations.ContainsKey(relation.Id2)) // TODO проверить правильность удаления дублей
+                            {
+                                continue;
+                            }
                             faction.Relations.Add(relation.Id2, relation);
+                            
                             faction = _systemFactions[relation.Id2];
                             faction.Relations.Add(relation.Id, relation);
                         }

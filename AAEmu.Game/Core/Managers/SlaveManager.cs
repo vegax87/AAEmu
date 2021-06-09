@@ -357,7 +357,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new SlaveInitialBuffs
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"), // there is no such field in the database for version 3030
                                 SlaveId = reader.GetUInt32("slave_id"),
                                 BuffId = reader.GetUInt32("buff_id")
                             };
@@ -380,7 +380,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new SlavePassiveBuffs
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"), // there is no such field in the database for version 3030
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 PassiveBuffId = reader.GetUInt32("passive_buff_id")
@@ -404,7 +404,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new SlaveDoodadBindings
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"), // there is no such field in the database for version 3030
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 AttachPointId = reader.GetInt32("attach_point_id"),
@@ -431,7 +431,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new SlaveBindings
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"), // there is no such field in the database for version 3030
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 AttachPointId = reader.GetUInt32("attach_point_id"),

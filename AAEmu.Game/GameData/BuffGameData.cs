@@ -1,12 +1,14 @@
-﻿ using System.Collections.Generic;
- using System.Linq;
- using AAEmu.Commons.Utils;
+﻿using System.Collections.Generic;
+using System.Linq;
+
+using AAEmu.Commons.Utils;
 using AAEmu.Game.GameData.Framework;
 using AAEmu.Game.Models.Game.Skills;
- using AAEmu.Game.Models.Game.Skills.Buffs;
- using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Skills.Buffs;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils.DB;
+
 using Microsoft.Data.Sqlite;
 
 namespace AAEmu.Game.GameData
@@ -17,7 +19,7 @@ namespace AAEmu.Game.GameData
         private Dictionary<uint, List<BuffModifier>> _buffModifiers;
         private Dictionary<uint, BuffTolerance> _buffTolerances;
         private Dictionary<uint, BuffTolerance> _buffTolerancesById;
-        
+
         public List<BuffModifier> GetModifiersForBuff(uint ownerId)
         {
             return _buffModifiers.ContainsKey(ownerId) ? _buffModifiers[ownerId] : new List<BuffModifier>();
@@ -27,13 +29,13 @@ namespace AAEmu.Game.GameData
         {
             return _buffTolerances.ContainsKey(buffTag) ? _buffTolerances[buffTag] : null;
         }
-        
+
         public void Load(SqliteConnection connection)
         {
             _buffModifiers = new Dictionary<uint, List<BuffModifier>>();
             _buffTolerances = new Dictionary<uint, BuffTolerance>();
             _buffTolerancesById = new Dictionary<uint, BuffTolerance>();
-            
+
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "SELECT * FROM buff_modifiers";
@@ -45,7 +47,7 @@ namespace AAEmu.Game.GameData
                     {
                         var template = new BuffModifier
                         {
-                            Id = reader.GetUInt32("id"),
+                            //Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
                             OwnerId = reader.GetUInt32("owner_id"),
                             OwnerType = reader.GetString("owner_type"),
                             TagId = reader.GetUInt32("tag_id", 0),
@@ -62,7 +64,7 @@ namespace AAEmu.Game.GameData
                     }
                 }
             }
-            
+
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "SELECT * FROM buff_tolerances";

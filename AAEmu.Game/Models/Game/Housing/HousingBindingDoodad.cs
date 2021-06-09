@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.World;
+﻿using AAEmu.Game.Models.Game.World;
 
 namespace AAEmu.Game.Models.Game.Housing
 {
@@ -7,5 +7,6 @@ namespace AAEmu.Game.Models.Game.Housing
         public uint AttachPointId { get; set; }
         public uint DoodadId { get; set; }
         public Point Position { get; set; }
+        public bool ForceDbSave { get; set; }
     }
 }

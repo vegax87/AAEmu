@@ -271,8 +271,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                             template.Items.UndershirtsGrade = reader2.GetByte("undershirt_grade_id");
                                             template.Items.Underpants = reader2.GetUInt32("underpants_id");
                                             template.Items.UnderpantsGrade = reader2.GetByte("underpants_grade_id");
-                                            //template.Items.Stabilizer = reader2.GetUInt32("stabilizer_id");
-                                            //template.Items.StabilizerGrade = reader2.GetByte("stabilizer_grade_id");
+                                            template.Items.Stabilizer = reader2.GetUInt32("stabilizer_id");
+                                            template.Items.StabilizerGrade = reader2.GetByte("stabilizer_grade_id");
                                         }
                                     }
                                 }
@@ -398,12 +398,15 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         var step = 0;
                         while (reader.Read())
                         {
-                            var template = new ExpandExpertLimit();
-                            template.Id = reader.GetUInt32("id");
-                            template.ExpandCount = reader.GetByte("expand_count");
-                            template.LifePoint = reader.GetInt32("life_point");
-                            template.ItemId = reader.GetUInt32("item_id", 0);
-                            template.ItemCount = reader.GetInt32("item_count");
+                            var template = new ExpandExpertLimit
+                            {
+                                //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
+                                Id = (uint)step,
+                                ExpandCount = reader.GetByte("expand_count"),
+                                LifePoint = reader.GetInt32("life_point"),
+                                ItemId = reader.GetUInt32("item_id", 0),
+                                ItemCount = reader.GetInt32("item_count")
+                            };
                             _expandExpertLimits.Add(step++, template);
                         }
                     }
@@ -514,7 +517,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 SetEquipItemTemplate(character.Inventory, items.Items.Ranged, EquipmentItemSlot.Ranged, items.Items.RangedGrade);
                 SetEquipItemTemplate(character.Inventory, items.Items.Musical, EquipmentItemSlot.Musical, items.Items.MusicalGrade);
                 SetEquipItemTemplate(character.Inventory, items.Items.Cosplay, EquipmentItemSlot.Cosplay, items.Items.CosplayGrade);
-                //SetEquipItemTemplate(character.Inventory, items.Items.Stabilizer, EquipmentItemSlot.Stabilizer, items.Items.StabilizerGrade);
+                SetEquipItemTemplate(character.Inventory, items.Items.Stabilizer, EquipmentItemSlot.Stabilizer, items.Items.StabilizerGrade);
                 for (var i = 0; i < 7; i++)
                 {
                     if (body[i] == 0 && template.Items[i] > 0)
@@ -526,8 +529,6 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 foreach (var item in items.Supplies)
                 {
                     character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Invalid, item.Id, item.Amount, item.Grade);
-                    //var createdItem = ItemManager.Instance.Create(item.Id, item.Amount, item.Grade);
-                    //character.Inventory.AddItem(Models.Game.Items.Actions.ItemTaskType.Invalid, createdItem);
 
                     character.SetAction(slot, ActionSlotType.ItemType, item.Id);
                     slot++;
@@ -539,8 +540,6 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     foreach (var item in items.Supplies)
                     {
                         character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Invalid, item.Id, item.Amount, item.Grade);
-                        //var createdItem = ItemManager.Instance.Create(item.Id, item.Amount, item.Grade);
-                        //character.Inventory.AddItem(ItemTaskType.Invalid, createdItem);
 
                         character.SetAction(slot, ActionSlotType.ItemType, item.Id);
                         slot++;
@@ -652,8 +651,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 item.Slot = (int)slot;
             }
 
-            inventory.Equipment.AddOrMoveExistingItem(0, item, (int)slot);
-            //inventory.Equip[(int) slot] = item;
+            inventory.Equipment.AddOrMoveExistingItem(ItemTaskType.Invalid, item, (int)slot);
         }
     }
 }

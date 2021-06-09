@@ -74,7 +74,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             template.ModelKindId = reader.GetUInt32("model_kind_id");
                             template.UseCreatorFaction = reader.GetBoolean("use_creator_faction", true);
                             template.ForceTodTopPriority = reader.GetBoolean("force_tod_top_priority", true);
-                            template.MilestoneId = reader.GetUInt32("milestone_id", 0);
+                            //template.MilestoneId = reader.GetUInt32("milestone_id", 0); // there is no such field in the database for version 3030
                             template.GroupId = reader.GetUInt32("group_id");
                             template.UseTargetDecal = reader.GetBoolean("use_target_decal", true);
                             template.UseTargetSilhouette = reader.GetBoolean("use_target_silhouette", true);
@@ -332,7 +332,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var func = new DoodadFuncBuyFishModel();
                             func.Id = reader.GetUInt32("id");
-                            func.Name = reader.GetString("name");
+                            //func.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             _funcTemplates["DoodadFuncBuyFishModel"].Add(func.Id, func);
                         }
                     }
@@ -570,7 +570,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var func = new DoodadFuncConsumeChangerModel();
                             func.Id = reader.GetUInt32("id");
-                            func.Name = reader.GetString("name");
+                            //func.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             _funcTemplates["DoodadFuncConsumeChangerModel"].Add(func.Id, func);
                         }
                     }
@@ -1838,22 +1838,22 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                     }
                 }
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM doodad_func_respawns";
-                    command.Prepare();
-                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
-                    {
-                        while (reader.Read())
-                        {
-                            var func = new DoodadFuncRespawn();
-                            func.Id = reader.GetUInt32("id");
-                            func.MinTime = reader.GetInt32("min_time");
-                            func.MaxTime = reader.GetInt32("max_time");
-                            _funcTemplates["DoodadFuncRespawn"].Add(func.Id, func);
-                        }
-                    }
-                }
+                //using (var command = connection.CreateCommand())
+                //{
+                //    command.CommandText = "SELECT * FROM doodad_func_respawns";
+                //    command.Prepare();
+                //    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                //    {
+                //        while (reader.Read())
+                //        {
+                //            var func = new DoodadFuncRespawn();
+                //            func.Id = reader.GetUInt32("id");
+                //            func.MinTime = reader.GetInt32("min_time");
+                //            func.MaxTime = reader.GetInt32("max_time");
+                //            _funcTemplates["DoodadFuncRespawn"].Add(func.Id, func);
+                //        }
+                //    }
+                //}
 
                 using (var command = connection.CreateCommand())
                 {

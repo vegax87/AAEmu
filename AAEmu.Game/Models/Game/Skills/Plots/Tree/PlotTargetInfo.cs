@@ -102,6 +102,10 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
         {
             var posUnit = new BaseUnit();
             posUnit.ObjId = uint.MaxValue;
+            if (Target == null)
+            {
+                Target = state.Target;
+            }
             posUnit.Region = Target.Region;
             posUnit.Position = new Point();
             posUnit.Position.ZoneId = Target.Position.ZoneId;

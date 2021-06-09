@@ -1,15 +1,17 @@
 ﻿using System;
+
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Units;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Templates
 {
     public abstract class EffectTemplate
     {
-        protected static Logger _log = LogManager.GetCurrentClassLogger(); 
+        protected static Logger _log = LogManager.GetCurrentClassLogger();
 
         public uint Id { get; set; }
 

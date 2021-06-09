@@ -609,15 +609,15 @@ namespace AAEmu.Game.Core.Managers
                             template.UpgradeRatio = reader.GetInt32("upgrade_ratio");
                             template.StatMultiplier = reader.GetInt32("stat_multiplier");
                             template.RefundMultiplier = reader.GetInt32("refund_multiplier");
-                            template.EnchantSuccessRatio = reader.GetInt32("grade_enchant_success_ratio");
-                            template.EnchantGreatSuccessRatio = reader.GetInt32("grade_enchant_great_success_ratio");
-                            template.EnchantBreakRatio = reader.GetInt32("grade_enchant_break_ratio");
-                            template.EnchantDowngradeRatio = reader.GetInt32("grade_enchant_downgrade_ratio");
-                            template.EnchantCost = reader.GetInt32("grade_enchant_cost");
-                            template.HoldableHealDps = reader.GetFloat("var_holdable_heal_dps");
-                            template.EnchantDowngradeMin = reader.GetInt32("grade_enchant_downgrade_min");
-                            template.EnchantDowngradeMax = reader.GetInt32("grade_enchant_downgrade_max");
-                            template.CurrencyId = reader.GetInt32("currency_id");
+                            //template.EnchantSuccessRatio = reader.GetInt32("grade_enchant_success_ratio"); // there is no such field in the database for version 3030
+                            //template.EnchantGreatSuccessRatio = reader.GetInt32("grade_enchant_great_success_ratio"); // there is no such field in the database for version 3030
+                            //template.EnchantBreakRatio = reader.GetInt32("grade_enchant_break_ratio"); // there is no such field in the database for version 3030
+                            //template.EnchantDowngradeRatio = reader.GetInt32("grade_enchant_downgrade_ratio"); // there is no such field in the database for version 3030
+                            //template.EnchantCost = reader.GetInt32("grade_enchant_cost"); // there is no such field in the database for version 3030
+                            //template.HoldableHealDps = reader.GetFloat("var_holdable_heal_dps"); // there is no such field in the database for version 3030
+                            //template.EnchantDowngradeMin = reader.GetInt32("grade_enchant_downgrade_min"); // there is no such field in the database for version 3030
+                            //template.EnchantDowngradeMax = reader.GetInt32("grade_enchant_downgrade_max"); // there is no such field in the database for version 3030
+                            //template.CurrencyId = reader.GetInt32("currency_id"); // there is no such field in the database for version 3030
                             _grades.Add(template.Grade, template);
                             _gradesOrdered.Add(template.GradeOrder, template);
                         }
@@ -637,7 +637,7 @@ namespace AAEmu.Game.Core.Managers
                             var template = new Holdable
                             {
                                 Id = reader.GetUInt32("id"),
-                                KindId = reader.GetUInt32("kind_id"),
+                                //KindId = reader.GetUInt32("kind_id"); // there is no such field in the database for version 3030
                                 Speed = reader.GetInt32("speed"),
                                 ExtraDamagePierceFactor = reader.GetInt32("extra_damage_pierce_factor"),
                                 ExtraDamageSlashFactor = reader.GetInt32("extra_damage_slash_factor"),
@@ -679,7 +679,7 @@ namespace AAEmu.Game.Core.Managers
                                 TypeId = reader.GetUInt32("armor_type_id"),
                                 SlotTypeId = reader.GetUInt32("slot_type_id"),
                                 ArmorBp = reader.GetInt32("armor_bp"),
-                                MagicResistanceBp = reader.GetInt32("magic_resistance_bp")
+                                //MagicResistanceBp = reader.GetInt32("magic_resistance_bp") // there is no such field in the database for version 3030
                             };
                             _wearables.Add(template.TypeId * 128 + template.SlotTypeId, template);
                         }
@@ -698,8 +698,8 @@ namespace AAEmu.Game.Core.Managers
                             var template = new WearableKind
                             {
                                 TypeId = reader.GetUInt32("armor_type_id"),
-                                ArmorRatio = reader.GetInt32("armor_ratio"),
-                                MagicResistanceRatio = reader.GetInt32("magic_resistance_ratio"),
+                                //template.ArmorRatio = reader.GetInt32("armor_ratio"); // there is no such field in the database for version 3030
+                                //template.MagicResistanceRatio = reader.GetInt32("magic_resistance_ratio"); // there is no such field in the database for version 3030
                                 FullBufId = reader.GetUInt32("full_buff_id"),
                                 HalfBufId = reader.GetUInt32("half_buff_id"),
                                 ExtraDamagePierce = reader.GetInt32("extra_damage_pierce"),
@@ -955,7 +955,8 @@ namespace AAEmu.Game.Core.Managers
                                 Id = reader.GetUInt32("item_id"),
                                 ModelId = reader.GetUInt32("model_id"),
                                 NpcOnly = reader.GetBoolean("npc_only", true),
-                                BeautyShopOnly = reader.GetBoolean("beautyshop_only", true)
+                                SlotTypeId = reader.GetUInt32("slot_type_id")
+                                //BeautyShopOnly = reader.GetBoolean("beautyshop_only", true) // there is no in the database for version 3030
                             };
                             _templates.Add(template.Id, template);
                         }
@@ -1066,10 +1067,12 @@ namespace AAEmu.Game.Core.Managers
                     using (var sqliteReader = command.ExecuteReader())
                     using (var reader = new SQLiteWrapperReader(sqliteReader))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
                             var template = new EquipSlotEnchantingCost();
-                            template.Id = reader.GetUInt32("id");
+                            //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
+                            template.Id = step++;
                             template.SlotTypeId = reader.GetUInt32("slot_type_id");
                             template.Cost = reader.GetInt32("cost");
                             if (!_enchantingCosts.ContainsKey(template.SlotTypeId))
@@ -1088,7 +1091,7 @@ namespace AAEmu.Game.Core.Managers
                         while (reader.Read())
                         {
                             var template = new ItemGradeEnchantingSupport();
-                            template.Id = reader.GetUInt32("id");
+                            //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
                             template.ItemId = reader.GetUInt32("item_id");
                             template.RequireGradeMin = reader.GetInt32("require_grade_min");
                             template.RequireGradeMax = reader.GetInt32("require_grade_max");
@@ -1117,8 +1120,8 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var numSockets = reader.GetUInt32("num_sockets");
-                            var chance = reader.GetUInt32("success_ratio");
+                            var numSockets = reader.GetUInt32("id");
+                            var chance = reader.GetUInt32("cost_ratio");
 
                             if (!_socketChance.ContainsKey(numSockets))
                                 _socketChance.Add(numSockets, chance);
@@ -1136,7 +1139,7 @@ namespace AAEmu.Game.Core.Managers
                         while (reader.Read())
                         {
                             var template = new ItemCapScale();
-                            template.Id = reader.GetUInt32("id");
+                            //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
                             template.SkillId = reader.GetUInt32("skill_id");
                             template.ScaleMin = reader.GetInt32("scale_min");
                             template.ScaleMax = reader.GetInt32("scale_max");
@@ -1220,7 +1223,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new GradeDistributions();
                             template.Id = reader.GetInt32("id");
-                            template.Name = reader.GetString("name");
+                            //template.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             template.Weight0 = reader.GetInt32("weight_0");
                             template.Weight1 = reader.GetInt32("weight_1");
                             template.Weight2 = reader.GetInt32("weight_2");

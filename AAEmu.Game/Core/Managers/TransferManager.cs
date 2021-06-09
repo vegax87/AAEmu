@@ -361,7 +361,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new TransferBindings
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"),
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 AttachPointId = reader.GetByte("attach_point_id"),
@@ -386,7 +386,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new TransferBindingDoodads
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"),
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 AttachPointId = reader.GetInt32("attach_point_id"),
@@ -411,7 +411,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new TransferPaths
                             {
-                                Id = reader.GetUInt32("id"),
+                                //Id = reader.GetUInt32("id"),
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 PathName = reader.GetString("path_name"),

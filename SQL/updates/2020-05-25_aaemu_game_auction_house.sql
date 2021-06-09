@@ -1,1 +1,0 @@
-ALTER TABLE `auction_house` ADD `end_time` datetime NOT NULL AFTER `creation_time`;

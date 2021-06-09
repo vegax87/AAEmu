@@ -108,12 +108,13 @@ namespace AAEmu.Game.Core.Managers.World
                         while (reader.Read())
                         {
                             var template = new SpecialtyNpc();
-                            template.Id = reader.GetUInt32("id");
-                            template.Name = reader.GetString("name");
+                            //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
+                            //template.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             template.NpcId = reader.GetUInt32("npc_id");
                             template.SpecialtyBundleId = reader.GetUInt32("specialty_bundle_id");
 
-                            _specialtyNpc.Add(template.NpcId, template);
+                            if (!_specialtyNpc.ContainsKey(template.NpcId))
+                                _specialtyNpc.Add(template.NpcId, template);
                         }
                     }
                 }

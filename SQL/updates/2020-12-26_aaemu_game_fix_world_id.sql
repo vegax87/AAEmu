@@ -1,1 +1,0 @@
-UPDATE characters SET world_id = 0 WHERE world_id = 1;

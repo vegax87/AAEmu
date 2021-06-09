@@ -35,20 +35,20 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write(_tl);      // tl
-            stream.Write(_eventId); // eventId
-            stream.Write(_skillId); // skillId
-            stream.Write(_caster);  // PlotObj
-                                    // type(b) Unit | Position
-                                    // casterId(bc) | XYZ
-            stream.Write(_target);  // PlotObj
-                                    // type(b) Unit | Position
-                                    // targetId(bc) | XYZ
-            stream.Write(_itemId);  // itemObjId
-            stream.WriteBc(_objId); // обычно 0, но иногда нужно вставлять casterId(bc)
+            stream.Write(_tl);          // tl
+            stream.Write(_eventId);     // eventId
+            stream.Write(_skillId);     // skillId
+            stream.Write(_caster);      // PlotObj
+                                        // type(b) Unit | Position
+                                        // casterId(bc) | XYZ
+            stream.Write(_target);      // PlotObj
+                                        // type(b) Unit | Position
+                                        // targetId(bc) | XYZ
+            stream.Write(_itemId);      // itemObjId
+            stream.WriteBc(_objId);     // обычно 0, но иногда нужно вставлять casterId(bc)
             stream.Write(_castingTime); // msec, castingTime / 10
-            stream.WriteBc(0);      // objId
-            stream.Write((short)0); // msec
+            stream.WriteBc(0);          // objId
+            stream.Write((short)0);     // msec
             stream.Write(_targetUnitCount); // targetUnitCount // TODO if aoe, list of units
             if (_targetUnitCount > 0)
             {

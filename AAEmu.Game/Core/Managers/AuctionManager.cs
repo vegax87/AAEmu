@@ -376,35 +376,38 @@ namespace AAEmu.Game.Core.Managers
                     break;
             }
 
-            var newAuctionItem = new AuctionItem
-            {
-                ID = GetNextId(),
-                Duration = 5,
-                ItemID = newItem.Template.Id,
-                ObjectID = 0,
-                Grade = newItem.Grade,
-                Flags = newItem.ItemFlags,
-                StackSize = (uint)newItem.Count,
-                DetailType = 0,
-                CreationTime = DateTime.Now,
-                EndTime = DateTime.Now.AddHours(timeLeft),
-                LifespanMins = 0,
-                Type1 = 0,
-                WorldId = 0,
-                UnpackDateTIme = DateTime.Now,
-                UnsecureDateTime = DateTime.Now,
-                WorldId2 = 0,
-                ClientId = player.Id,
-                ClientName = player.Name,
-                StartMoney = startPrice,
-                DirectMoney = buyoutPrice,
-                BidWorldID = 0,
-                BidderId = 0,
-                BidderName = "",
-                BidMoney = 0,
-                Extra = 0,
-                IsDirty = true
-            };
+            var newAuctionItem = new AuctionItem();
+            newAuctionItem.ID = GetNextId();
+            newAuctionItem.Duration = 5;
+            newAuctionItem.ItemID = newItem.Template.Id;
+            newAuctionItem.ItemName = GetLocalizedItemNameById(newItem.Template.Id);
+            newAuctionItem.ObjectID = 0;
+            newAuctionItem.Grade = newItem.Grade;
+            newAuctionItem.Flags = newItem.ItemFlags;
+            newAuctionItem.StackSize = (uint)newItem.Count;
+            newAuctionItem.DetailType = 0;
+            newAuctionItem.CreationTime = DateTime.Now;
+            newAuctionItem.EndTime = DateTime.Now.AddHours(timeLeft);
+            newAuctionItem.LifespanMins = 0;
+            newAuctionItem.Type1 = 0;
+            newAuctionItem.WorldId = 0;
+            newAuctionItem.UnpackDateTIme = DateTime.Now;
+            newAuctionItem.UnsecureDateTime = DateTime.Now;
+            newAuctionItem.WorldId2 = 0;
+            newAuctionItem.ClientId = player.Id;
+            newAuctionItem.ClientName = player.Name;
+            newAuctionItem.StartMoney = startPrice;
+            newAuctionItem.DirectMoney = buyoutPrice;
+            newAuctionItem.TimeLeft = timeLeft;
+            newAuctionItem.BidWorldID = 0;
+            newAuctionItem.BidderId = 0;
+            newAuctionItem.BidderName = "";
+            newAuctionItem.BidMoney = 0;
+            newAuctionItem.Extra = 0;
+            newAuctionItem.IsDirty = true;
+            newAuctionItem.CategoryA = (uint)newItem.Template.AuctionCategoryA;
+            newAuctionItem.CategoryB = (uint)newItem.Template.AuctionCategoryB;
+            newAuctionItem.CategoryC = (uint)newItem.Template.AuctionCategoryC;
             return newAuctionItem;
         }
 
@@ -426,6 +429,7 @@ namespace AAEmu.Game.Core.Managers
                             auctionItem.ID = reader.GetUInt32("id");
                             auctionItem.Duration = reader.GetByte("duration"); //0 is 6 hours, 1 is 12 hours, 2 is 24 hours, 3 is 48 hours
                             auctionItem.ItemID = reader.GetUInt32("item_id");
+                            auctionItem.ItemName = reader.GetString("item_name").ToLower();
                             auctionItem.ObjectID = reader.GetUInt32("object_id");
                             auctionItem.Grade = reader.GetByte("grade");
                             auctionItem.Flags = (ItemFlag)reader.GetByte("flags");
@@ -443,11 +447,15 @@ namespace AAEmu.Game.Core.Managers
                             auctionItem.ClientName = reader.GetString("client_name");
                             auctionItem.StartMoney = reader.GetInt32("start_money");
                             auctionItem.DirectMoney = reader.GetInt32("direct_money");
+                            auctionItem.TimeLeft = reader.GetUInt64("time_left"); // TODO поле размером ulong, а считываем uint ?!
                             auctionItem.BidWorldID = reader.GetByte("bid_world_id");
                             auctionItem.BidderId = reader.GetUInt32("bidder_id");
                             auctionItem.BidderName = reader.GetString("bidder_name");
                             auctionItem.BidMoney = reader.GetInt32("bid_money");
                             auctionItem.Extra = reader.GetUInt32("extra");
+                            auctionItem.CategoryA = reader.GetUInt32("category_a");
+                            auctionItem.CategoryB = reader.GetUInt32("category_b");
+                            auctionItem.CategoryC = reader.GetUInt32("category_c");
                             AddAuctionItem(auctionItem);
                         }
                     }
@@ -488,13 +496,13 @@ namespace AAEmu.Game.Core.Managers
                     command.CommandText = "REPLACE INTO auction_house(" +
                         "`id`, `duration`, `item_id`, `object_id`, `grade`, `flags`, `stack_size`, `detail_type`," +
                         " `creation_time`,`end_time`, `lifespan_mins`, `type_1`, `world_id`, `unsecure_date_time`, `unpack_date_time`," +
-                        " `world_id_2`, `client_id`, `client_name`, `start_money`, `direct_money`, `bid_world_id`," +
-                        " `bidder_id`, `bidder_name`, `bid_money`, `extra`" +
+                        " `world_id_2`, `client_id`, `client_name`, `start_money`, `direct_money`, `time_left`, `bid_world_id`," +
+                        " `bidder_id`, `bidder_name`, `bid_money`, `extra`, `item_name`, `category_a`, `category_b`, `category_c`" +
                         ") VALUES (" +
                         "@id, @duration, @item_id, @object_id, @grade, @flags, @stack_size, @detail_type," +
                         " @creation_time, @end_time, @lifespan_mins, @type_1, @world_id, @unsecure_date_time, @unpack_date_time," +
-                        " @world_id_2, @client_id, @client_name, @start_money, @direct_money, @bid_world_id," +
-                        " @bidder_id, @bidder_name, @bid_money, @extra)";
+                        " @world_id_2, @client_id, @client_name, @start_money, @direct_money, @time_left, @bid_world_id," +
+                        " @bidder_id, @bidder_name, @bid_money, @extra, @item_name, @category_a, @category_b, @category_c)";
 
                     command.Prepare();
 
@@ -524,6 +532,10 @@ namespace AAEmu.Game.Core.Managers
                     command.Parameters.AddWithValue("@bidder_name", mtbs.BidderName);
                     command.Parameters.AddWithValue("@bid_money", mtbs.BidMoney);
                     command.Parameters.AddWithValue("@extra", mtbs.Extra);
+                    command.Parameters.AddWithValue("@item_name", mtbs.ItemName);
+                    command.Parameters.AddWithValue("@category_a", mtbs.CategoryA);
+                    command.Parameters.AddWithValue("@category_b", mtbs.CategoryB);
+                    command.Parameters.AddWithValue("@category_c", mtbs.CategoryC);
 
                     command.ExecuteNonQuery();
                     updatedCount++;
