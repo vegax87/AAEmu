@@ -35,6 +35,12 @@ namespace AAEmu.Game.Models.Game.DoodadObj
             _owner = owner;
         }
 
+        public Doodad GetOwner()
+        {
+            return _owner;
+        }
+
+
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write((byte)_attachPoint);

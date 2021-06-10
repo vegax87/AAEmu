@@ -529,11 +529,11 @@ namespace AAEmu.Game.Models.Game.Units
             {
                 var time = transfer.Template.WaitTime;
                 WaitTime = DateTime.Now.AddSeconds(time);
-                _log.Info("TransfersPath #" + transfer.Template.Id);
-                _log.Warn("path #" + Steering);
-                _log.Warn("walk to #" + MoveStepIndex);
-                _log.Info("pause to #" + time);
-                _log.Warn("x:=" + transfer.Position.X + " y:=" + transfer.Position.Y + " z:=" + transfer.Position.Z);
+                //_log.Info("TransfersPath #" + transfer.Template.Id);
+                //_log.Warn("path #" + Steering);
+                //_log.Warn("walk to #" + MoveStepIndex);
+                //_log.Info("pause to #" + time);
+                //_log.Warn("x:=" + transfer.Position.X + " y:=" + transfer.Position.Y + " z:=" + transfer.Position.Z);
             }
         }
 
@@ -664,15 +664,15 @@ namespace AAEmu.Game.Models.Game.Units
             //    Bounded.Velocity = Velocity;
             //}
 
-            if (TemplateId == 700)
-            {
-                // для проверки
+            //if (TemplateId == 700)
+            //{
+            //    // для проверки
 
-                _log.Warn("Reverse=" + Reverse + " Cyclic=" + Template.Cyclic);
-                _log.Warn("MoveStepIndex=" + MoveStepIndex + " Steering=" + Steering);
-                _log.Warn("x=" + Position.X + " y=" + Position.Y + " z=" + Position.Z + " Angle=" + Angle + " Rot=" + Rot);
-                //_log.Warn("velx=" + Velocity.X + " vely=" + Velocity.Y + " velz=" + Velocity.Z);
-            }
+            //    _log.Warn("Reverse=" + Reverse + " Cyclic=" + Template.Cyclic);
+            //    _log.Warn("MoveStepIndex=" + MoveStepIndex + " Steering=" + Steering);
+            //    _log.Warn("x=" + Position.X + " y=" + Position.Y + " z=" + Position.Z + " Angle=" + Angle + " Rot=" + Rot);
+            //    //_log.Warn("velx=" + Velocity.X + " vely=" + Velocity.Y + " velz=" + Velocity.Z);
+            //}
 
             if (nextPoint)
             {
@@ -723,11 +723,11 @@ namespace AAEmu.Game.Models.Game.Units
                 time = transfer.Template.TransferAllPaths[Steering].WaitTimeStart;
                 WaitTime = DateTime.Now.AddSeconds(time);
             }
-            _log.Info("TransfersPath #" + transfer.Template.Id);
-            _log.Warn("path #" + Steering);
-            _log.Warn("walk to #" + MoveStepIndex);
-            _log.Info("pause to #" + time);
-            _log.Warn("x:=" + transfer.Position.X + " y:=" + transfer.Position.Y + " z:=" + transfer.Position.Z);
+            //_log.Info("TransfersPath #" + transfer.Template.Id);
+            //_log.Warn("path #" + Steering);
+            //_log.Warn("walk to #" + MoveStepIndex);
+            //_log.Info("pause to #" + time);
+            //_log.Warn("x:=" + transfer.Position.X + " y:=" + transfer.Position.Y + " z:=" + transfer.Position.Z);
         }
 
         public bool DoSpeedReduction()

@@ -231,7 +231,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             func.Id = reader.GetUInt32("id");
                             func.AttachPointId = (AttachPointKind)reader.GetByte("attach_point_id");
                             func.Space = reader.GetInt32("space");
-                            func.BondKindId = reader.GetByte("bond_kind_id");
+                            func.BondKindId = (BondKind)reader.GetByte("bond_kind_id");
+                            func.AnimActionId = reader.GetUInt32("anim_action_id"); // (используется в пакете SCBondDoodadPacket) поле добавлено в версии 3+
                             _funcTemplates["DoodadFuncAttachment"].Add(func.Id, func);
                         }
                     }

@@ -52,6 +52,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public uint CurrentPhaseId { get; set; }
         public uint OverridePhase { get; set; }
         private bool _deleted = false;
+        public VehicleSeat Seat { get; set; }
 
         public Doodad()
         {
@@ -59,6 +60,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
             Position = new Point();
             PlantTime = DateTime.MinValue;
             AttachPoint = 255;
+            Seat = new VehicleSeat();
         }
 
         public void SetScale(float scale)
@@ -268,7 +270,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
             // CurrentPhaseId / FuncGroupId - doodad_func_group_id
             // QuestGlow - When this is higher than 0 it shows a blue orb over the doodad
             stream.WritePisc(TemplateId, CurrentPhaseId, 0, QuestGlow);
-            
+
             stream.Write(Flag);
             stream.WriteBc(OwnerObjId);  //The creator of the object
             stream.WriteBc(ParentObjId); //Things like boats or cars,
