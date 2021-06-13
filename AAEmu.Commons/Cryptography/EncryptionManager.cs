@@ -82,7 +82,7 @@ namespace AAEmu.Commons.Cryptography
         {
             var keys = GetConnectionKeys(connectionId, accountId);
             var mc = keys.SCMessageCount;
-            _log.Warn("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
+            _log.Trace("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
 
             return mc;
         }

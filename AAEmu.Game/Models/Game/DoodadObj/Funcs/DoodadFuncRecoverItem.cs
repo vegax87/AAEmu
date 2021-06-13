@@ -10,7 +10,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
     {
         public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
-            _log.Debug("DoodadFuncRecoverItem");
+            //_log.Debug("DoodadFuncRecoverItem");
 
             //TODO: itemId currently using itemtemplate but shouldn't, needs to retain original crafter 
             var character = (Character)caster;

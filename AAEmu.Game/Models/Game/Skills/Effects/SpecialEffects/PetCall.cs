@@ -31,7 +31,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                     break;
             }
             owner.Mates.SpawnMount(skillData);
-            _log.Warn("Special effects: PetCall");
+            //_log.Warn("Special effects: PetCall");
         }
     }
 }

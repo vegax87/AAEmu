@@ -13,7 +13,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 
         public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
-            _log.Debug("DoodadFuncEnterSysInstance, ZoneId: {0}", ZoneId);
+            //_log.Debug("DoodadFuncEnterSysInstance, ZoneId: {0}", ZoneId);
             if (caster is Character character)
             {
                 character.DisabledSetPosition = true;

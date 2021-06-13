@@ -23,7 +23,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             var owner = (Character)caster;
             var skillData = (SkillItem)casterObj;
             SlaveManager.Instance.Create(owner, skillData);
-            _log.Warn("Special effects: SlaveCall");
+            //_log.Warn("Special effects: SlaveCall");
         }
     }
 }
