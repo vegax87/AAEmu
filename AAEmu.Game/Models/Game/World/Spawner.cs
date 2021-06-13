@@ -5,8 +5,8 @@
         public uint Id { get; set; }
         public uint UnitId { get; set; }
         public Point Position { get; set; }
-        public int RespawnTime { get; set; } = 15;
-        public int DespawnTime { get; set; } = 20;
+        public int RespawnTime { get; set; } = 50;
+        public int DespawnTime { get; set; } = 25;
 
         public virtual T Spawn(uint objId)
         {
