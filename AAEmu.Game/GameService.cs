@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-
+using AAEmu.Game.IO;
 using AAEmu.Commons.Cryptography;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
@@ -15,9 +15,7 @@ using AAEmu.Game.Core.Network.Login;
 using AAEmu.Game.Core.Network.Stream;
 using AAEmu.Game.GameData.Framework;
 using AAEmu.Game.Utils.Scripts;
-
 using Microsoft.Extensions.Hosting;
-
 using NLog;
 
 namespace AAEmu.Game
@@ -38,10 +36,19 @@ namespace AAEmu.Game
             TaskManager.Instance.Initialize();
 
             FeaturesManager.Instance.Initialize();
-            ConfigurationManager.Instance.Load();
+
+            ClientFileManager.Initialize();
+            
             LocalizationManager.Instance.Load();
             ObjectIdManager.Instance.Initialize();
             TradeIdManager.Instance.Initialize();
+
+            ZoneManager.Instance.Load();
+            WorldManager.Instance.Load();
+            var heightmapTask = Task.Run(() =>
+            {
+                WorldManager.Instance.LoadHeightmaps();
+            }, cancellationToken);
 
             ItemIdManager.Instance.Initialize();
             DoodadIdManager.Instance.Initialize();
@@ -60,21 +67,18 @@ namespace AAEmu.Game
             QuestIdManager.Instance.Initialize();
             MailIdManager.Instance.Initialize();
             UccIdManager.Instance.Initialize();
+            MusicIdManager.Instance.Initialize();
+            ShipyardIdManager.Instance.Initialize();
+            ShipyardManager.Instance.Initialize();
 
             GameDataManager.Instance.LoadGameData();
-            ZoneManager.Instance.Load();
-            WorldManager.Instance.Load();
-            var heightmapTask = Task.Run(() =>
-            {
-                WorldManager.Instance.LoadHeightmaps();
-            });
             QuestManager.Instance.Load();
 
-            ShipyardManager.Instance.Load();
+            SphereQuestManager.Instance.Load();
+            SphereQuestManager.Instance.Initialize();
 
             FormulaManager.Instance.Load();
             ExpirienceManager.Instance.Load();
-            ConfigurationManager.Instance.Load();
 
             TlIdManager.Instance.Initialize();
             SpecialtyManager.Instance.Load();
@@ -102,21 +106,25 @@ namespace AAEmu.Game
             AIManager.Instance.Initialize();
             NpcManager.Instance.Load();
             DoodadManager.Instance.Load();
+            TaxationsManager.Instance.Load();
             HousingManager.Instance.Load();
             TransferManager.Instance.Load();
             GimmickManager.Instance.Load();
+            ShipyardManager.Instance.Load();
 
             SpawnManager.Instance.Load();
 
             AccessLevelManager.Instance.Load();
             CashShopManager.Instance.Load();
             UccManager.Instance.Load();
+            MusicManager.Instance.Load();
             EncryptionManager.Instance.Load();
+
             ScriptCompiler.Compile();
 
             TimeManager.Instance.Start();
             TaskManager.Instance.Start();
-
+            
             SaveManager.Instance.Initialize();
             AreaTriggerManager.Instance.Initialize();
             SpecialtyManager.Instance.Initialize();
@@ -127,21 +135,27 @@ namespace AAEmu.Game
             CashShopManager.Instance.Initialize();
             GameDataManager.Instance.PostLoadGameData();
 
-            await heightmapTask;
+            if (!heightmapTask.IsCompleted)
+            {
+                _log.Info("Waiting on heightmaps to be loaded before proceeding, please wait ...");
+                await heightmapTask;
+            }
 
             var spawnSw = new Stopwatch();
             _log.Info("Spawning units...");
             spawnSw.Start();
+            HousingManager.Instance.SpawnAll(); // Houses need to be spawned before doodads
             SpawnManager.Instance.SpawnAll();
-            HousingManager.Instance.SpawnAll();
             TransferManager.Instance.SpawnAll();
             spawnSw.Stop();
             _log.Info("Units spawned in {0}", spawnSw.Elapsed);
-
+            
+            CharacterManager.Instance.CheckForDeletedCharacters();
+            
             GameNetwork.Instance.Start();
             StreamNetwork.Instance.Start();
             LoginNetwork.Instance.Start();
-
+            
             stopWatch.Stop();
             _log.Info("Server started! Took {0}", stopWatch.Elapsed);
         }
@@ -167,6 +181,8 @@ namespace AAEmu.Game
 
             TickManager.Instance.Stop();
             TimeManager.Instance.Stop();
+            
+            ClientFileManager.ClearSources();
             return Task.CompletedTask;
         }
 

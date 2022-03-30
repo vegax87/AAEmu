@@ -1,5 +1,4 @@
-using System;
-
+﻿using System;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
@@ -23,6 +22,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public bool UseSummonerFaction { get; set; }
         public float LifeTime { get; set; }
         public bool DespawnOnCreatorDeath { get; set; }
+
         public bool UseSummoneerAggroTarget { get; set; }
         public uint MateStateId { get; set; }
 
@@ -31,21 +31,24 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
             EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            _log.Debug("SpawnEffect");
+            _log.Trace("SpawnEffect");
 
             if (OwnerTypeId == 1) // NPC
             {
                 var npc = NpcManager.Instance.Create(0, SubType);
-                npc.SetPosition(target.Position);
+                npc.Transform = caster.Transform.CloneDetached(npc);
+                
+                var rpy = target.Transform.World.ToRollPitchYawDegrees();
+                npc.SetPosition(target.Transform.World.Position.X, target.Transform.World.Position.Y, target.Transform.World.Position.Z, rpy.X, rpy.Y, rpy.Z);
                 if (AppConfiguration.Instance.HeightMapsEnable)
-                    npc.Position.Z = WorldManager.Instance.GetHeight(npc.Position.ZoneId, npc.Position.X, npc.Position.Y);
-
+                    npc.Transform.Local.SetHeight(WorldManager.Instance.GetHeight(npc.Transform.ZoneId, npc.Transform.World.Position.X, npc.Transform.World.Position.Y));
+                
                 if (npc.Ai != null)
                 {
-                    npc.Ai.IdlePosition = npc.Position;
+                    npc.Ai.IdlePosition = npc.Transform.CloneDetached();
                     npc.Ai.GoToSpawn();
                 }
-
+                
                 npc.Faction = caster.Faction;
                 npc.Spawn();
 

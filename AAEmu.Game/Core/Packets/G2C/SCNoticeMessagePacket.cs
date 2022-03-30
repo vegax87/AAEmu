@@ -7,7 +7,6 @@ namespace AAEmu.Game.Core.Packets.G2C
 {
     public class SCNoticeMessagePacket : GamePacket
     {
-
         //Initialize
         readonly string _message = "";
         readonly byte _type = 3;
@@ -15,14 +14,15 @@ namespace AAEmu.Game.Core.Packets.G2C
         readonly string _colorhex = "80FF80";
         readonly int _vistime = 1000;
 
-        public SCNoticeMessagePacket(byte type, Color ARGBColor, int vistime, string message) : base(SCOffsets.SCNoticeMessagePacket, 5)
+        public SCNoticeMessagePacket(byte type, Color ARGBColor, int vistime, string message)
+            : base(SCOffsets.SCNoticeMessagePacket, 5)
         {
             // Set Opacity to max if none was provided
             if (ARGBColor.A <= 0)
                 ARGBColor = Color.FromArgb(0xFF, ARGBColor.R, ARGBColor.G, ARGBColor.B);
             // if no visible time set, generate automatic timing
             if (vistime <= 0)
-                vistime = 1000 + message.Length * 50;
+                vistime = 1000 + (message.Length * 50);
             _type = type;
             _alphahex = ARGBColor.A.ToString("X2");
             _colorhex = ARGBColor.R.ToString("X2") + ARGBColor.G.ToString("X2") + ARGBColor.B.ToString("X2");

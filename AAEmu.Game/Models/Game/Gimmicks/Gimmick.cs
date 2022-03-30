@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Numerics;
-using System.Threading;
+
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.Gimmicks;
-using AAEmu.Game.Utils;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Gimmicks
@@ -41,19 +38,12 @@ namespace AAEmu.Game.Models.Game.Gimmicks
         /// <summary>
         /// MoveZ
         /// </summary>
-        public bool moveDown  { get; set; } = false;
+        public bool moveDown { get; set; } = false;
         public DateTime WaitTime { get; set; }
-        public uint TimeLeft => WaitTime > DateTime.Now ? (uint)(WaitTime - DateTime.Now).TotalMilliseconds : 0;
+        public uint TimeLeft => WaitTime > DateTime.UtcNow ? (uint)(WaitTime - DateTime.UtcNow).TotalMilliseconds : 0;
+
         public Gimmick()
         {
-        }
-
-        public override void BroadcastPacket(GamePacket packet, bool self)
-        {
-            foreach (var character in WorldManager.Instance.GetAround<Character>(this))
-            {
-                character.SendPacket(packet);
-            }
         }
 
         public override void AddVisibleObject(Character character)
@@ -61,10 +51,12 @@ namespace AAEmu.Game.Models.Game.Gimmicks
             character.SendPacket(new SCGimmicksCreatedPacket(new[] { this }));
             var temp = new Gimmick[0];
             character.SendPacket(new SCGimmickJointsBrokenPacket(temp));
+            base.AddVisibleObject(character);
         }
 
         public override void RemoveVisibleObject(Character character)
         {
+            base.RemoveVisibleObject(character);
             character.SendPacket(new SCGimmicksRemovedPacket(new[] { GimmickId }));
         }
 
@@ -81,13 +73,13 @@ namespace AAEmu.Game.Models.Game.Gimmicks
             stream.Write(0);                // Faction
             stream.Write(SpawnerUnitId);    // spawnerUnitId
             stream.Write(GrasperUnitId);    // grasperUnitId
-            stream.Write(Position.ZoneId);
+            stream.Write(Transform.ZoneId);
             stream.Write((short)0);         // ModelPath
-            
-            stream.Write(Helpers.ConvertLongX(Position.X)); // WorldPosition qx,qx,fz
-            stream.Write(Helpers.ConvertLongY(Position.Y));
-            stream.Write(Position.Z);
-            
+
+            stream.Write(Helpers.ConvertLongX(Transform.World.Position.X)); // WorldPosition qx,qx,fz
+            stream.Write(Helpers.ConvertLongY(Transform.World.Position.Y));
+            stream.Write(Transform.World.Position.Z);
+
             stream.Write(Rot.X); // Quaternion Rotation
             stream.Write(Rot.Y);
             stream.Write(Rot.Z);

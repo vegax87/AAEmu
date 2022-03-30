@@ -57,6 +57,7 @@ namespace AAEmu.Game.Models.Game.Items
         private DateTime _unpackTime;
         private uint _imageItemTemplateId;
         private bool _isDirty;
+        private ulong _uccId;
         private DateTime _chargeUseSkillTime;
         private byte _flags;
         private byte _durability;
@@ -84,6 +85,20 @@ namespace AAEmu.Game.Models.Game.Items
         public DateTime UnpackTime { get => _unpackTime; set { _unpackTime = value; _isDirty = true; } }
         public uint ImageItemTemplateId { get => _imageItemTemplateId; set { _imageItemTemplateId = value; _isDirty = true; } }
 
+        public ulong UccId
+        {
+            get => _uccId;
+            set
+            {
+                _uccId = value;
+                if (value > 0)
+                    SetFlag(ItemFlag.HasUCC);
+                else
+                    RemoveFlag(ItemFlag.HasUCC);
+                _isDirty = true;
+            }
+        }
+
         public virtual ItemDetailType DetailType { get; set; } // TODO 1.0 max type: 8, at 1.2 max type 9, at 3.0.3.0 max type 10, at 3.5.0.3 max type 12
         public DateTime ChargeUseSkillTime { get => _chargeUseSkillTime; set { _chargeUseSkillTime = value; _isDirty = true; } }
         public byte Flags { get => _flags; set { _flags = value; _isDirty = true; } }
@@ -103,6 +118,10 @@ namespace AAEmu.Game.Models.Game.Items
         public static uint TaxCertificate = 31891;
         public static uint BoundTaxCertificate = 31892;
         public static uint AppraisalCertificate = 28085;
+        public static uint CrestStamp = 17662;
+        public static uint CrestInk = 17663;
+        public static uint SheetMusic = 28051;
+        public static uint SalonCertificate = 30811;
 
         /// <summary>
         /// Sort will use itemSlot numbers
@@ -212,7 +231,7 @@ namespace AAEmu.Game.Models.Game.Items
 
         public virtual void ReadDetails(PacketStream stream)
         {
-            int mDetailLength;
+                    int mDetailLength;
             switch ((byte)DetailType)
             {
                 case 1:
@@ -274,7 +293,7 @@ Label_32:
                 default:
                     break;
             }
-        }
+}
 
         public virtual void WriteDetails(PacketStream stream)
         {
@@ -318,7 +337,7 @@ Label_32:
                     goto Label_32;
                 case 10:
                     mDetailLength = 13;
-Label_32:
+                    Label_32:
                     mDetailLength -= 1;
                     if (mDetailLength > 0)
                     {

@@ -10,8 +10,12 @@ namespace AAEmu.Game.Models.Game.World.Interactions
         public void Execute(Unit caster, SkillCaster casterType, BaseUnit target, SkillCastTarget targetType,
             uint skillId, uint doodadId, DoodadFuncTemplate objectFunc)
         {
-            var doodad = DoodadManager.Instance.Create(0, doodadId, caster);
-            doodad.Position = target.Position.Clone();
+            var doodad = DoodadManager.Instance.Create(0, (uint)doodadId, caster);
+            if (doodad == null)
+            {
+                return;
+            }
+            doodad.Transform = target.Transform.CloneDetached(doodad);
             doodad.Spawn();
         }
     }

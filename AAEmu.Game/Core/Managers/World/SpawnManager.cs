@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,11 +10,13 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
 
 using NLog;
@@ -46,103 +50,163 @@ namespace AAEmu.Game.Core.Managers.World
 
             var worlds = WorldManager.Instance.GetWorlds();
             _log.Info("Loading spawns...");
+            var jsonFileName = string.Empty;
             foreach (var world in worlds)
             {
                 var npcSpawners = new Dictionary<uint, NpcSpawner>();
                 var doodadSpawners = new Dictionary<uint, DoodadSpawner>();
                 var transferSpawners = new Dictionary<uint, TransferSpawner>();
                 var gimmickSpawners = new Dictionary<uint, GimmickSpawner>();
+                var worldPath = Path.Combine(FileManager.AppPath, "Data", "Worlds", world.Name);
 
-                var contents =
-                    FileManager.GetFileContents($"{FileManager.AppPath}Data/Worlds/{world.Name}/npc_spawns.json");
-                if (string.IsNullOrWhiteSpace(contents))
-                    _log.Warn(
-                        $"File {FileManager.AppPath}Data/Worlds/{world.Name}/npc_spawns.json doesn't exists or is empty.");
-                else
-                {
-                    if (JsonHelper.TryDeserializeObject(contents, out List<NpcSpawner> spawners, out _))
-                        foreach (var spawner in spawners)
-                        {
-                            if (!NpcManager.Instance.Exist(spawner.UnitId))
-                                continue; // TODO ... so mb warn here?
-                            spawner.Position.WorldId = world.Id;
-                            spawner.Position.ZoneId = WorldManager
-                                .Instance
-                                .GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
-                            npcSpawners.Add(spawner.Id, spawner);
-                        }
-                    else
-                        throw new Exception($"SpawnManager: Parse {FileManager.AppPath}Data/Worlds/{world.Name}/npc_spawns.json file");
-                }
+                // Load NPC Spawns
+                jsonFileName = Path.Combine(worldPath, "npc_spawns.json");
 
-                contents = FileManager.GetFileContents(
-                    $"{FileManager.AppPath}Data/Worlds/{world.Name}/doodad_spawns.json");
-                if (string.IsNullOrWhiteSpace(contents))
-                    _log.Warn($"File {FileManager.AppPath}Data/Worlds/{world.Name}/doodad_spawns.json doesn't exists or is empty.");
-                else
-                {
-                    if (JsonHelper.TryDeserializeObject(contents, out List<DoodadSpawner> spawners, out _))
-                        foreach (var spawner in spawners)
-                        {
-                            if (!DoodadManager.Instance.Exist(spawner.UnitId))
-                                continue; // TODO ... so mb warn here?
-                            spawner.Position.WorldId = world.Id;
-                            spawner.Position.ZoneId = WorldManager
-                                .Instance
-                                .GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
-                            doodadSpawners.Add(spawner.Id, spawner);
-                        }
-                    else
-                        throw new Exception($"SpawnManager: Parse {FileManager.AppPath}Data/Worlds/{world.Name}/doodad_spawns.json file");
-                }
+                var contents = string.Empty;
 
-                contents = FileManager.GetFileContents($"{FileManager.AppPath}Data/Worlds/{world.Name}/transfer_spawns.json");
-                if (string.IsNullOrWhiteSpace(contents))
+                if (!File.Exists(jsonFileName))
                 {
-                    _log.Warn($"File {FileManager.AppPath}Data/Worlds/{world.Name}/transfer_spawns.json doesn't exists or is empty.");
+                    _log.Info("World  {0}  is missing  {1}", world.Name, Path.GetFileName(jsonFileName));
                 }
                 else
                 {
-                    if (JsonHelper.TryDeserializeObject(contents, out List<TransferSpawner> spawners, out _))
-                    {
-                        foreach (var spawner in spawners)
-                        {
-                            if (!TransferManager.Instance.Exist(spawner.UnitId))
-                                continue;
-                            spawner.Position.WorldId = world.Id;
-                            spawner.Position.ZoneId = WorldManager
-                                .Instance
-                                .GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
-                            transferSpawners.Add(spawner.Id, spawner);
-                        }
-                    }
+                    contents = FileManager.GetFileContents(jsonFileName);
+
+                    if (string.IsNullOrWhiteSpace(contents))
+                        _log.Warn("File {0} is empty.", jsonFileName);
                     else
                     {
-                        throw new Exception($"SpawnManager: Parse {FileManager.AppPath}Data/Worlds/{world.Name}/transfer_spawns.json file");
+                        if (JsonHelper.TryDeserializeObject(contents, out List<NpcSpawner> spawners, out _))
+                            foreach (var spawner in spawners)
+                            {
+                                if (!NpcManager.Instance.Exist(spawner.UnitId))
+                                    continue; // TODO ... so mb warn here?
+                                spawner.Position.WorldId = world.Id;
+                                spawner.Position.ZoneId =
+                                    WorldManager.Instance.GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
+                                // Convert degrees from the file to radians for use
+                                spawner.Position.Yaw = spawner.Position.Yaw.DegToRad();
+                                spawner.Position.Pitch = spawner.Position.Pitch.DegToRad();
+                                spawner.Position.Roll = spawner.Position.Roll.DegToRad();
+                                npcSpawners.Add(spawner.Id, spawner);
+                            }
+                        else
+                            throw new Exception(string.Format("SpawnManager: Parse {0} file", jsonFileName));
                     }
                 }
 
-                contents = FileManager.GetFileContents($"{FileManager.AppPath}Data/Worlds/{world.Name}/gimmick_spawns.json");
-                if (string.IsNullOrWhiteSpace(contents))
+                // Load Doodad spawns
+                jsonFileName = Path.Combine(worldPath, "doodad_spawns.json");
+
+                if (!File.Exists(jsonFileName))
                 {
-                    //_log.Warn($"File {FileManager.AppPath}Data/Worlds/{world.Name}/gimmick_spawns.json doesn't exists or is empty.");
+                    _log.Info("World  {0}  is missing  {1}", world.Name, Path.GetFileName(jsonFileName));
                 }
                 else
                 {
-                    if (JsonHelper.TryDeserializeObject(contents, out List<GimmickSpawner> spawners, out _))
+                    contents = FileManager.GetFileContents(jsonFileName);
+                    if (string.IsNullOrWhiteSpace(contents))
+                        _log.Warn("File {0} is empty.", jsonFileName);
+                    else
                     {
-                        foreach (var spawner in spawners)
+                        if (JsonHelper.TryDeserializeObject(contents, out List<DoodadSpawner> spawners, out _))
                         {
-                            if (!GimmickManager.Instance.Exist(spawner.UnitId))
-                                continue;
-                            spawner.Position.WorldId = world.Id;
-                            spawner.Position.ZoneId = WorldManager.Instance.GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
-                            gimmickSpawners.Add(spawner.Id, spawner);
+                            var C = 0;
+                            foreach (var spawner in spawners)
+                            {
+                                C++;
+                                if (!DoodadManager.Instance.Exist(spawner.UnitId))
+                                {
+                                    _log.Warn("Doodad Template {0} (file entry {1}) doesn't exist - {2}",
+                                        spawner.UnitId, C, jsonFileName);
+                                    continue; // TODO ... so mb warn here?
+                                }
+
+                                spawner.Position.WorldId = world.Id;
+                                spawner.Position.ZoneId = WorldManager
+                                    .Instance
+                                    .GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
+                                // Convert degrees from the file to radians for use
+                                spawner.Position.Yaw = spawner.Position.Yaw.DegToRad();
+                                spawner.Position.Pitch = spawner.Position.Pitch.DegToRad();
+                                spawner.Position.Roll = spawner.Position.Roll.DegToRad();
+                                doodadSpawners.Add(spawner.Id, spawner);
+                            }
                         }
+                        else
+                            throw new Exception(string.Format("SpawnManager: Parse {0} file", jsonFileName));
+                    }
+                }
+
+                // Load Transfers
+                jsonFileName = Path.Combine(worldPath, "transfer_spawns.json");
+
+                if (!File.Exists(jsonFileName))
+                {
+                    _log.Info("World  {0}  is missing  {1}", world.Name, Path.GetFileName(jsonFileName));
+                }
+                else
+                {
+                    contents = FileManager.GetFileContents(jsonFileName);
+                    if (string.IsNullOrWhiteSpace(contents))
+                    {
+                        _log.Warn("File {0} doesn't exists or is empty.", jsonFileName);
                     }
                     else
                     {
-                        throw new Exception($"SpawnManager: Parse {FileManager.AppPath}Data/Worlds/{world.Name}/gimmick_spawns.json file");
+                        if (JsonHelper.TryDeserializeObject(contents, out List<TransferSpawner> spawners, out _))
+                        {
+                            foreach (var spawner in spawners)
+                            {
+                                if (!TransferManager.Instance.Exist(spawner.UnitId))
+                                    continue;
+                                spawner.Position.WorldId = world.Id;
+                                spawner.Position.ZoneId = WorldManager.Instance.GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
+                                // Convert degrees from the file to radians for use
+                                spawner.Position.Yaw = spawner.Position.Yaw.DegToRad();
+                                spawner.Position.Pitch = spawner.Position.Pitch.DegToRad();
+                                spawner.Position.Roll = spawner.Position.Roll.DegToRad();
+                                transferSpawners.Add(spawner.Id, spawner);
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception(string.Format("SpawnManager: Parse {0} file", jsonFileName));
+                        }
+                    }
+                }
+
+                jsonFileName = Path.Combine(worldPath, "gimmick_spawns.json");
+
+                if (!File.Exists(jsonFileName))
+                {
+                    _log.Info("World  {0}  is missing  {1}", world.Name, Path.GetFileName(jsonFileName));
+                }
+                else
+                {
+                    contents = FileManager.GetFileContents(jsonFileName);
+                    if (string.IsNullOrWhiteSpace(contents))
+                    {
+                        _log.Warn("File {0} doesn't exists or is empty.", jsonFileName);
+                    }
+                    else
+                    {
+                        if (JsonHelper.TryDeserializeObject(contents, out List<GimmickSpawner> spawners, out _))
+                        {
+                            foreach (var spawner in spawners)
+                            {
+                                if (!GimmickManager.Instance.Exist(spawner.UnitId))
+                                    continue;
+                                spawner.Position.WorldId = world.Id;
+                                spawner.Position.ZoneId =
+                                    WorldManager.Instance.GetZoneId(world.Id, spawner.Position.X, spawner.Position.Y);
+                                gimmickSpawners.Add(spawner.Id, spawner);
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception(string.Format("SpawnManager: Parse {0} file", jsonFileName));
+                        }
                     }
 
                 }
@@ -153,19 +217,20 @@ namespace AAEmu.Game.Core.Managers.World
                 _gimmickSpawners.Add((byte)world.Id, gimmickSpawners);
             }
 
-            _log.Info("Loading character doodads...");
+            _log.Info("Loading persistent doodads...");
             using (var connection = MySQL.CreateConnection())
             {
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT * FROM doodads";
+                    // Sorting required to make sure parenting doesn't produce invalid parents (normally)
+                    command.CommandText = "SELECT * FROM doodads ORDER BY `plant_time` ASC";
                     command.Prepare();
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             var templateId = reader.GetUInt32("template_id");
-                            var dbHouseId = reader.GetUInt32("id");
+                            var dbId = reader.GetUInt32("id");
                             var phaseId = reader.GetUInt32("current_phase_id");
                             var x = reader.GetFloat("x");
                             var y = reader.GetFloat("y");
@@ -174,25 +239,65 @@ namespace AAEmu.Game.Core.Managers.World
                             var growthTime = reader.GetDateTime("growth_time");
                             var phaseTime = reader.GetDateTime("phase_time");
                             var ownerId = reader.GetUInt32("owner_id");
-                            var ownerType = reader.GetByte("owner_type");
+                            var ownerType = (DoodadOwnerType)reader.GetByte("owner_type");
+                            var itemId = reader.GetUInt64("item_id");
+                            var houseId = reader.GetUInt32("house_id");
+                            var parentDoodad = reader.GetUInt32("parent_doodad");
+                            var itemTemplateId = reader.GetUInt32("item_template_id");
 
-                            var doodad = new Doodad
+                            var doodad = DoodadManager.Instance.Create(0, templateId);
+
+                            doodad.DbId = dbId;
+                            doodad.FuncGroupId = phaseId;
+                            doodad.OwnerId = ownerId;
+                            doodad.OwnerType = ownerType;
+                            doodad.AttachPoint = AttachPointKind.None;
+                            doodad.PlantTime = plantTime;
+                            doodad.GrowthTime = growthTime;
+                            doodad.ItemId = itemId;
+                            doodad.DbHouseId = houseId;
+                            // Try to grab info from the actual item if it still exists
+                            var sourceItem = ItemManager.Instance.GetItemByItemId(itemId);
+                            doodad.ItemTemplateId = sourceItem?.TemplateId ?? itemTemplateId;
+                            // Grab Ucc from it's old source item
+                            doodad.UccId = sourceItem?.UccId ?? 0;
+
+                            doodad.Transform.Local.SetPosition(x, y, z);
+                            doodad.Transform.Local.SetRotation(reader.GetFloat("roll"), reader.GetFloat("pitch"), reader.GetFloat("yaw"));
+
+                            // Apparently this is only a reference value, so might not actually need to parent it
+                            if (parentDoodad > 0)
                             {
-                                DbHouseId = dbHouseId,
-                                ObjId = ObjectIdManager.Instance.GetNextId(),
-                                TemplateId = templateId,
-                                Template = DoodadManager.Instance.GetTemplate(templateId),
-                                CurrentPhaseId = phaseId,
-                                OwnerId = ownerId,
-                                OwnerType = (DoodadOwnerType)ownerType,
-                                PlantTime = plantTime,
-                                GrowthTime = growthTime,
-                                Position = new Point(x, y, z)
+                                // var pDoodad = WorldManager.Instance.GetDoodadByDbId(parentDoodad);
+                                var pDoodad = _playerDoodads.FirstOrDefault(d => d.DbId == parentDoodad);
+                                if (pDoodad == null)
                                 {
-                                    RotationZ = reader.GetSByte("rotation_z"),
-                                    WorldId = 0
+                                    _log.Warn("Unable to place doodad {0} can't find it's parent doodad {1}", dbId,
+                                        parentDoodad);
                                 }
-                            };
+                                else
+                                {
+                                    //doodad.Transform.Parent = pDoodad.Transform;
+                                    //doodad.ParentObj = pDoodad;
+                                    //doodad.ParentObjId = pDoodad.ObjId;
+                                }
+                            }
+
+                            if (houseId > 0)
+                            {
+                                var owningHouse = HousingManager.Instance.GetHouseById(doodad.DbHouseId);
+                                if (owningHouse == null)
+                                {
+                                    _log.Warn("Unable to place doodad {0} can't find it's owning house {1}", dbId,
+                                        houseId);
+                                }
+                                else
+                                {
+                                    doodad.Transform.Parent = owningHouse.Transform;
+                                    doodad.ParentObj = owningHouse;
+                                    doodad.ParentObjId = owningHouse.ObjId;
+                                }
+                            }
 
                             _playerDoodads.Add(doodad);
                         }
@@ -206,27 +311,93 @@ namespace AAEmu.Game.Core.Managers.World
 
         public void SpawnAll()
         {
+            _log.Info("Spawning NPCs...");
             foreach (var (worldId, worldSpawners) in _npcSpawners)
-                foreach (var spawner in worldSpawners.Values)
-                    spawner.SpawnAll();
+            {
+                Task.Run(() =>
+                {
+                    _log.Info("Spawning {0} NPC spawners in world {1}", worldSpawners.Count, worldId);
+                    var count = 0;
+                    foreach (var spawner in worldSpawners.Values)
+                    {
+                        spawner.SpawnAll();
+                        count++;
+                        if (count % 5000 == 0 && worldId == 0)
+                        {
+                            _log.Info("{0} NPC spawners spawned...", count);
+                        }
+                    }
+                });
+            }
 
+            _log.Info("Spawning Doodads...");
             foreach (var (worldId, worldSpawners) in _doodadSpawners)
-                foreach (var spawner in worldSpawners.Values)
-                    spawner.Spawn(0);
+            {
+                Task.Run(() =>
+                {
+                    _log.Info("Spawning {0} Doodads in world {1}", worldSpawners.Count, worldId);
+                    var count = 0;
+                    foreach (var spawner in worldSpawners.Values)
+                    {
+                        spawner.Spawn(0);
+                        count++;
+                        if (count % 5000 == 0 && worldId == 0)
+                        {
+                            _log.Info("{0} Doodads spawned", count);
+                        }
+                    }
 
+                    _log.Info("{0} Doodads spawned", count);
+                });
+            }
+
+            _log.Info("Spawning Transfers...");
             foreach (var (worldId, worldSpawners) in _transferSpawners)
-                foreach (var spawner in worldSpawners.Values)
-                    spawner.SpawnAll();
+            {
+                Task.Run(() =>
+                {
+                    _log.Info("Spawning {0} Transfers in world {1}", worldSpawners.Count, worldId);
+                    var count = 0;
+                    foreach (var spawner in worldSpawners.Values)
+                    {
+                        spawner.SpawnAll();
+                        count++;
+                        if (count % 5000 == 0 && worldId == 0)
+                        {
+                            _log.Info("{0} Transfers spawned...", count);
+                        }
+                    }
 
+                    _log.Info("{0} Transfers spawned...", count);
+                });
+            }
+
+            _log.Info("Spawning Gimmicks...");
             foreach (var (worldId, worldSpawners) in _gimmickSpawners)
-                foreach (var spawner in worldSpawners.Values)
-                    spawner.Spawn(0);
+            {
+                Task.Run(() =>
+                {
+                    _log.Info("Spawning {0} Gimmicks in world {1}", worldSpawners.Count, worldId);
+                    var count = 0;
+                    foreach (var spawner in worldSpawners.Values)
+                    {
+                        spawner.Spawn(0);
+                        count++;
+                        if (count % 5000 == 0 && worldId == 0)
+                        {
+                            _log.Info("{0} Gimmicks spawned...", count);
+                        }
+                    }
 
+                    _log.Info("{0} Gimmicks spawned...", count);
+                });
+            }
+
+            _log.Info("Spawning Player Doodads asynchronously...");
             Task.Run(() =>
             {
                 foreach (var doodad in _playerDoodads)
                 {
-                    doodad.DoPhase(null, 0);
                     doodad.Spawn();
                 }
             });
@@ -282,7 +453,7 @@ namespace AAEmu.Game.Core.Managers.World
 
             var res = new HashSet<GameObject>();
             foreach (var npc in temp)
-                if (npc.Respawn <= DateTime.Now)
+                if (npc.Respawn <= DateTime.UtcNow)
                     res.Add(npc);
             return res;
         }
@@ -297,7 +468,7 @@ namespace AAEmu.Game.Core.Managers.World
 
             var res = new HashSet<GameObject>();
             foreach (var item in temp)
-                if (item.Despawn <= DateTime.Now)
+                if (item.Despawn <= DateTime.UtcNow)
                     res.Add(item);
             return res;
         }
@@ -311,7 +482,7 @@ namespace AAEmu.Game.Core.Managers.World
                 {
                     foreach (var obj in respawns)
                     {
-                        if (obj.Respawn >= DateTime.Now)
+                        if (obj.Respawn >= DateTime.UtcNow)
                             continue;
                         if (obj is Npc npc)
                             npc.Spawner.Respawn(npc);
@@ -330,7 +501,7 @@ namespace AAEmu.Game.Core.Managers.World
                 {
                     foreach (var obj in despawns)
                     {
-                        if (obj.Despawn >= DateTime.Now)
+                        if (obj.Despawn >= DateTime.UtcNow)
                             continue;
                         if (obj is Npc npc && npc.Spawner != null)
                             npc.Spawner.Despawn(npc);
@@ -340,6 +511,10 @@ namespace AAEmu.Game.Core.Managers.World
                             transfer.Spawner.Despawn(transfer);
                         else if (obj is Gimmick gimmick && gimmick.Spawner != null)
                             gimmick.Spawner.Despawn(gimmick);
+                        else if (obj is Slave slave) // slaves don't have a spawner, but this is used for delayed despawn of un-summoned boats
+                            slave.Delete();
+                        else if (obj is Doodad doodad2)
+                            doodad2.Delete();
                         else
                         {
                             ObjectIdManager.Instance.ReleaseId(obj.ObjId);

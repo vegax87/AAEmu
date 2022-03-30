@@ -376,7 +376,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             if (caster.GetRelationStateTo(trg) == RelationState.Friendly)
             {
-                if (!trg.Buffs.CheckBuff((uint)BuffConstants.RETRIBUTION_BUFF))
+                if (!trg.Buffs.CheckBuff((uint)BuffConstants.Retribution))
                 {
                     caster.SetCriminalState(true);
                 }

@@ -6,6 +6,7 @@ using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Utils.DB;
 using NLog;
 
@@ -31,7 +32,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new FriendTemplate
+                            var template = new FriendTemplate()
                             {
                                 Id = reader.GetUInt32("id"),
                                 FriendId = reader.GetUInt32("friend_id"),
@@ -109,7 +110,7 @@ namespace AAEmu.Game.Core.Managers
                             {
                                 Name = reader.GetString("name"),
                                 CharacterId = reader.GetUInt32("id"),
-                                Position = new Point(reader.GetUInt32("zone_id"), reader.GetFloat("x"), reader.GetFloat("y"), reader.GetFloat("z")),
+                                Position = new Transform(null, null, 1, reader.GetUInt32("zone_id"), 1, reader.GetFloat("x"), reader.GetFloat("y"), reader.GetFloat("z"), 0, 0, 0),
                                 InParty = false,
                                 IsOnline = false,
                                 Race = (Race)reader.GetUInt32("race"),
@@ -158,11 +159,11 @@ namespace AAEmu.Game.Core.Managers
 
         private static Friend FormatFriend(Character friend)
         {
-            return new Friend
+            return new Friend()
             {
                 Name = friend.Name,
                 CharacterId = friend.Id,
-                Position = friend.Position.Clone(),
+                Position = friend.Transform.Clone(),
                 InParty = friend.InParty,
                 IsOnline = true,
                 Race = friend.Race,

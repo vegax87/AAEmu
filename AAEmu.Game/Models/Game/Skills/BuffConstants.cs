@@ -2,20 +2,31 @@
 {
     public enum BuffConstants : uint
     {
-        BLOODLUST_BUFF = 1482,
-        RETRIBUTION_BUFF = 2167,
-        EQUIP_DUALWIELD_BUFF = 4899,
-        EQUIP_SHIELD_BUFF = 8226,
-        EQUIP_TWOHANDED_BUFF = 8227,
-        DUALWIELD_PROFICIENCY = 831,
-        ARMOR_BUFF_TAG = 145,
-        CLOTH_4P = 713,
-        CLOTH_7P = 714,
-        LEATHER_4P = 715,
-        LEATHER_7P = 716,
-        PLATE_4P = 717,
-        PLATE_7P = 740,
-        EQUIPMENT_BUFF_TAG = 156,
-        NPC_RETURN_BUFF = 550 // TODO: Find
+        ArmorBuffTag = 145,
+        EquipmentBuffTag = 156,
+        Untouchable = 545,
+        Cloth4P = 713,
+        Cloth7P = 714,
+        Leather4P = 715,
+        Leather7P = 716,
+        Plate4P = 717,
+        Plate7P = 740,
+        DualwieldProficiency = 831,
+        FallStun = 1391, // From fall damage
+        Bloodlust = 1482, // Ctrl+F
+        Retribution = 2167,
+        RemovalDebuff = 2250, // for houses
+        LoggedOn = 2423, // player is logging in
+        Deterioration = 3553, // Deterioration
+        TaxProtection = 3554, // Tax Protection
+        EquipDualwield = 4899,
+        ScoreMemorized = 6010,
+        FlutePlay = 6176,
+        LutePlay = 6177,
+        DrumPlay = 8216, // this one is actually called Play Drums, but not really used
+        EquipShield = 8226,
+        EquipTwoHanded = 8227,
+        InBeautySalon = 6117,
+        NpcReturn = 550 // TODO: Find
     }
 }

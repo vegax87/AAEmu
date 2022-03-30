@@ -42,7 +42,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 sourceItem = character.Inventory.Bag.GetItemByItemId(skillItem.ItemId);
 
 
-            _log.Debug("LootGroups {0}", lootGroups);
+            _log.Trace("LootGroups {0}", lootGroups);
 
             var rowG = lootGroups.Length;
             var rowP = lootPacks.Length;
@@ -165,7 +165,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 }
             }
 
-            _log.Debug("GainLootPackItemEffect {0}", LootPackId);
+            _log.Trace("GainLootPackItemEffect {0}", LootPackId);
         }
 
         private void AddGold(Unit caster, int goldMin, int goldMax)

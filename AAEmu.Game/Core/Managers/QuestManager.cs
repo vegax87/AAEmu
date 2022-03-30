@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 
 using AAEmu.Commons.Utils;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Quests;
 using AAEmu.Game.Models.Game.Quests.Acts;
+using AAEmu.Game.Models.Game.Quests.Static;
 using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Models.Tasks.Quests;
 using AAEmu.Game.Utils.DB;
 
 using NLog;
@@ -22,6 +25,7 @@ namespace AAEmu.Game.Core.Managers
         private Dictionary<string, Dictionary<uint, QuestActTemplate>> _actTemplates;
         private Dictionary<uint, List<uint>> _groupItems;
         private Dictionary<uint, List<uint>> _groupNpcs;
+        public Dictionary<uint, Dictionary<uint, QuestTimeoutTask>> QuestTimeoutTask;
 
         public QuestTemplate GetTemplate(uint id)
         {
@@ -56,21 +60,36 @@ namespace AAEmu.Game.Core.Managers
 
         public List<uint> GetGroupItems(uint groupId)
         {
-            return _groupItems.ContainsKey(groupId) ? _groupItems[groupId] : new List<uint>();
+            return _groupItems.ContainsKey(groupId) ? (_groupItems[groupId]) : new List<uint>();
         }
 
         public bool CheckGroupItem(uint groupId, uint itemId)
         {
-            return _groupItems.ContainsKey(groupId) && _groupItems[groupId].Contains(itemId);
+            return _groupItems.ContainsKey(groupId) && (_groupItems[groupId].Contains(itemId));
         }
 
         public bool CheckGroupNpc(uint groupId, uint npcId)
         {
-            return _groupNpcs.ContainsKey(groupId) && _groupNpcs[groupId].Contains(npcId);
+            return _groupNpcs.ContainsKey(groupId) && (_groupNpcs[groupId].Contains(npcId));
+        }
+
+        public void QuestCompleteTask(Character owner, uint questId)
+        {
+            owner.Quests.Complete(questId, 0);
+        }
+
+        public void CancelQuest(Character owner, uint questId)
+        {
+            owner.Quests.Drop(questId, true);
+            owner.SendMessage("[Quest] {0}, quest {1} time is over, you didn't make it. Try again.", owner.Name, questId);
+            _log.Warn("[Quest] {0}, quest {1} time is over, you didn't make it. Try again.", owner.Name, questId);
         }
 
         public void Load()
         {
+            //                              charId          questId  Task
+            QuestTimeoutTask = new Dictionary<uint, Dictionary<uint, QuestTimeoutTask>>();
+
             _templates = new Dictionary<uint, QuestTemplate>();
             _supplies = new Dictionary<byte, QuestSupplies>();
             _acts = new Dictionary<uint, List<QuestAct>>();
@@ -87,7 +106,7 @@ namespace AAEmu.Game.Core.Managers
                 _log.Info("Loading quests...");
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT * FROM quest_contexts";
+                    command.CommandText = "SELECT * FROM quest_contexts ORDER BY id ASC";
                     command.Prepare();
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
@@ -102,7 +121,7 @@ namespace AAEmu.Game.Core.Managers
                             template.RestartOnFail = reader.GetBoolean("restart_on_fail", true);
                             template.ChapterIdx = reader.GetUInt32("chapter_idx", 0);
                             template.QuestIdx = reader.GetUInt32("quest_idx", 0);
-                            //template.MilestoneId = reader.GetUInt32("milestone_id", 0); // there is no such field in the database for version 3030
+                            //template.MilestoneId = reader.GetUInt32("milestone_id", 0);
                             template.LetItDone = reader.GetBoolean("let_it_done", true);
                             template.DetailId = reader.GetUInt32("detail_id");
                             template.ZoneId = reader.GetUInt32("zone_id");
@@ -118,7 +137,7 @@ namespace AAEmu.Game.Core.Managers
                 }
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT * FROM quest_components";
+                    command.CommandText = "SELECT * FROM quest_components ORDER BY quest_context_id ASC, component_kind_id ASC, id ASC";
                     command.Prepare();
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
@@ -143,6 +162,7 @@ namespace AAEmu.Game.Core.Managers
                             template.AiCommandSetId = reader.GetUInt32("ai_command_set_id", 0);
                             template.OrUnitReqs = reader.GetBoolean("or_unit_reqs", true);
                             template.CinemaId = reader.GetUInt32("cinema_id", 0);
+                            template.BuffId = reader.GetUInt32("buff_id", 0);
                             _templates[questId].Components.Add(template.Id, template);
                         }
                     }
@@ -168,7 +188,7 @@ namespace AAEmu.Game.Core.Managers
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT * FROM quest_acts";
+                    command.CommandText = "SELECT * FROM quest_acts ORDER BY quest_component_id ASC, id ASC";
                     command.Prepare();
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {

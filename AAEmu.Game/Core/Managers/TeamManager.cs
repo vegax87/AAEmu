@@ -8,7 +8,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Team;
-
+using AAEmu.Game.Models.Game.World.Transform;
 using NLog;
 
 namespace AAEmu.Game.Core.Managers

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
@@ -36,7 +35,7 @@ namespace AAEmu.Game.Core.Packets.C2G
                 var slotType = stream.ReadByte();
                 var slot = stream.ReadByte();
                 if (slotType == 0)
-                    itemSlots.Add((0, 0));
+                    itemSlots.Add(((byte)0, (byte)0));
                 else
                     itemSlots.Add(((SlotType)slotType, slot));
             }
@@ -45,13 +44,13 @@ namespace AAEmu.Game.Core.Packets.C2G
             var doodad = WorldManager.Instance.GetDoodad(doodadObjId);
 
             // Validate if we are near a MailBox
-            bool mailCheckOK;
+            bool mailCheckOK ;
             if (doodad != null)
             {
                 // Doodad GroupID 6 is "Other - Mailboxes"
                 if (doodad.Template.GroupId == 6)
                 {
-                    var dist = MathUtil.CalculateDistance(Connection.ActiveChar.Position, doodad.Position);
+                    var dist = MathUtil.CalculateDistance(Connection.ActiveChar.Transform.World.Position, doodad.Transform.World.Position);
                     mailCheckOK = dist <= 5f; // 5m is kinda generous I guess
                 }
                 else

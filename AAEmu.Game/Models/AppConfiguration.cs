@@ -1,4 +1,8 @@
-﻿using AAEmu.Commons.Utils;
+﻿using System.Collections.Generic;
+using AAEmu.Commons.Utils;
+using AAEmu.Game.IO;
+using AAEmu.Game.Models.Game;
+using AAEmu.Game.Models.Game.Expeditions;
 
 namespace AAEmu.Game.Models
 {
@@ -15,6 +19,11 @@ namespace AAEmu.Game.Models
         public int MaxConcurencyThreadPool { get; set; }
         public bool HeightMapsEnable { get; set; }
         public string DiscordToken { get; set; }
+        public ExpeditionConfig Expedition { get; set; }
+        public WorldConfig World { get; set; }
+        public Dictionary<string, int> AccessLevel { get; set; } = new Dictionary<string, int>();
+        public AccountConfig Account { get; set; }
+        public ClientDataConfig ClientData { get; set; } = new ClientDataConfig();
 
         public class NetworkConfig
         {

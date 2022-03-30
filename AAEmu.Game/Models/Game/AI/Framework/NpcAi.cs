@@ -4,7 +4,7 @@ using System.Linq;
 
 using AAEmu.Game.Models.Game.AI.Params;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Models.Game.World.Transform;
 
 using NLog;
 
@@ -21,7 +21,7 @@ namespace AAEmu.Game.Models.Game.AI.Framework
         public bool ShouldTick { get; set; }
 
         public Npc Owner { get; set; }
-        public Point IdlePosition { get; set; }
+        public Transform IdlePosition { get; set; }
         public AiParams Param { get; set; }
 
         private Dictionary<BehaviorKind, Behavior> _behaviors;

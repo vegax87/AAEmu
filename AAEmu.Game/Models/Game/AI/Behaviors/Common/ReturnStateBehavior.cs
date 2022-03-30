@@ -23,7 +23,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
             if (needRestorationOnReturn)
             {
                 // StartSkill RETURN SKILL TYPE
-                Ai.Owner.Buffs.AddBuff((uint)BuffConstants.NPC_RETURN_BUFF, Ai.Owner);
+                Ai.Owner.Buffs.AddBuff((uint)BuffConstants.NpcReturn, Ai.Owner);
                 Ai.Owner.Hp = Ai.Owner.MaxHp;
                 Ai.Owner.Mp = Ai.Owner.MaxMp;
                 Ai.Owner.BroadcastPacket(new SCUnitPointsPacket(Ai.Owner.ObjId, Ai.Owner.Hp, Ai.Owner.Mp, Ai.Owner.HighAbilityRsc), true);
@@ -46,9 +46,9 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
 
         public override void Tick(TimeSpan delta)
         {
-            Ai.Owner.MoveTowards(Ai.IdlePosition, 2.4f * (delta.Milliseconds / 1000.0f)); // TODO: Get proper npc speed
+            Ai.Owner.MoveTowards(Ai.IdlePosition.Local.Position, 2.4f * (delta.Milliseconds / 1000.0f)); // TODO: Get proper npc speed
 
-            var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition, Ai.Owner.Position);
+            var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition.Local.Position, Ai.Owner.Transform.World.Position);
             if (distanceToIdle < 1.0f)
                 OnCompletedReturnNoTeleport();
 
@@ -58,10 +58,10 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
 
         private void OnCompletedReturn()
         {
-            var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition, Ai.Owner.Position);
+            var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition.Local.Position, Ai.Owner.Transform.World.Position);
             if (distanceToIdle > 2 * 2)
             {
-                Ai.Owner.MoveTowards(Ai.IdlePosition, 1000000.0f);
+                Ai.Owner.MoveTowards(Ai.IdlePosition.Local.Position, 1000000.0f);
                 Ai.Owner.StopMovement();
             }
 
@@ -78,7 +78,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
         {
             // TODO: Ai.Owner.EnableAggro();
 
-            Ai.Owner.Buffs.RemoveBuff((uint)BuffConstants.NPC_RETURN_BUFF);
+            Ai.Owner.Buffs.RemoveBuff((uint)BuffConstants.NpcReturn);
         }
     }
 }

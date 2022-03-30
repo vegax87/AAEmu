@@ -6,6 +6,7 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units.Route;
 
 namespace AAEmu.Game.Core.Packets.C2G
@@ -43,7 +44,6 @@ namespace AAEmu.Game.Core.Packets.C2G
                 Connection.ActiveChar.Simulation = new Simulation(character);
 
                 Connection.SendPacket(new SCCharacterStatePacket(character));
-
                 Connection.SendPacket(new SCCharacterGamePointsPacket(character));
                 Connection.ActiveChar.Inventory.Send();
                 Connection.SendPacket(new SCActionSlotsPacket(Connection.ActiveChar.Slots));
@@ -81,7 +81,9 @@ namespace AAEmu.Game.Core.Packets.C2G
                 Connection.ActiveChar.SendOption(2);
                 Connection.ActiveChar.SendOption(5);
 
-                Connection.ActiveChar.OnZoneChange(0, Connection.ActiveChar.Position.ZoneId);
+                Connection.ActiveChar.Buffs.AddBuff((uint)BuffConstants.LoggedOn, Connection.ActiveChar);
+
+                Connection.ActiveChar.OnZoneChange(0, Connection.ActiveChar.Transform.ZoneId);
             }
             else
             {

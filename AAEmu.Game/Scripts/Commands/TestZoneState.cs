@@ -44,7 +44,7 @@ namespace AAEmu.Game.Scripts.Commands
                             conflict.ZoneGroupId,
                             ZoneConflictType.Trouble0,
                             conflict.NoKillMin[0] > 0
-                                ? DateTime.Now.AddMinutes(conflict.NoKillMin[0])
+                                ? DateTime.UtcNow.AddMinutes(conflict.NoKillMin[0])
                                 : DateTime.MinValue
                         )
                     );
@@ -63,7 +63,7 @@ namespace AAEmu.Game.Scripts.Commands
 
             if (zonegroupid <= 0)
             {
-                var thiszone = ZoneManager.Instance.GetZoneByKey(character.Position.ZoneId);
+                var thiszone = ZoneManager.Instance.GetZoneByKey(character.Transform.ZoneId);
                 if (thiszone != null)
                     zonegroupid = (ushort)(thiszone.GroupId);
             }

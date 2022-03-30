@@ -32,20 +32,22 @@ namespace AAEmu.Game.Models.Game.World
         {
             // Z check
             var zOffset = Value3;
-            toCheck = toCheck.Where(o => o.Position.Z >= origin.Position.Z - zOffset && o.Position.Z <= origin.Position.Z + zOffset).ToList();
+            toCheck = toCheck.Where(o => (o.Transform.World.Position.Z >= origin.Transform.World.Position.Z - zOffset) && (o.Transform.World.Position.Z <= origin.Transform.World.Position.Z + zOffset)).ToList();
             if (toCheck.Count == 0)
                 return toCheck;
 
             // Triangle check
-            var vertices = MathUtil.GetCuboidVertices(Value1, Value2, origin.Position.X, origin.Position.Y,
-                origin.Position.RotationZ);
+            var vertices = MathUtil.GetCuboidVertices(Value1, Value2,
+                origin.Transform.World.Position.X, origin.Transform.World.Position.Y,
+                //origin.Transform.World.ToRollPitchYawSBytes().Item3);
+                origin.Transform.World.Rotation.Z);
 
             toCheck = toCheck.Where(o =>
             {
-                var tri1 = MathUtil.PointInTriangle((o.Position.X, o.Position.Y), vertices[0], vertices[1],
+                var tri1 = MathUtil.PointInTriangle((o.Transform.World.Position.X, o.Transform.World.Position.Y), vertices[0], vertices[1],
                     vertices[2]);
 
-                var tri2 = MathUtil.PointInTriangle((o.Position.X, o.Position.Y), vertices[1], vertices[2],
+                var tri2 = MathUtil.PointInTriangle((o.Transform.World.Position.X, o.Transform.World.Position.Y), vertices[1], vertices[2],
                     vertices[3]);
 
                 return tri1 || tri2;
@@ -105,9 +107,12 @@ namespace AAEmu.Game.Models.Game.World
 
         public void OnEnter(Unit unit)
         {
+            if (Caster == null)
+                return;
+
             if (SkillTargetingUtil.IsRelationValid(TargetRelation, Caster, unit))
-                InsideBuffTemplate?.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.Now);
-            // unit.Effects.AddEffect(new Effect(Owner, Caster, new SkillCasterUnit(Caster.ObjId), InsideBuffTemplate, null, DateTime.Now));
+                InsideBuffTemplate?.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.UtcNow);
+            // unit.Effects.AddEffect(new Effect(Owner, Caster, new SkillCasterUnit(Caster.ObjId), InsideBuffTemplate, null, DateTime.UtcNow));
         }
 
         public void OnLeave(Unit unit)
@@ -148,7 +153,7 @@ namespace AAEmu.Game.Models.Game.World
                     else
                         castAction = new CastSkill(SkillId, 0);
 
-                    effect.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), castAction, new EffectSource(), new SkillObject(), DateTime.Now);
+                    effect.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), castAction, new EffectSource(), new SkillObject(), DateTime.UtcNow);
                 }
             }
         }
@@ -158,10 +163,10 @@ namespace AAEmu.Game.Models.Game.World
         {
             UpdateUnits();
             if (TickRate > 0)
-                if ((DateTime.Now - _lastTick).TotalMilliseconds > TickRate)
+                if ((DateTime.UtcNow - _lastTick).TotalMilliseconds > TickRate)
                 {
                     ApplyEffects();
-                    _lastTick = DateTime.Now;
+                    _lastTick = DateTime.UtcNow;
                 }
         }
     }

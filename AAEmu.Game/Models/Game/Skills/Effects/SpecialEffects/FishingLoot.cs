@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Linq;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Units;
-using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
     class FishingLoot : SpecialEffectAction
     {
+        protected override SpecialType SpecialEffectActionType => SpecialType.FishingLoot;
+
         public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
@@ -24,22 +26,22 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
-            //_log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", target.Position.ZoneId, value1, target.Name, targetObj.ObjId);
-            
+            _log.Trace("value1 {0}, value2 {1}, value3 {2}, value4 {3}", target.Transform.ZoneId, value1, target.Name, targetObj.ObjId);
+
             var lootTableId = new uint();
-            var zoneId = ZoneManager.Instance.GetZoneByKey(target.Position.ZoneId).GroupId;
-            
-            if(target.Position.Z > 101)
+            var zoneId = ZoneManager.Instance.GetZoneByKey(target.Transform.ZoneId).GroupId;
+
+            if (target.Transform.World.Position.Z > 101)
                 lootTableId = ZoneManager.Instance.GetZoneGroupById(zoneId).FishingLandLootPackId;
             else
                 lootTableId = ZoneManager.Instance.GetZoneGroupById(zoneId).FishingSeaLootPackId;
-            
+
             var lootPacks = ItemManager.Instance.GetLootPacks(lootTableId);
 
             if (lootPacks != null)
             {
                 var totalDropRate = (int)lootPacks.Sum(c => c.DropRate); //Adds the total drop rate of all possible items from a skill
-                var rand = new Random();
+                Random rand = new Random();
                 var randChoice = rand.Next(totalDropRate);
 
                 LootPacks lootpack = null;

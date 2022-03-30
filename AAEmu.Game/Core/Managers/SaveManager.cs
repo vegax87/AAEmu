@@ -3,6 +3,7 @@ using System.Diagnostics;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models;
 using AAEmu.Game.Models.Tasks.SaveTask;
 using AAEmu.Game.Utils.DB;
 
@@ -14,7 +15,7 @@ namespace AAEmu.Game.Core.Managers
     {
         protected static Logger _log = LogManager.GetCurrentClassLogger();
 
-        private double Delay = 1; // TODO: 1 minute for debugging, should likely be more like 5 or 10 on production, maybe add to configuration ?
+        private double Delay = 1;
         private bool _enabled;
         private bool _isSaving;
         private object _lock = new object();
@@ -30,14 +31,7 @@ namespace AAEmu.Game.Core.Managers
         {
             _log.Info("Initialising Save Manager...");
             _enabled = true;
-            if (double.TryParse(ConfigurationManager.Instance.GetConfiguration("AutoSaveInterval"), out var d))
-            {
-                Delay = d;
-            }
-            else
-            {
-                Delay = 5; // Default to 5 minutes
-            }
+            Delay = AppConfiguration.Instance.World.AutoSaveInterval;
             SaveTickStart();
         }
 
@@ -119,13 +113,13 @@ namespace AAEmu.Game.Core.Managers
                                 {
                                     transaction.Commit();
 
-                                    if (savedHouses.Item1 + savedHouses.Item2 > 0)
+                                    if ((savedHouses.Item1 + savedHouses.Item2) > 0)
                                         _log.Debug("Updated {0} and deleted {1} houses ...", savedHouses.Item1, savedHouses.Item2);
-                                    if (savedMails.Item1 + savedMails.Item2 > 0)
+                                    if ((savedMails.Item1 + savedMails.Item2) > 0)
                                         _log.Debug("Updated {0} and deleted {1} mails ...", savedMails.Item1, savedMails.Item2);
-                                    if (saveItems.Item1 + saveItems.Item2 > 0)
+                                    if ((saveItems.Item1 + saveItems.Item2) > 0)
                                         _log.Debug("Updated {0} and deleted {1} items ...", saveItems.Item1, saveItems.Item2);
-                                    if (savedAuctionHouse.Item1 + savedAuctionHouse.Item2 > 0)
+                                    if ((savedAuctionHouse.Item1 + savedAuctionHouse.Item2) > 0)
                                         _log.Debug("Updated {0} and deleted {1} auction items ...", savedAuctionHouse.Item1, savedAuctionHouse.Item2);
                                     if (savedCharacters > 0)
                                         _log.Debug("Updated {0} characters ...", savedCharacters);
@@ -152,7 +146,7 @@ namespace AAEmu.Game.Core.Managers
                 }
                 catch (Exception e)
                 {
-                    _log.Error(string.Format("DoSave Exception: {0}", e.Message));
+                    _log.Error(e, "DoSave Exception\n");
                 }
                 stopWatch.Stop();
                 _log.Debug("Saving data took {0}", stopWatch.Elapsed);

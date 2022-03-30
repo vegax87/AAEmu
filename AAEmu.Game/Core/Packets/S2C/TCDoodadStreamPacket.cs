@@ -27,12 +27,15 @@ namespace AAEmu.Game.Core.Packets.S2C
             {
                 stream.WriteBc(doodad.ObjId);    // bc
                 stream.Write(doodad.TemplateId); // type
-                stream.WritePosition(doodad.Position.X, doodad.Position.Y, doodad.Position.Z); // pos_bc_xyz
-                stream.Write(Helpers.ConvertRotation(doodad.Position.RotationX)); // rotx
-                stream.Write(Helpers.ConvertRotation(doodad.Position.RotationY)); // roty
-                stream.Write(Helpers.ConvertRotation(doodad.Position.RotationZ)); // rotz
-                stream.Write(doodad.Scale);          //scale
-                stream.Write(doodad.CurrentPhaseId); // doodad_func_groups Id type
+                stream.WritePosition(doodad.Transform.World.Position.X, doodad.Transform.World.Position.Y, doodad.Transform.World.Position.Z);
+                var (roll, pitch, yaw) = doodad.Transform.World.ToRollPitchYawShorts();
+                stream.Write(roll);  // rotx
+                stream.Write(pitch); // roty
+                stream.Write(yaw);   // rotz
+                stream.Write(doodad.Scale);
+                stream.Write(doodad.FuncGroupId); // doodad_func_groups Id
+                //stream.Write(doodad.TimeLeft); // growing
+                //stream.Write(doodad.PlantTime); // plantTime
             }
 
             return stream;

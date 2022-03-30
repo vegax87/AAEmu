@@ -1,19 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Expeditions;
+using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Plots.Tree;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
+using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Tasks;
@@ -35,7 +39,7 @@ namespace AAEmu.Game.Models.Game.Units
         {
             get
             {
-                return ModelManager.Instance.GetActorModel(ModelId)?.Radius ?? 0 * Scale;
+                return (ModelManager.Instance.GetActorModel(ModelId)?.Radius ?? 0) * Scale;
             }
         }
 
@@ -172,7 +176,7 @@ namespace AAEmu.Game.Models.Game.Units
         public SkillTask SkillTask { get; set; }
         public SkillTask AutoAttackTask { get; set; }
         public DateTime GlobalCooldown { get; set; }
-        public bool IsGlobalCooldowned => GlobalCooldown > DateTime.Now;
+        public bool IsGlobalCooldowned => GlobalCooldown > DateTime.UtcNow;
         public object GCDLock { get; set; }
         public DateTime SkillLastUsed { get; set; }
         public PlotState ActivePlotState { get; set; }
@@ -208,14 +212,19 @@ namespace AAEmu.Game.Models.Game.Units
             IsInBattle = false;
             // TODO 1.2 Equipment.ContainerSize = 28, at 3.0.3.0 Equipment.ContainerSize = 29
             Equipment = new ItemContainer(null, SlotType.Equipment, true);
-            Equipment.ContainerSize = 29;
+            Equipment.ContainerSize = 29; //28;
             ChargeLock = new object();
             Cooldowns = new UnitCooldowns();
         }
 
-        public override void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
+        public void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
         {
-            var moved = !Position.X.Equals(x) || !Position.Y.Equals(y) || !Position.Z.Equals(z);
+            SetPosition(x, y, z, (float)MathUtil.ConvertDirectionToRadian(rotationX), (float)MathUtil.ConvertDirectionToRadian(rotationY), (float)MathUtil.ConvertDirectionToRadian(rotationZ));
+        }
+
+        public override void SetPosition(float x, float y, float z, float rotationX, float rotationY, float rotationZ)
+        {
+            var moved = !Transform.World.Position.X.Equals(x) || !Transform.World.Position.Y.Equals(y) || !Transform.World.Position.Z.Equals(z);
             if (moved)
             {
                 Events.OnMovement(this, new OnMovementArgs());
@@ -223,8 +232,39 @@ namespace AAEmu.Game.Models.Game.Units
             base.SetPosition(x, y, z, rotationX, rotationY, rotationZ);
         }
 
-        public virtual void ReduceCurrentHp(Unit attacker, int value)
+        public bool CheckMovedPosition(Vector3 oldPosition)
         {
+            var moved = !Transform.World.Position.X.Equals(oldPosition.X) || !Transform.World.Position.Y.Equals(oldPosition.Y) || !Transform.World.Position.Z.Equals(oldPosition.Z);
+            if (moved)
+            {
+                Events.OnMovement(this, new OnMovementArgs());
+            }
+            if (DisabledSetPosition)
+                return moved;
+
+            WorldManager.Instance.AddVisibleObject(this);
+            // base.SetPosition(x, y, z, rotationX, rotationY, rotationZ);
+            return moved;
+        }
+
+        /// <summary>
+        /// Make unit take value amount of damage, if the unit dies, killReason is used as a reason
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="value"></param>
+        /// <param name="killReason"></param>
+        public virtual void ReduceCurrentHp(Unit attacker, int value, KillReason killReason = KillReason.Damage)
+        {
+            if (attacker.CurrentTarget is Character character)
+            {
+                if (AppConfiguration.Instance.World.GodMode)
+                {
+                    _log.Debug("{1}:{0}'s Damage disabled because of GM or Admin flag", character.Name, character.Id);
+                    return; // GodMode On : take 0 damage from Npc
+                }
+
+            }
+
             if (Hp <= 0)
                 return;
 
@@ -242,7 +282,7 @@ namespace AAEmu.Game.Models.Game.Units
             if (Hp <= 0)
             {
                 attacker.Events.OnKill(attacker, new OnKillArgs { target = attacker });
-                DoDie(attacker);
+                DoDie(attacker, killReason);
                 //StopRegen();
             }
             else
@@ -265,7 +305,7 @@ namespace AAEmu.Game.Models.Game.Units
             BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc), true);
         }
 
-        public virtual void DoDie(Unit killer)
+        public virtual void DoDie(Unit killer, KillReason killReason)
         {
             InterruptSkills();
 
@@ -303,7 +343,7 @@ namespace AAEmu.Game.Models.Game.Units
                 {
                     character2.StopAutoSkill(character2);
                     character2.IsInBattle = false; // we need the character to be "not in battle"
-                    character2.DeadTime = DateTime.Now;
+                    character2.DeadTime = DateTime.UtcNow;
                 }
 
                 killer.CurrentTarget = null;
@@ -351,17 +391,22 @@ namespace AAEmu.Game.Models.Game.Units
             BroadcastPacket(new SCUnitInvisiblePacket(ObjId, Invisible), true);
         }
 
+        public void SetGodMode(bool value)
+        {
+            AppConfiguration.Instance.World.GodMode = value;
+        }
+
         public void SetCriminalState(bool criminalState)
         {
             if (criminalState)
             {
-                var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.RETRIBUTION_BUFF);
+                var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.Retribution);
                 var casterObj = new SkillCasterUnit(ObjId);
-                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now));
+                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.UtcNow));
             }
             else
             {
-                Buffs.RemoveBuff((uint)BuffConstants.RETRIBUTION_BUFF);
+                Buffs.RemoveBuff((uint)BuffConstants.Retribution);
             }
         }
 
@@ -370,13 +415,13 @@ namespace AAEmu.Game.Models.Game.Units
             ForceAttack = value;
             if (ForceAttack)
             {
-                var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.BLOODLUST_BUFF);
+                var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.Bloodlust);
                 var casterObj = new SkillCasterUnit(ObjId);
-                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now));
+                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.UtcNow));
             }
             else
             {
-                Buffs.RemoveBuff((uint)BuffConstants.BLOODLUST_BUFF);
+                Buffs.RemoveBuff((uint)BuffConstants.Bloodlust);
             }
             BroadcastPacket(new SCForceAttackSetPacket(ObjId, ForceAttack), true);
         }
@@ -446,16 +491,37 @@ namespace AAEmu.Game.Models.Game.Units
             SendPacket(new SCErrorMsgPacket(type, 0, true));
         }
 
+        /// <summary>
+        /// Get distance between two units taking into account their model sizes
+        /// </summary>
+        /// <param name="baseUnit"></param>
+        /// <param name="includeZAxis"></param>
+        /// <returns></returns>
         public float GetDistanceTo(BaseUnit baseUnit, bool includeZAxis = false)
         {
-            if (Position == baseUnit.Position)
+            if (Transform.World.Position.Equals(baseUnit.Transform.World.Position))
                 return 0.0f;
 
-            var rawDist = MathUtil.CalculateDistance(this.Position, baseUnit.Position, includeZAxis);
-
+            var rawDist = MathUtil.CalculateDistance(Transform.World.Position, baseUnit.Transform.World.Position, includeZAxis);
+            if (baseUnit is Shipyard.Shipyard shipyard)
+            {
+                // Let's use the build radius for this, as it doesn't really have a easy to grab model to get it from 
+                rawDist -= ShipyardManager.Instance._shipyardsTemplate[shipyard.ShipyardData.TemplateId].BuildRadius;
+            }
+            else
+            if (baseUnit is House house)
+            {
+                // Subtract house radius, this should be fair enough for building
+                rawDist -= house.Template.GardenRadius * house.Scale;
+            }
+            else
+            {
+                // If target is a Unit, then use it's model for radius
+                if (baseUnit is Unit unit)
+                    rawDist -= ModelManager.Instance.GetActorModel(unit.ModelId)?.Radius ?? 0 * unit.Scale;
+            }
+            // Subtract own radius
             rawDist -= ModelManager.Instance.GetActorModel(ModelId)?.Radius ?? 0 * Scale;
-            if (baseUnit is Unit unit)
-                rawDist -= ModelManager.Instance.GetActorModel(unit.ModelId)?.Radius ?? 0 * unit.Scale;
 
             return Math.Max(rawDist, 0);
         }
@@ -467,7 +533,7 @@ namespace AAEmu.Game.Models.Game.Units
 
         public string GetAttribute(UnitAttribute attr)
         {
-            var props = this.GetType().GetProperties()
+            var props = GetType().GetProperties()
                 .Where(o => (o.GetCustomAttributes(typeof(UnitAttributeAttribute), true) as IEnumerable<UnitAttributeAttribute>)
                     .Any(a => a.Attributes.Contains(attr)));
 
@@ -476,6 +542,23 @@ namespace AAEmu.Game.Models.Game.Units
             else
                 return "NotFound";
         }
+
+        public T GetAttribute<T>(UnitAttribute attr, T defaultVal)
+        {
+            var props = GetType().GetProperties()
+                .Where(o => (o.GetCustomAttributes(typeof(UnitAttributeAttribute), true) as IEnumerable<UnitAttributeAttribute>)
+                    .Any(a => a.Attributes.Contains(attr)));
+
+            if (props.Any())
+            {
+                var ElementValue = props.ElementAt(0).GetValue(this);
+                if (ElementValue is T ret)
+                    return ret;
+            }
+            return defaultVal;
+        }
+        
+        
 
         public string GetAttribute(uint attr) => GetAttribute((UnitAttribute)attr);
 
@@ -527,5 +610,47 @@ namespace AAEmu.Game.Models.Game.Units
         {
 
         }
+
+        /// <summary>
+        /// Does fall damage based on velocity 
+        /// </summary>
+        /// <param name="fallVel">Velocity value from MoveType</param>
+        /// <returns>The damage that was dealt</returns>
+        public virtual int DoFallDamage(ushort fallVel)
+        {
+            var fallDmg = Math.Min(MaxHp, (int)(MaxHp * ((fallVel - 8600) / 15000f)));
+            var minHpLeft = MaxHp / 20; //5% of hp 
+            var maxDmgLeft = Hp - minHpLeft; // Max damage one can take 
+
+            if (fallVel >= 32000)
+            {
+                ReduceCurrentHp(this, Hp); // This is instant death so should be first
+                // This will also kill anybody riding this if this is a mount
+            }
+            else
+            {
+                if (fallDmg < maxDmgLeft)
+                {
+                    ReduceCurrentHp(this, fallDmg); //If you can take the hit without reaching 5% hp left take it
+                }
+                else
+                {
+                    var duration = 500 * (fallDmg / minHpLeft);
+
+                    var buff = SkillManager.Instance.GetBuffTemplate((uint)BuffConstants.FallStun);
+                    var casterObj = new SkillCasterUnit(ObjId);
+                    Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.UtcNow), 0, duration);
+
+                    if (Hp > minHpLeft)
+                        ReduceCurrentHp(this, maxDmgLeft); // Leaves you at 5% hp no matter what
+                }
+            }
+
+            BroadcastPacket(new SCEnvDamagePacket(EnvSource.Falling, ObjId, (uint)fallDmg), true);
+            //SendPacket(new SCEnvDamagePacket(EnvSource.Falling, ObjId, (uint)fallDmg));
+            // TODO: Maybe adjust formula & need to detect water landing?
+            return fallDmg;
+        }
+
     }
 }

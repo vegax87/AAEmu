@@ -20,7 +20,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             CastAction castObj,
             EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            _log.Debug("CraftEffect, {0}", WorldInteraction);
+            _log.Trace("CraftEffect, {0}", WorldInteraction);
 
             var wiGroup = WorldManager.Instance.GetWorldInteractionGroup((uint)WorldInteraction);
             if (caster is Character character)

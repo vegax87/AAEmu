@@ -44,6 +44,15 @@ namespace AAEmu.Game.Models.Game.Mails
             return MailManager.Instance.Send(this);
         }
 
+        /// <summary>
+        /// Checks if a mail can returned to it's sender
+        /// </summary>
+        /// <returns></returns>
+        public bool CanReturnMail()
+        {
+            return IsDelivered == false && Header.SenderId != Header.ReceiverId && Header.SenderId > 0 && (MailType == MailType.Normal || MailType == MailType.Express);
+        }
+
         public bool ReturnToSender()
         {
             // TODO

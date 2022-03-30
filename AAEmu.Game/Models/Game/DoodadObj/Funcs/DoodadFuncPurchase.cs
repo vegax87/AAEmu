@@ -8,6 +8,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 {
     public class DoodadFuncPurchase : DoodadFuncTemplate
     {
+        // doodad_funcs
         public uint ItemId { get; set; }
         public int Count { get; set; }
         public uint CoinItemId { get; set; }
@@ -16,8 +17,6 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 
         public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
-            owner.ToPhaseAndUse = false;
-
             if (!(caster is Character character))
                 return;
             if (character.Inventory.Bag.SpaceLeftForItem(ItemId) < Count)
@@ -38,6 +37,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
                 {
                     _log.Error(string.Format("DoodadFuncPurchase: Failed to auto-equip backpack item {0} for player {1}", ItemId, character.Name));
                     character.SendErrorMessage(ErrorMessageType.BackpackOccupied);
+                    return;
                 }
             }
             else

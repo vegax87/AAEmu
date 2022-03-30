@@ -36,7 +36,7 @@ namespace AAEmu.Game.Models.Game.AI.Behaviors.Common
                     }
                     else
                     {
-                        var rangeOfUnit = MathUtil.CalculateDistance(Ai.Owner.Position, unit.Position, true);
+                        var rangeOfUnit = MathUtil.CalculateDistance(Ai.Owner, unit, true);
                         if (rangeOfUnit < 3 * Ai.Owner.Template.SightRangeScale)
                         {
                             if (Ai.Owner.CanAttack(unit))

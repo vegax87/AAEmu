@@ -7,6 +7,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
     public class SpawnDoodad : SpecialEffectAction
     {
+        protected override SpecialType SpecialEffectActionType => SpecialType.SpawnDoodad;
+        
         public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
@@ -20,8 +22,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
-            var doodad = DoodadManager.Instance.Create(0, (uint)doodadId, caster);
-            doodad.Position = caster.Position.Clone();
+            var doodad = DoodadManager.Instance.Create(0, (uint) doodadId, caster);
+            doodad.Transform = caster.Transform.CloneDetached(doodad);
             doodad.Spawn();
         }
     }

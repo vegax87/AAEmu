@@ -6,6 +6,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.NPChar;
@@ -111,8 +112,8 @@ namespace AAEmu.Game.Core.Packets.G2C
                     break;
                 case BaseUnitType.Shipyard:
                     var shipyard = (Shipyard)_unit;
-                    stream.Write(shipyard.Template.Id);         // type(id)
-                    stream.Write(shipyard.Template.TemplateId); // type(id)
+                    stream.Write(shipyard.ShipyardData.Id);         // type(id)
+                    stream.Write(shipyard.ShipyardData.TemplateId); // type(id)
                     break;
             }
             #endregion BaseUnitType
@@ -127,7 +128,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 stream.Write("");
             }
 
-            stream.WritePosition(_unit.Position.X, _unit.Position.Y, _unit.Position.Z); // posXYZ
+            stream.WritePosition(_unit.Transform.Local.Position);
             stream.Write(_unit.Scale); // scale
             stream.Write(_unit.Level); // level
             stream.Write((byte)0);     // level for 3.0.3.0
@@ -148,42 +149,60 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_unit.Mp * 100); // preciseMana
 
             #region AttachPoint1
-            if (_unit is Transfer)
+            switch (_unit)
             {
-                var transfer = (Transfer)_unit;
-                if (transfer.BondingObjId != 0)
-                {
-                    stream.Write(transfer.AttachPointId);  // point
-                    stream.WriteBc(transfer.BondingObjId); // point to the owner where to attach
-                }
-                else
-                {
-                    stream.Write((sbyte)-1);   // point
-                }
-            }
-            else
-            {
-                stream.Write((sbyte)-1);   // point
+                case Character _:
+                case Npc _:
+                    stream.Write((byte)AttachPointKind.System); // point
+                    break;
+                case Slave unit:
+                    stream.Write(unit.AttachPointId);
+                    if (unit.AttachPointId > -1)
+                        stream.WriteBc(unit.OwnerObjId);
+                    break;
+                case House _:
+                case Mate _:
+                case Shipyard _:
+                    stream.Write((byte)AttachPointKind.System);   // point
+                    break;
+                case Transfer unit:
+                    stream.Write((byte)unit.AttachPointId);  // point
+                    if (unit.AttachPointId != AttachPointKind.System)
+                        stream.WriteBc(unit.BondingObjId); // point to the owner where to attach
+                    break;
             }
             #endregion AttachPoint1
 
             #region AttachPoint2
             switch (_unit)
             {
-                case Character character2 when character2.Bonding == null:
+                case Character unit:
+                    if (unit.Bonding == null)
+                    {
+                        stream.Write((sbyte)-1); // point
+                    }
+                    else
+                    {
+                        stream.Write(unit.Bonding);
+                    }
+                    break;
+                case Npc _:
                     stream.Write((sbyte)-1); // point
                     break;
-                case Character character2:
-                    stream.Write(character2.Bonding);
+                case Slave unit:
+                    if (unit.BondingObjId > 0)
+                    {
+                        stream.WriteBc(unit.BondingObjId);
+                    }
+                    else
+                    {
+                        stream.Write((sbyte)-1);
+                    }
                     break;
-                case Slave slave when slave.BondingObjId > 0:
-                    stream.WriteBc(slave.BondingObjId);
-                    break;
-                case Slave _:
+                case House _:
+                case Mate _:
+                case Shipyard _:
                 case Transfer _:
-                    stream.Write((sbyte)-1); // attachPoint
-                    break;
-                default:
                     stream.Write((sbyte)-1); // point
                     break;
             }
@@ -368,15 +387,17 @@ namespace AAEmu.Game.Core.Packets.G2C
                     break;
             }
 
+            // Rotation
             if (_baseUnitType == BaseUnitType.Housing)
             {
-                stream.Write(Helpers.ConvertDirectionToRadian(_unit.Position.RotationZ)); // должно быть float
+                stream.Write(_unit.Transform.Local.Rotation.Z); // должно быть float
             }
             else
             {
-                stream.Write(_unit.Position.RotationX);
-                stream.Write(_unit.Position.RotationY);
-                stream.Write(_unit.Position.RotationZ);
+                var (roll, pitch, yaw) = _unit.Transform.Local.ToRollPitchYawSBytes();
+                stream.Write(roll);
+                stream.Write(pitch);
+                stream.Write(yaw);
             }
 
             switch (_unit)

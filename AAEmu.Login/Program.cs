@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,22 +21,23 @@ namespace AAEmu.Login
         private static Thread _thread = Thread.CurrentThread;
         private static DateTime _startTime;
         private static string Name => Assembly.GetExecutingAssembly().GetName().Name;
-        private static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        private static string Version => Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "???";
 
-        public static int UpTime => (int) (DateTime.Now - _startTime).TotalSeconds;
+        public static int UpTime => (int) (DateTime.UtcNow - _startTime).TotalSeconds;
 
         public static async Task Main(string[] args)
         {
             CliUtil.WriteHeader("Login", ConsoleColor.DarkGreen);
             CliUtil.LoadingTitle();
-
+            
             Initialization();
 
-            if (FileManager.FileExists(FileManager.AppPath + "Config.json"))
-                Configuration(args);
+            var mainConfig = Path.Combine(FileManager.AppPath, "Config.json");
+            if (File.Exists(mainConfig))
+                Configuration(args, mainConfig);
             else
             {
-                _log.Error($"{FileManager.AppPath}Config.json doesn't exist!");
+                _log.Error($"{mainConfig} doesn't exist!");
                 return;
             }
 
@@ -72,19 +74,21 @@ namespace AAEmu.Login
         private static void Initialization()
         {
             _thread.Name = "AA.LoginServer Base Thread";
-            _startTime = DateTime.Now;
+            _startTime = DateTime.UtcNow;
         }
 
-        private static void Configuration(string[] args)
+        private static void Configuration(string[] args, string mainConfigJson)
         {
+            var configJsonFile = Path.Combine(FileManager.AppPath, "Config.json");
             var configurationBuilder = new ConfigurationBuilder()
-                .AddJsonFile(FileManager.AppPath + "Config.json")
+                .AddJsonFile(mainConfigJson)
                 .AddCommandLine(args)
                 .Build();
 
             configurationBuilder.Bind(AppConfiguration.Instance);
 
-            LogManager.Configuration = new XmlLoggingConfiguration(FileManager.AppPath + "NLog.config", false);
+            LogManager.Configuration =
+                new XmlLoggingConfiguration(Path.Combine(FileManager.AppPath, "NLog.config"), false);
         }
     }
 }

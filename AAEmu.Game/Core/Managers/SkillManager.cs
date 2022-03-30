@@ -1318,7 +1318,6 @@ namespace AAEmu.Game.Core.Managers
                         }
                     }
                 }
-
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "SELECT * FROM special_effects";

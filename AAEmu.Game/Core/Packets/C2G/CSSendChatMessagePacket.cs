@@ -16,7 +16,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 
         public override void Read(PacketStream stream)
         {
-            var type = (ChatType)stream.ReadInt16();
+            var type = (ChatType) stream.ReadInt16();
             var unk1 = stream.ReadInt16();
             var unk2 = stream.ReadInt32();
 
@@ -82,7 +82,7 @@ namespace AAEmu.Game.Core.Packets.C2G
                     var partyRaid = TeamManager.Instance.GetActiveTeamByUnit(Connection.ActiveChar.Id);
                     if (partyRaid != null)
                     {
-                        ChatManager.Instance.GetPartyChat(partyRaid, Connection.ActiveChar).SendMessage(Connection.ActiveChar, message, ability, languageType);
+                        ChatManager.Instance.GetPartyChat(partyRaid,Connection.ActiveChar).SendMessage(Connection.ActiveChar, message, ability, languageType);
                     }
                     else
                     {
@@ -93,7 +93,7 @@ namespace AAEmu.Game.Core.Packets.C2G
                 case ChatType.GroupFind: //lfg
                 case ChatType.Shout: //shout
                     // We use SendPacket here so we can fake our way through the different channel types
-                    ChatManager.Instance.GetZoneChat(Connection.ActiveChar.Position.ZoneId).SendPacket(
+                    ChatManager.Instance.GetZoneChat(Connection.ActiveChar.Transform.ZoneId).SendPacket(
                         new SCChatMessagePacket(type, Connection.ActiveChar, message, ability, languageType)
                         );
                     break;
@@ -108,14 +108,14 @@ namespace AAEmu.Game.Core.Packets.C2G
                         Connection.ActiveChar.SendErrorMessage(ErrorMessageType.ChatNotInExpedition);
                     }
                     break;
-                /*
-            case ChatType.Judge: 
-                // TODO: Need a check so only defendant and jury can talk here, the client does some checks too, but let's make sure
-                ChatManager.Instance.GetNationChat(Connection.ActiveChar.Race).SendPacket(
-                    new SCChatMessagePacket(type, Connection.ActiveChar, message, ability, languageType)
-                    );
-                break;
-                */
+                    /*
+                case ChatType.Judge: 
+                    // TODO: Need a check so only defendant and jury can talk here, the client does some checks too, but let's make sure
+                    ChatManager.Instance.GetNationChat(Connection.ActiveChar.Race).SendPacket(
+                        new SCChatMessagePacket(type, Connection.ActiveChar, message, ability, languageType)
+                        );
+                    break;
+                    */
                 case ChatType.Region: //nation (birth place/race, includes pirates etc)
                     ChatManager.Instance.GetNationChat(Connection.ActiveChar.Race).SendMessage(Connection.ActiveChar, message, ability, languageType);
                     break;

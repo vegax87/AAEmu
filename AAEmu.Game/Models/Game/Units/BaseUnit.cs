@@ -60,10 +60,10 @@ namespace AAEmu.Game.Models.Game.Units
             if (this.ObjId == target.ObjId)
                 return false;
             var relation = GetRelationStateTo(target);
-            var zone = ZoneManager.Instance.GetZoneByKey(target.Position.ZoneId);
+            var zone = ZoneManager.Instance.GetZoneByKey(target.Transform.ZoneId);
             if (this is Character me && target is Character other)
             {
-                var trgIsFlagged = other.Buffs.CheckBuff((uint)BuffConstants.RETRIBUTION_BUFF);
+                var trgIsFlagged = other.Buffs.CheckBuff((uint)BuffConstants.Retribution);
 
                 //check safezone
                 if (other.Faction.MotherId != 0 && other.Faction.MotherId == zone.FactionId 
@@ -72,7 +72,7 @@ namespace AAEmu.Game.Models.Game.Units
                     return false;
                 }
 
-                var isTeam = TeamManager.Instance.AreTeamMembers(me.Id, other.Id);
+                bool isTeam = TeamManager.Instance.AreTeamMembers(me.Id, other.Id);
                 if (trgIsFlagged && !isTeam && relation == RelationState.Friendly)
                 {
                     return true;

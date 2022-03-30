@@ -9,15 +9,21 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Char.Templates;
 using AAEmu.Game.Models.Game.Chat;
+using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Models.Tasks.Characters;
+using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
+
+using MySql.Data.MySqlClient;
 
 using NLog;
 
@@ -84,16 +90,17 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
         public void CombatTick(TimeSpan delta)
         {
-            //Not sure if we should put htis here or world
+            // Not sure if we should put this here or world
             foreach (var character in WorldManager.Instance.GetAllCharacters())
             {
-                if (character.IsInCombat && character.LastCombatActivity.AddSeconds(30) < DateTime.Now)
+                // TODO: Make it so you can also become out of combat if you are not on any aggro lists
+                if (character.IsInCombat && character.LastCombatActivity.AddSeconds(30) < DateTime.UtcNow)
                 {
                     character.BroadcastPacket(new SCCombatClearedPacket(character.ObjId), true);
                     character.IsInCombat = false;
                 }
 
-                if (character.IsInPostCast && character.LastCast.AddSeconds(5) < DateTime.Now)
+                if (character.IsInPostCast && character.LastCast.AddSeconds(5) < DateTime.UtcNow)
                 {
                     character.IsInPostCast = false;
                 }
@@ -413,38 +420,41 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 }
             }
 
-            var content = FileManager.GetFileContents($"{FileManager.AppPath}Data/CharTemplates.json");
+            var filePath = Path.Combine(FileManager.AppPath, "Data", "CharTemplates.json");
+            var content = FileManager.GetFileContents(filePath);
             if (string.IsNullOrWhiteSpace(content))
-                throw new IOException(
-                    $"File {FileManager.AppPath + "Data/CharTemplates.json"} doesn't exists or is empty.");
+                throw new IOException($"File {filePath} doesn't exists or is empty.");
 
             if (JsonHelper.TryDeserializeObject(content, out List<CharacterTemplateConfig> charTemplates, out _))
             {
                 foreach (var charTemplate in charTemplates)
                 {
-                    var point = new Point(charTemplate.Pos.X, charTemplate.Pos.Y, charTemplate.Pos.Z);
-                    point.WorldId = charTemplate.Pos.WorldId;
-                    point.ZoneId = WorldManager
-                        .Instance
-                        .GetZoneId(charTemplate.Pos.WorldId, charTemplate.Pos.X, charTemplate.Pos.Y); // TODO ...
+                    var point = charTemplate.Pos.Clone();
+                    // Recalculate ZoneId as this isn't included in the config
+                    // Always use main_world Id for this
+                    point.ZoneId = WorldManager.Instance.GetZoneId(WorldManager.DefaultWorldId, charTemplate.Pos.X, charTemplate.Pos.Y);
+                    // Convert the json's degrees to rads
+                    point.Roll = point.Roll.DegToRad();
+                    point.Pitch = point.Pitch.DegToRad();
+                    point.Yaw = point.Yaw.DegToRad();
 
-                    point.RotationX = charTemplate.Pos.RotationX;
-                    point.RotationY = charTemplate.Pos.RotationY;
-                    point.RotationZ = charTemplate.Pos.RotationZ;
-
+                    // Males
                     var template = _templates[(byte)(16 + charTemplate.Id)];
-                    template.Position = point;
+                    template.SpawnPosition = point;
+                    template.SpawnPosition.WorldId = WorldManager.DefaultWorldId;
                     template.NumInventorySlot = charTemplate.NumInventorySlot;
                     template.NumBankSlot = charTemplate.NumBankSlot;
 
+                    // Females
                     template = _templates[(byte)(32 + charTemplate.Id)];
-                    template.Position = point;
+                    template.SpawnPosition = point;
+                    template.SpawnPosition.WorldId = WorldManager.DefaultWorldId;
                     template.NumInventorySlot = charTemplate.NumInventorySlot;
                     template.NumBankSlot = charTemplate.NumBankSlot;
                 }
             }
             else
-                throw new Exception($"CharacterManager: Parse {FileManager.AppPath + "Data/CharTemplates.json"} file");
+                throw new Exception($"CharacterManager: Error parsing {filePath} file");
 
             Log.Info("Loaded {0} character templates", _templates.Count);
         }
@@ -473,16 +483,17 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 character.Name = name.Substring(0, 1).ToUpper() + name.Substring(1);
                 character.Race = (Race)race;
                 character.Gender = (Gender)gender;
-                character.Position = template.Position.Clone();
-                character.Position.ZoneId = template.ZoneId;
+                character.Transform.ApplyWorldSpawnPosition(template.SpawnPosition);
                 character.Level = level;
                 character.Faction = FactionManager.Instance.GetFaction(template.FactionId);
                 character.FactionName = "";
+                character.AccessLevel = 100; // TODO для тестирования создаем с полными правами
                 character.LaborPower = 50;
                 character.LaborPowerModified = DateTime.UtcNow;
                 character.NumInventorySlots = template.NumInventorySlot;
                 character.NumBankSlots = template.NumBankSlot;
                 character.Inventory = new Inventory(character);
+                character.Created = DateTime.UtcNow;
                 character.Updated = DateTime.UtcNow;
                 character.Ability1 = (AbilityType)ability1;
                 character.Ability2 = (AbilityType)ability2;
@@ -496,9 +507,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 //character.ArmorSetBuffIds = new List<uint>();//TODO: get from saved buffs
                 character.Slots = new ActionSlot[121];       // 85 in 1.2, 121 in 3.0.3.0, 133 in 3.5.0.3
                 for (var i = 0; i < character.Slots.Length; i++)
-                {
                     character.Slots[i] = new ActionSlot();
-                }
 
                 var items = _abilityItems[ability1];
                 SetEquipItemTemplate(character.Inventory, items.Items.Headgear, EquipmentItemSlot.Head, items.Items.HeadgearGrade);
@@ -529,6 +538,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 foreach (var item in items.Supplies)
                 {
                     character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Invalid, item.Id, item.Amount, item.Grade);
+                    //var createdItem = ItemManager.Instance.Create(item.Id, item.Amount, item.Grade);
+                    //character.Inventory.AddItem(Models.Game.Items.Actions.ItemTaskType.Invalid, createdItem);
 
                     character.SetAction(slot, ActionSlotType.ItemType, item.Id);
                     slot++;
@@ -536,42 +547,34 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
                 items = _abilityItems[0];
                 if (items != null)
-                {
                     foreach (var item in items.Supplies)
                     {
                         character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Invalid, item.Id, item.Amount, item.Grade);
+                        //var createdItem = ItemManager.Instance.Create(item.Id, item.Amount, item.Grade);
+                        //character.Inventory.AddItem(ItemTaskType.Invalid, createdItem);
 
                         character.SetAction(slot, ActionSlotType.ItemType, item.Id);
                         slot++;
                     }
-                }
 
                 character.Abilities = new CharacterAbilities(character);
                 character.Abilities.SetAbility(character.Ability1, 0);
 
                 character.Actability = new CharacterActability(character);
                 foreach (var (id, actabilityTemplate) in _actabilities)
-                {
                     character.Actability.Actabilities.Add(id, new Actability(actabilityTemplate));
-                }
 
                 character.Skills = new CharacterSkills(character);
                 foreach (var skill in SkillManager.Instance.GetDefaultSkills())
                 {
                     if (!skill.AddToSlot)
-                    {
                         continue;
-                    }
-
                     character.SetAction(skill.Slot, ActionSlotType.Spell, skill.Template.Id);
                 }
 
                 slot = 1;
                 while (character.Slots[slot].Type != ActionSlotType.None)
-                {
                     slot++;
-                }
-
                 foreach (var skill in SkillManager.Instance.GetStartAbilitySkills(character.Ability1))
                 {
                     character.Skills.AddSkill(skill, 1, false);
@@ -608,6 +611,258 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             }
         }
 
+        /// <summary>
+        /// Removed all items and assets this character currently owns
+        /// </summary>
+        /// <param name="character">Character to delete assets from</param>
+        /// <param name="fullWipe">Do owned items need to be actually deleted</param>
+        public void DeleteCharacterAssets(Character character, bool fullWipe)
+        {
+            // Demolish owned houses
+            var myHouses = new Dictionary<uint, House>();
+            if (HousingManager.Instance.GetByCharacterId(myHouses, character.Id) > 0)
+            {
+                foreach (var (houseId, house) in myHouses)
+                {
+                    house.Permission = HousingPermission.Public;
+                    // force expire the house
+                    // This should technically kill the house, and return the minimum amount of furniture
+                    house.ProtectionEndDate = DateTime.UtcNow.AddDays(-21);
+                    HousingManager.Instance.UpdateTaxInfo(house);
+                }
+            }
+
+            // Remove from Guild
+            if (character.Expedition != null)
+                ExpeditionManager.Instance.Leave(character);
+
+            // Remove from Family
+            if (character.Family > 0)
+                FamilyManager.Instance.LeaveFamily(character);
+
+            // TODO: Remove from player nation
+            // TODO: Delete leadership
+
+            // Return all mails to sender (if needed)
+            // The main reason we do this is so other people's items wouldn't get delete if fullWipe is enabled
+            foreach (var (mailId, mail) in MailManager.Instance._allPlayerMails)
+            {
+                if (mail.CanReturnMail() && !mail.ReturnToSender())
+                    Log.Warn(
+                        "DeleteCharacterAssets - Unable to return mail to sender for mail: {0}, deleted char: {1}({2}), sender: {3}({4})",
+                        mail.Id,
+                        mail.Header.ReceiverName, mail.Header.ReceiverId,
+                        mail.Header.SenderName, mail.Header.SenderId);
+            }
+
+            if (!fullWipe)
+                return;
+
+            Log.Warn("DeleteCharacterAssets - fullWipe is currently not implemented yet, charId: {0}", character.Id);
+            // TODO: Wipe all mails
+            // TODO: Wipe all items/gold (this also deletes all pets/vehicles)
+        }
+
+        /// <summary>
+        /// Mark characters marked for deletion as deleted after their time is finished
+        /// </summary>
+        /// <param name="character"></param>
+        /// <param name="gameConnection"></param>
+        /// <param name="dbConnection"></param>
+        /// <returns>Returns true if a character was marked deleted, otherwise false</returns>
+        public bool CheckForDeletedCharactersDeletion(Character character, GameConnection gameConnection, MySqlConnection dbConnection)
+        {
+            if (character.DeleteTime > DateTime.MinValue && character.DeleteTime <= DateTime.UtcNow)
+            {
+                Log.Info("CheckForDeletedCharactersDeletion - Deleting Account:{0} Id:{1} Name:{2}", character.AccountId, character.Id, character.Name);
+                using (var command = dbConnection.CreateCommand())
+                {
+                    var deletedName = character.Name;
+                    if (AppConfiguration.Instance.Account.DeleteReleaseName)
+                    {
+                        deletedName = "!" + character.Name;
+                        NameManager.Instance.RemoveCharacterName(character.Id);
+                        NameManager.Instance.AddCharacterName(character.Id, deletedName);
+                    }
+
+                    command.Connection = dbConnection;
+                    command.CommandText = "UPDATE `characters` SET `deleted`='1', `delete_time`=@new_delete_time, `name`=@deletedname WHERE `id`=@char_id and `account_id`=@account_id;";
+                    command.Parameters.AddWithValue("@new_delete_time", DateTime.MinValue);
+                    command.Parameters.AddWithValue("@char_id", character.Id);
+                    command.Parameters.AddWithValue("@account_id", character.AccountId);
+                    command.Parameters.AddWithValue("@deletedname", deletedName);
+
+                    var res = command.ExecuteNonQuery();
+                    // Send update to current connection
+                    if (res > 0)
+                    {
+                        DeleteCharacterAssets(character, false);
+
+                        // Send delete packet to the player if online
+                        if (gameConnection != null)
+                        {
+                            gameConnection.SendPacket(new SCCharacterDeletedPacket(character.Id, character.Name));
+                            // Not sure if this is the way it should be send or not, but it seems to work with status 1
+                            gameConnection.SendPacket(new SCDeleteCharacterResponsePacket(character.Id, 1, character.DeleteRequestTime, character.DeleteTime));
+                        }
+                    }
+                    return res > 0;
+                }
+            }
+            else
+            if (character.DeleteRequestTime > DateTime.MinValue)
+            {
+                Log.Warn("CheckForDeletedCharactersDeletion - Delete request for Account:{0} Id:{1} Name:{2}, but character is no longer marked for deletion (possibly cancelled delete)", character.AccountId, character.Id, character.Name);
+            }
+            return false;
+        }
+
+        public void CheckForDeletedCharacters()
+        {
+            var nextCheckTime = DateTime.MaxValue;
+            var deleteList = new List<(uint, ulong)>(); // charId, accountId
+
+            Log.Debug("CheckForDeletedCharacters - Begin");
+            using (var connection = MySQL.CreateConnection())
+            {
+                using (var command = connection.CreateCommand())
+                {
+                    // TODO: Update this query to be more efficient
+                    command.CommandText = "SELECT `id`, `name`, `account_id`, `delete_time` FROM characters WHERE `deleted`=0";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Check the delete time for this entry
+                            var deleteTime = reader.GetDateTime("delete_time");
+                            var charId = reader.GetUInt32("id");
+                            var accountId = reader.GetUInt64("account_id");
+                            if (deleteTime > DateTime.MinValue && deleteTime <= DateTime.UtcNow)
+                            {
+                                deleteList.Add((charId, accountId));
+                            }
+                            else
+                            if (deleteTime > DateTime.MinValue && deleteTime < nextCheckTime)
+                            {
+                                nextCheckTime = deleteTime;
+                            }
+                        }
+                    }
+                }
+
+                // Actually start deleting
+                foreach (var (charId, accountId) in deleteList)
+                {
+                    var character = Character.Load(connection, charId, accountId);
+                    if (character != null)
+                    {
+                        var accountConnection = GameConnectionTable.Instance?.GetConnectionByAccount(character.AccountId) ?? null;
+                        if (CheckForDeletedCharactersDeletion(character, accountConnection, connection))
+                            Log.Info("CheckForDeletedCharacters - Delete charId:{0}", charId);
+                        else
+                            // Failed to delete character from DB
+                            Log.Error("CheckForDeletedCharacters - Failed to delete character for deletion charId:{0}", charId);
+                    }
+                    else
+                    {
+                        // Failed to load character for deletion somehow
+                        Log.Error("CheckForDeletedCharacters - Failed to load character for deletion charId:{0}", charId);
+                    }
+                }
+            }
+
+            // Start a Delete Tick Task
+            if (nextCheckTime < DateTime.MaxValue)
+            {
+                var deleteCheckTask = new CharacterDeleteTask();
+                TaskManager.Instance?.Schedule(deleteCheckTask, nextCheckTime - DateTime.UtcNow);
+                Log.Debug("CheckForDeletedCharacters - Next delete scheduled at " + nextCheckTime.ToString());
+            }
+            else
+            {
+                Log.Debug("CheckForDeletedCharacters - No new deletions scheduled");
+            }
+        }
+
+        public void SetDeleteCharacter(GameConnection gameConnection, uint characterId)
+        {
+            if (gameConnection.Characters.ContainsKey(characterId))
+            {
+                var character = gameConnection.Characters[characterId];
+                character.DeleteRequestTime = DateTime.UtcNow;
+
+                var targetDeleteDelay = 0;
+
+                // Get timings from settings
+                foreach (var timing in AppConfiguration.Instance.Account.DeleteTimings)
+                {
+                    if (character.Level >= timing.Level)
+                        targetDeleteDelay = timing.Delay;
+                }
+
+                // Add the actual timing
+                character.DeleteTime = character.DeleteRequestTime.AddMinutes(targetDeleteDelay);
+
+                using (var connection = MySQL.CreateConnection())
+                {
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText =
+                            "UPDATE characters SET `delete_request_time` = @delete_request_time, `delete_time` = @delete_time WHERE `id` = @id";
+                        command.Prepare();
+                        command.Parameters.AddWithValue("@delete_request_time", character.DeleteRequestTime);
+                        command.Parameters.AddWithValue("@delete_time", character.DeleteTime);
+                        command.Parameters.AddWithValue("@id", character.Id);
+                        if (command.ExecuteNonQuery() == 1)
+                        {
+                            gameConnection.SendPacket(new SCDeleteCharacterResponsePacket(character.Id, 2, character.DeleteRequestTime, character.DeleteTime));
+                        }
+                        else
+                        {
+                            // Failed to mark for deletion
+                            // Not the correct message, but it seems funny enough
+                            gameConnection.SendPacket(new SCErrorMsgPacket(ErrorMessageType.CannotDeleteCharWhileBotSuspected, 0, true));
+                        }
+
+                    }
+                }
+            }
+            else
+            {
+                gameConnection.SendPacket(new SCDeleteCharacterResponsePacket(characterId, 0));
+            }
+            // Trigger our task queueing
+            CheckForDeletedCharacters();
+        }
+
+        public void SetRestoreCharacter(GameConnection gameConnection, uint characterId)
+        {
+            if (gameConnection.Characters.ContainsKey(characterId))
+            {
+                var character = gameConnection.Characters[characterId];
+                character.DeleteRequestTime = DateTime.MinValue;
+                character.DeleteTime = DateTime.MinValue;
+                gameConnection.SendPacket(new SCCancelCharacterDeleteResponsePacket(character.Id, 3));
+
+                using (var connection = MySQL.CreateConnection())
+                {
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText =
+                            "UPDATE characters SET `delete_request_time` = @delete_request_time, `delete_time` = @delete_time WHERE `id` = @id";
+                        command.Prepare();
+                        command.Parameters.AddWithValue("@delete_request_time", character.DeleteRequestTime);
+                        command.Parameters.AddWithValue("@delete_time", character.DeleteTime);
+                        command.Parameters.AddWithValue("@id", character.Id);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            else
+            {
+                gameConnection.SendPacket(new SCCancelCharacterDeleteResponsePacket(characterId, 4));
+            }
+        }
         public List<LoginCharacterInfo> LoadCharacters(ulong accountId)
         {
             var result = new List<LoginCharacterInfo>();
@@ -615,8 +870,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             {
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText =
-                        "SELECT `id`, `name`, `race`, `gender`,`delete_time` FROM characters WHERE `account_id`=@accountId and `deleted`=0";
+                    command.CommandText = "SELECT `id`, `name`, `race`, `gender`,`delete_time` FROM characters WHERE `account_id`=@accountId and `deleted`=0";
                     command.Parameters.AddWithValue("@accountId", accountId);
                     using (var reader = command.ExecuteReader())
                     {
@@ -624,7 +878,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             // Skip this char in the list if it's read to be deleted
                             var deleteTime = reader.GetDateTime("delete_time");
-                            if (deleteTime > DateTime.MinValue && deleteTime < DateTime.Now)
+                            if (deleteTime > DateTime.MinValue && deleteTime < DateTime.UtcNow)
                                 continue;
 
                             var character = new LoginCharacterInfo();
@@ -651,7 +905,45 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                 item.Slot = (int)slot;
             }
 
-            inventory.Equipment.AddOrMoveExistingItem(ItemTaskType.Invalid, item, (int)slot);
+            inventory.Equipment.AddOrMoveExistingItem(0, item, (int)slot);
+            //inventory.Equip[(int) slot] = item;
+        }
+
+        public void ApplyBeautySalon(Character character, uint hairModel, UnitCustomModelParams modelParams)
+        {
+            // TODO: Add support for future X-day Salon Certificate items
+
+            if (character.Inventory.GetItemsCount(SlotType.Inventory, Item.SalonCertificate) <= 0)
+                return;
+
+            var oldHair = character.Equipment.GetItemBySlot((byte)EquipmentItemSlot.Hair);
+
+            // Check if hair changed
+            if (oldHair != null && oldHair.TemplateId != hairModel)
+            {
+                // Remove old hair item
+                oldHair._holdingContainer.RemoveItem(ItemTaskType.Invalid, oldHair, true);
+                // Create new hair item
+                if (!character.Equipment.AcquireDefaultItemEx(ItemTaskType.Invalid, hairModel, 1, -1,
+                        out var newItemsList, out var _, character.Id, (int)EquipmentItemSlot.Hair))
+                {
+                    Log.Error($"Failed to add new hairstyle for player {character.Name} ({character.Id})!");
+                }
+
+                if (newItemsList.Count != 1)
+                {
+                    Log.Error($"Something failed during hairstyle creation for player {character.Name} ({character.Id})!");
+                }
+
+            }
+            character.ModelParams = modelParams;
+
+            character.BroadcastPacket(new SCCharacterGenderAndModelModifiedPacket(character), true);
+
+            if (character.Inventory.Bag.ConsumeItem(ItemTaskType.EditCosmetic, Item.SalonCertificate, 1, null) <= 0)
+                Log.Error($"Could not consume salon certificate for player {character.Name} ({character.Id})!");
+
+            // The client will do a salon leave request after it gets the SCCharacterGenderAndModelModifiedPacket
         }
     }
 }

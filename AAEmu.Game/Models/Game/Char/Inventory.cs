@@ -26,6 +26,7 @@ namespace AAEmu.Game.Models.Game.Char
         public ItemContainer Warehouse { get; private set; }
         public ItemContainer MailAttachments { get; private set; }
         public ItemContainer SystemContainer { get; private set; }
+        public ulong PreviousBackPackItemId { get; set; } // used to re-equip glider when putting backpacks down
 
         public Inventory(Character owner)
         {
@@ -555,7 +556,11 @@ namespace AAEmu.Game.Models.Game.Char
             if (Bag.FreeSlotCount <= 0)
                 return false;
 
-            Bag.AddOrMoveExistingItem(taskType, backpack);
+            SplitOrMoveItem(taskType, backpack.Id, backpack.SlotType, (byte)backpack.Slot, 0, SlotType.Inventory, (byte)Bag.GetUnusedSlot(0));
+            //Bag.AddOrMoveExistingItem(taskType, backpack);
+
+            if (glidersOnly)
+                PreviousBackPackItemId = backpack.Id;
 
             return true;
         }
@@ -569,6 +574,23 @@ namespace AAEmu.Game.Models.Game.Char
                 return Owner.Inventory.Equipment.AcquireDefaultItem(taskType, itemId, itemCount, gradeToAdd, crafterId);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Tries to add a new item to the player's inventory bag (or backpack slot if it's a auto-equip backpack)
+        /// </summary>
+        /// <param name="taskType"></param>
+        /// <param name="itemId">Item Template Id</param>
+        /// <param name="itemCount"></param>
+        /// <param name="gradeToAdd"></param>
+        /// <param name="crafterId"></param>
+        /// <returns></returns>
+        public bool TryAddNewItem(ItemTaskType taskType, uint itemId, int itemCount, int gradeToAdd = -1, uint crafterId = 0)
+        {
+            if (ItemManager.Instance.IsAutoEquipTradePack(itemId))
+                return TryEquipNewBackPack(taskType, itemId, itemCount, gradeToAdd, crafterId);
+
+            return Bag.AcquireDefaultItem(taskType, itemId, itemCount, gradeToAdd, crafterId);
         }
 
         public Item GetItemById(ulong id)
@@ -708,8 +730,11 @@ namespace AAEmu.Game.Models.Game.Char
         public void OnAcquiredItem(Item item, int count, bool onlyUpdatedCount = false)
         {
             // Quests
-            if (item?.Template.LootQuestId > 0 && count != 0)
+            //if ((item?.Template.LootQuestId > 0) && (count != 0))
+            if (count > 0 && item != null)
+            {
                 Owner?.Quests?.OnItemGather(item, count);
+            }
         }
 
         /// <summary>
@@ -720,10 +745,20 @@ namespace AAEmu.Game.Models.Game.Char
         /// <param name="onlyUpdatedCount"></param>
         public void OnConsumedItem(Item item, int count, bool onlyUpdatedCount = false)
         {
+            // вызов OnItemUse перенес в CSStartSkillPacket - неправильный выбор! отменяем!
             // Quests
-            if (item?.Template.LootQuestId > 0 && count != 0)
-                Owner?.Quests?.OnItemGather(item, -count);
+            //if ((item?.Template.LootQuestId > 0) && (count != 0))
+            if (count > 0 && item != null)
+            {
+                Owner?.Quests?.OnItemUse(item);
+            }
         }
 
+        public void OnItemManuallyDestroyed(Item item, int count)
+        {
+            if (item?.Template.LootQuestId > 0)
+                if (Owner.Quests.HasQuest(item.Template.LootQuestId))
+                    Owner.Quests.Drop(item.Template.LootQuestId, true);
+        }
     }
 }

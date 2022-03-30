@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
@@ -9,7 +10,9 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.Doodads;
@@ -25,6 +28,8 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         private float _scale;
         public byte Flag { get; set; }
         public uint TemplateId { get; set; }
+        public uint DbId { get; set; }
+        public bool IsPersistent { get; set; } = false;
         public DoodadTemplate Template { get; set; }
         public override float Scale => _scale;
         public uint FuncGroupId { get; set; }
@@ -38,207 +43,279 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public uint OwnerObjId { get; set; }
         public uint ParentObjId { get; set; }
         public DoodadOwnerType OwnerType { get; set; }
-        public byte AttachPoint { get; set; }
+        public AttachPointKind AttachPoint { get; set; }
         public Point AttachPosition { get; set; }
         public uint DbHouseId { get; set; }
         public int Data { get; set; }
         public uint QuestGlow { get; set; } //0 off // 1 on
         public DoodadSpawner Spawner { get; set; }
         public DoodadFuncTask FuncTask { get; set; }
-        public uint TimeLeft => GrowthTime > DateTime.Now ? (uint)(GrowthTime - DateTime.Now).TotalMilliseconds : 0; // TODO formula time of phase
-        public bool ToPhaseAndUse { get; set; }
+        public uint TimeLeft => GrowthTime > DateTime.UtcNow ? (uint)(GrowthTime - DateTime.UtcNow).TotalMilliseconds : 0; // TODO formula time of phase
         public int PhaseRatio { get; set; }
         public int CumulativePhaseRatio { get; set; }
-        public uint CurrentPhaseId { get; set; }
-        public uint OverridePhase { get; set; }
+        public int OverridePhase { get; set; }
         private bool _deleted = false;
         public VehicleSeat Seat { get; set; }
+        public List<uint> ListGroupId { get; set; }
+        private List<uint> ListFuncGroupId { get; set; }
 
         public Doodad()
         {
             _scale = 1f;
-            Position = new Point();
             PlantTime = DateTime.MinValue;
-            AttachPoint = 255;
-            Seat = new VehicleSeat();
+            AttachPoint = AttachPointKind.System;
+            Seat = new VehicleSeat(this);
+            ListGroupId = new List<uint>();
+            ListFuncGroupId = new List<uint>();
+            //ListGroupId.AddRange(DoodadManager.Instance.GetDoodadFuncGroupsId(TemplateId));
         }
 
         public void SetScale(float scale)
         {
             _scale = scale;
         }
-
-        // public void DoFirstPhase(Unit unit)
-        // {
-        //     
-        // }
-
-        /// <summary>
-        /// This "uses" the doodad. Using a doodad means running its functions in doodad_funcs
-        /// </summary>
-        public void Use(Unit unit, uint skillId, uint recursionDepth = 0)
+        private bool CheckPhase(uint anotherPhase)
         {
-            recursionDepth++;
-            if (recursionDepth % 10 == 0)
-                _log.Warn("Doodad {0} (TemplateId {1}) might be looping indefinitely. {2} recursionDepth.", ObjId, TemplateId, recursionDepth);
-            _log.Trace("Using phase {0}", CurrentPhaseId);
-            // Get all doodad_funcs
-            var funcs = DoodadManager.Instance.GetFuncsForGroup(CurrentPhaseId);
-
-            // Apply them
-            var nextFunc = 0;
-            var isUse = false;
-            ToPhaseAndUse = false;
-
-            try
-            {
-                foreach (var func in funcs)
-                {
-                    if ((func.SkillId <= 0 || func.SkillId != skillId) && func.SkillId != 0)
-                        continue;
-
-                    func.Use(unit, this, skillId, func.NextPhase);
-
-                    if (ToPhaseAndUse)
-                    {
-                        isUse = true;
-                        nextFunc = func.NextPhase;
-                    }
-
-                    break;
-                }
-            }
-            catch (Exception e)
-            {
-                _log.Fatal(e, "Doodad func crashed !");
-            }
-
-            if (nextFunc == 0)
-                return;
-
-            if (isUse)
-                GoToPhaseAndUse(unit, nextFunc, skillId, recursionDepth);
-            else
-                GoToPhase(unit, nextFunc);
+            return ListGroupId.Any(phase => phase == anotherPhase);
+        }
+        private bool CheckFunc(uint anotherPhase)
+        {
+            return ListFuncGroupId.Any(phase => phase == anotherPhase);
         }
 
-        /// <summary>
-        /// This executes a doodad's phase. Phase functions start as soon as the doodad switches to a new phase.
-        /// </summary>
-        public void DoPhase(Unit unit, uint skillId, uint recursionDepth = 0)
+        public void Use(Unit caster, uint skillId)
         {
-            recursionDepth++;
-            if (recursionDepth % 10 == 0)
-                _log.Warn("Doodad {0} (TemplateId {1}) might be phasing indefinitely. {2} recursionDepth.", ObjId, TemplateId, recursionDepth);
-
-            _log.Trace("Doing phase {0}", CurrentPhaseId);
-            var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(CurrentPhaseId);
-
-            OverridePhase = 0;
-            try
+            while (true)
             {
+                _log.Trace("Use: TemplateId {0}, Using phase {1} with SkillId {2}", TemplateId, FuncGroupId, skillId);
+
+                var stop = DoPhaseFuncs(caster, (int)FuncGroupId);
+                if (stop)
+                {
+                    // не прошли проверку условий для квестов
+                    ListFuncGroupId = new List<uint>();
+                    _log.Trace("Use: Did not pass the conditions check! TemplateId {0}, Using phase {1} with SkillId {2}", TemplateId, FuncGroupId, skillId);
+                    return;
+                }
+
+                var func = DoodadManager.Instance.GetFunc(FuncGroupId, skillId); // здесь проверяем на выполняемый skillId
+                if (func == null)
+                {
+                    ListFuncGroupId = new List<uint>();
+                    _log.Trace("Use: Finished execution: TemplateId {0}, Using phase {1} with SkillId {2}", TemplateId, FuncGroupId, skillId);
+                    return;
+                }
+
+                if (!ListFuncGroupId.Contains(FuncGroupId))
+                {
+                    ListFuncGroupId.Add(FuncGroupId); // для проверки CheckPhase()
+                }
+
+                func.Use(caster, this, skillId, func.NextPhase);
+                if (func.NextPhase <= 0)
+                {
+                    ListFuncGroupId = new List<uint>();
+                    _log.Trace("Use: Finished execution: TemplateId {0}, Using phase {1} with SkillId {2}", TemplateId, FuncGroupId, skillId);
+                    return;
+                }
+
+                if (func.SoundId > 0)
+                {
+                    BroadcastPacket(new SCDoodadSoundPacket(this, func.SoundId), true);
+                }
+
+                #region nextFunc
+
+                // проверки на завершение цикла функций
+                if (func == null || func.NextPhase == -1)
+                {
+                    // закончились функции
+                    ListFuncGroupId = new List<uint>();
+                    _log.Trace("Use: Finished execution: TemplateId {0}, Using phase {1} with SkillId {2}", TemplateId, FuncGroupId, skillId);
+                    return;
+                }
+
+                // проверка на зацикливание
+                if (CheckFunc((uint)func.NextPhase))
+                {
+                    ListFuncGroupId = new List<uint>();
+                    _log.Trace("Use: Finished execution: TemplateId {0}, Using phase {1} with SkillId {2}", TemplateId, FuncGroupId, skillId);
+                    return;
+                } // проверяем на 1)278-false, 2)276-true
+
+                FuncGroupId = (uint)func.NextPhase; // 278
+                skillId = 0;
+
+                #endregion nextFunc
+            }
+        }
+        /// <summary>
+        /// выполняем фазовые функции с прерыванием таймера
+        /// </summary>
+        /// <param name="caster"></param>
+        /// <param name="nextPhase">фаза на которую необходимо переключиться</param>
+        public void DoPhase(Unit caster, int nextPhase)
+        {
+            while (true)
+            {
+                if (nextPhase <= 0) { return; }
+
+                _log.Trace("DoPhase: [0] TemplateId {0}, ObjId {1}, nextPhase {2}", TemplateId, ObjId, nextPhase);
+                if (FuncTask is DoodadFuncTimerTask)
+                {
+                    _ = FuncTask.Cancel();
+                    FuncTask = null;
+                    _log.Trace("DoPhase: TemplateId {0}, ObjId {1}. The current timer has been cancelled.", TemplateId, ObjId);
+                }
+                FuncGroupId = (uint)nextPhase;
+                // проверка на зацикливание
+                if (CheckPhase((uint)nextPhase))
+                {
+                    ListGroupId = new List<uint>();
+                    return;
+                }
+                if (!ListGroupId.Contains(FuncGroupId))
+                {
+                    ListGroupId.Add(FuncGroupId); // для проверки CheckPhase()
+                }
+                BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true);
+                var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(FuncGroupId);
+                if (phaseFuncs.Length == 0)
+                {
+                    ListGroupId = new List<uint>();
+                    return; // нет фазовых функций для FuncGroupId
+                }
+                var stop = false;
+                PhaseRatio = Rand.Next(0, 10000);
+                CumulativePhaseRatio = 0;
                 foreach (var phaseFunc in phaseFuncs)
                 {
-                    phaseFunc.Use(unit, this, skillId);
-                    if (OverridePhase > 0)
+                    if (phaseFunc == null) { continue; }
+                    stop = phaseFunc.Use(caster, this);
+                    if (stop) // если TRUE - прерываем выполнение фазовых функций и переходим к OverridePhase
+                    {
                         break;
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                _log.Fatal(e, "Doodad phase crashed!");
-            }
 
-            if (OverridePhase > 0)
-            {
-                CurrentPhaseId = OverridePhase;
-                DoPhase(unit, skillId, recursionDepth);
-            }
+                if (OverridePhase != 0 && stop && FuncGroupId != OverridePhase)
+                {
+                    nextPhase = OverridePhase;
+                    // проверка на зацикливание
+                    if (CheckPhase((uint)nextPhase))
+                    {
+                        ListGroupId = new List<uint>();
+                        return;
+                    }
+                    continue;
+                }
 
-            if (!_deleted)
-                Save();
+                //_log.Debug("DoPhase: [2] TemplateId {0}, ObjId {1}, nextPhase {2}", TemplateId, ObjId, FuncGroupId);
+                //BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true);
+
+                if (!_deleted)
+                    Save();
+
+                ListGroupId = new List<uint>();
+                return;
+            }
         }
 
         /// <summary>
-        /// Changes the doodad's phase
+        /// Выполнение фазовых функций
         /// </summary>
-        /// <param name="unit">Unit who triggered the change</param>
-        /// <param name="funcGroupId">New phase to go to</param>
-        public void GoToPhase(Unit unit, int funcGroupId, uint skillId = 0)
+        /// <param name="caster"></param>
+        /// <param name="nextPhase"></param>
+        public bool DoPhaseFuncs(Unit caster, int nextPhase)
         {
-            _log.Trace("Going to phase {0}", funcGroupId);
-            if (funcGroupId == -1)
+            while (true)
             {
-                // Delete doodad
-                Delete();
-            }
-            else
-            {
-                CurrentPhaseId = (uint)funcGroupId;
+                if (nextPhase <= 0) { return false; }
+
+                _log.Trace("DoPhaseFuncs: [0] TemplateId {0}, ObjId {1}, nextPhase {2}", TemplateId, ObjId, nextPhase);
+                // проверка на зацикливание
+                if (CheckPhase((uint)nextPhase))
+                {
+                    ListGroupId = new List<uint>();
+                    return false;
+                }
+                if (!ListGroupId.Contains((uint)nextPhase))
+                {
+                    ListGroupId.Add((uint)nextPhase); // для проверки CheckPhase()
+                }
+                FuncGroupId = (uint)nextPhase;
+                BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true);
+                var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(FuncGroupId);
+                if (phaseFuncs.Length == 0)
+                {
+                    ListGroupId = new List<uint>();
+                    return false; // нет фазовых функций для FuncGroupId
+                }
                 PhaseRatio = Rand.Next(0, 10000);
                 CumulativePhaseRatio = 0;
-                DoPhase(unit, skillId);
+                var stop = false;
+                foreach (var phaseFunc in phaseFuncs)
+                {
+                    if (phaseFunc == null) { continue; }
+                    stop = phaseFunc.Use(caster, this);
+                    if (stop) // если TRUE - прерываем выполнение фазовых функций и переходим к OverridePhase
+                    {
+                        break;
+                    }
+                }
 
-                _log.Debug("SCDoodadPhaseChangedPacket : CurrentPhaseId {0}", CurrentPhaseId);
-                BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true);
+                if (OverridePhase != 0 && stop && FuncGroupId != OverridePhase)
+                {
+                    nextPhase = OverridePhase;
+                    // проверка на зацикливание
+                    if (CheckPhase((uint)nextPhase))
+                    {
+                        ListGroupId = new List<uint>();
+                        return false;
+                    }
+                    continue;
+                }
+
+                //_log.Debug("DoPhaseFuncs: [2] TemplateId {0}, ObjId {1}, nextPhase {2}", TemplateId, ObjId, FuncGroupId);
+                //BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true);
+
+                if (!_deleted)
+                    Save();
+
+                ListGroupId = new List<uint>();
+                return stop; // если true, то это не прошли проверку для квеста
             }
-        }
-
-        public void GoToPhaseAndUse(Unit unit, int funcGroupId, uint skillId, uint recursionDepth = 0)
-        {
-            recursionDepth++;
-            _log.Trace("Going to phase {0} and using it", funcGroupId);
-            if (funcGroupId == -1)
-            {
-                // Delete doodad
-                Delete();
-            }
-            else
-            {
-                CurrentPhaseId = (uint)funcGroupId;
-                PhaseRatio = Rand.Next(0, 10000);
-                CumulativePhaseRatio = 0;
-                DoPhase(unit, skillId);
-
-                _log.Debug("SCDoodadPhaseChangedPacket : CurrentPhaseId {0}", CurrentPhaseId);
-                BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true);
-
-                Use(unit, skillId, recursionDepth);
-            }
-        }
-
-        public List<uint> GetStartFuncs()
-        {
-            var startGroupIds = new List<uint>();
-            foreach (var funcGroup in Template.FuncGroups)
-            {
-                if (funcGroup.GroupKindId == DoodadFuncGroups.DoodadFuncGroupKind.Start)
-                    startGroupIds.Add(funcGroup.Id);
-            }
-
-            return startGroupIds;
         }
 
         public uint GetFuncGroupId()
         {
-            foreach (var funcGroup in Template.FuncGroups)
-            {
-                if (funcGroup.GroupKindId == DoodadFuncGroups.DoodadFuncGroupKind.Start)
-                    return funcGroup.Id;
-            }
-            return 0;
+            return (from funcGroup in Template.FuncGroups
+                    where funcGroup.GroupKindId == DoodadFuncGroups.DoodadFuncGroupKind.Start
+                    select funcGroup.Id).FirstOrDefault();
         }
 
         public void OnSkillHit(Unit caster, uint skillId)
         {
-            var funcs = DoodadManager.Instance.GetFuncsForGroup(CurrentPhaseId);
+            var funcs = DoodadManager.Instance.GetFuncsForGroup(FuncGroupId);
             foreach (var func in funcs)
             {
                 if (func.FuncType == "DoodadFuncSkillHit")
                 {
-                    Use(null, skillId);
+                    Use(caster, skillId);
                 }
             }
+        }
+
+        /// <summary>
+        /// Инициализация doodad начальной фазой
+        /// </summary>
+        public override void Spawn()
+        {
+            base.Spawn();
+            _log.Trace("Doing phase {0} for doodad TemplateId {1}, objId {2}", FuncGroupId, TemplateId, ObjId);
+            FuncGroupId = GetFuncGroupId();  // Start phase
+            var unit = WorldManager.Instance.GetUnit(OwnerObjId);
+            DoPhaseFuncs(unit, (int)FuncGroupId);
         }
 
         public override void BroadcastPacket(GamePacket packet, bool self)
@@ -250,37 +327,43 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public override void AddVisibleObject(Character character)
         {
             character.SendPacket(new SCDoodadCreatedPacket(this));
+            base.AddVisibleObject(character);
         }
 
         public override void RemoveVisibleObject(Character character)
         {
-            if (character.CurrentTarget != null && character.CurrentTarget == this)
-            {
-                character.CurrentTarget = null;
-                character.SendPacket(new SCTargetChangedPacket(character.ObjId, 0));
-            }
+            base.RemoveVisibleObject(character);
             character.SendPacket(new SCDoodadRemovedPacket(ObjId));
         }
 
         public PacketStream Write(PacketStream stream)
         {
             stream.WriteBc(ObjId); //The object # in the list
-
             // TemplateId - The template id needed for that object, the client then uses the template configurations, not the server
             // CurrentPhaseId / FuncGroupId - doodad_func_group_id
             // QuestGlow - When this is higher than 0 it shows a blue orb over the doodad
-            stream.WritePisc(TemplateId, CurrentPhaseId, 0, QuestGlow);
+            stream.WritePisc(TemplateId, FuncGroupId, 0, QuestGlow);
 
             stream.Write(Flag);
             stream.WriteBc(OwnerObjId);  //The creator of the object
             stream.WriteBc(ParentObjId); //Things like boats or cars,
-            stream.Write(AttachPoint);   // attachPoint, relative to the parentObj, (Door or window on a house)
-
-            stream.WritePosition(Position.X, Position.Y, Position.Z);
-
-            stream.Write(Helpers.ConvertRotation(Position.RotationX));
-            stream.Write(Helpers.ConvertRotation(Position.RotationY));
-            stream.Write(Helpers.ConvertRotation(Position.RotationZ));
+            stream.Write((byte)AttachPoint); // attachPoint, relative to the parentObj (Door or window on a house, seats on carriage, etc.)
+            if (AttachPoint > 0 || ParentObjId > 0)
+            {
+                stream.WritePosition(Transform.Local.Position.X, Transform.Local.Position.Y, Transform.Local.Position.Z);
+                var (roll, pitch, yaw) = Transform.Local.ToRollPitchYawShorts();
+                stream.Write(roll);
+                stream.Write(pitch);
+                stream.Write(yaw);
+            }
+            else
+            {
+                stream.WritePosition(Transform.World.Position.X, Transform.World.Position.Y, Transform.World.Position.Z);
+                var (roll, pitch, yaw) = Transform.World.ToRollPitchYawShorts();
+                stream.Write(roll);
+                stream.Write(pitch);
+                stream.Write(yaw);
+            }
 
             stream.Write(Scale);           //The size of the object
             stream.Write(OwnerId);         // characterId
@@ -299,17 +382,18 @@ namespace AAEmu.Game.Models.Game.DoodadObj
 
         public override void Delete()
         {
+            _log.Trace("Delete: deleted doodad TemplateId {0}, ObjId {1}", TemplateId, ObjId);
             base.Delete();
             _deleted = true;
 
-            if (DbHouseId > 0)
+            if (DbId > 0)
             {
                 using (var connection = MySQL.CreateConnection())
                 {
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = "DELETE FROM doodads WHERE id = @id";
-                        command.Parameters.AddWithValue("@id", DbHouseId);
+                        command.Parameters.AddWithValue("@id", DbId);
                         command.Prepare();
                         command.ExecuteNonQuery();
                     }
@@ -319,28 +403,42 @@ namespace AAEmu.Game.Models.Game.DoodadObj
 
         public void Save()
         {
-            DbHouseId = DbHouseId > 0 ? DbHouseId : DoodadIdManager.Instance.GetNextId();
+            if (!IsPersistent) return;
+
+            DbId = DbId > 0 ? DbId : DoodadIdManager.Instance.GetNextId();
             using (var connection = MySQL.CreateConnection())
             {
                 using (var command = connection.CreateCommand())
                 {
+                    var parentDoodadId = 0u;
+                    if (Transform?.Parent?.GameObject is Doodad pDoodad && pDoodad.DbId > 0)
+                        parentDoodadId = pDoodad.DbId;
+
                     command.CommandText =
-                        "REPLACE INTO doodads (id, owner_id, owner_type, template_id, current_phase_id, plant_time, growth_time, phase_time, x, y, z, rotation_x, rotation_y, rotation_z) " +
-                        "VALUES(@id, @owner_id, @owner_type, @template_id, @current_phase_id, @plant_time, @growth_time, @phase_time, @x, @y, @z, @rotation_x, @rotation_y, @rotation_z)";
-                    command.Parameters.AddWithValue("@id", DbHouseId);
+                        "REPLACE INTO doodads (`id`, `owner_id`, `owner_type`, `template_id`, `current_phase_id`, `plant_time`, `growth_time`, `phase_time`, `x`, `y`, `z`, `roll`, `pitch`, `yaw`, `item_id`, `house_id`, `parent_doodad`, `item_template_id`) " +
+                        "VALUES(@id, @owner_id, @owner_type, @template_id, @current_phase_id, @plant_time, @growth_time, @phase_time, @x, @y, @z, @roll, @pitch, @yaw, @item_id, @house_id, @parent_doodad, @item_template_id)";
+                    command.Parameters.AddWithValue("@id", DbId);
                     command.Parameters.AddWithValue("@owner_id", OwnerId);
                     command.Parameters.AddWithValue("@owner_type", OwnerType);
                     command.Parameters.AddWithValue("@template_id", TemplateId);
-                    command.Parameters.AddWithValue("@current_phase_id", CurrentPhaseId);
+                    command.Parameters.AddWithValue("@current_phase_id", FuncGroupId);
                     command.Parameters.AddWithValue("@plant_time", PlantTime);
                     command.Parameters.AddWithValue("@growth_time", GrowthTime);
                     command.Parameters.AddWithValue("@phase_time", DateTime.MinValue);
-                    command.Parameters.AddWithValue("@x", Position.X);
-                    command.Parameters.AddWithValue("@y", Position.Y);
-                    command.Parameters.AddWithValue("@z", Position.Z);
-                    command.Parameters.AddWithValue("@rotation_x", Position.RotationX);
-                    command.Parameters.AddWithValue("@rotation_y", Position.RotationY);
-                    command.Parameters.AddWithValue("@rotation_z", Position.RotationZ);
+                    // We save it's world position, and upon loading, we re-parent things depending on the data
+                    if (Transform != null)
+                    {
+                        command.Parameters.AddWithValue("@x", Transform.World.Position.X);
+                        command.Parameters.AddWithValue("@y", Transform.World.Position.Y);
+                        command.Parameters.AddWithValue("@z", Transform.World.Position.Z);
+                        command.Parameters.AddWithValue("@roll", Transform.World.Rotation.X);
+                        command.Parameters.AddWithValue("@pitch", Transform.World.Rotation.Y);
+                        command.Parameters.AddWithValue("@yaw", Transform.World.Rotation.Z);
+                    }
+                    command.Parameters.AddWithValue("@item_id", ItemId);
+                    command.Parameters.AddWithValue("@house_id", DbHouseId);
+                    command.Parameters.AddWithValue("@parent_doodad", parentDoodadId);
+                    command.Parameters.AddWithValue("@item_template_id", ItemTemplateId);
                     command.Prepare();
                     command.ExecuteNonQuery();
                 }

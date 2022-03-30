@@ -1,31 +1,37 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Game;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
-using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
-
+using AAEmu.Game.Core.Packets.G2C;
 using NLog;
-
 using InstanceWorld = AAEmu.Game.Models.Game.World.World;
+using AAEmu.Game.Models.Game.World.Transform;
+using System.Diagnostics;
+using System.Xml;
+using AAEmu.Game.IO;
+using AAEmu.Game.Models.ClientData;
+using AAEmu.Game.Models.Game.Gimmicks;
+using AAEmu.Game.Models.Game.World.Xml;
+using AAEmu.Game.Models.Game.World.Zones;
 
 namespace AAEmu.Game.Core.Managers.World
 {
     public class WorldManager : Singleton<WorldManager>
     {
+        // Default World and Instance ID that will be assigned to all Transforms as a Default value
+        public static uint DefaultWorldId = 1;
+        public static uint DefaultInstanceId = 0;
         private static Logger _log = LogManager.GetCurrentClassLogger();
 
         private Dictionary<uint, InstanceWorld> _worlds;
@@ -41,9 +47,17 @@ namespace AAEmu.Game.Core.Managers.World
         private readonly ConcurrentDictionary<uint, AreaShape> _areaShapes;
         private readonly ConcurrentDictionary<uint, Transfer> _transfers;
         private readonly ConcurrentDictionary<uint, Gimmick> _gimmicks;
+        private readonly ConcurrentDictionary<uint, IndunZone> _indunZones;
 
+        public const int CELL_SIZE = 1024;
+        /// <summary>
+        /// Sector Size
+        /// </summary>
         public const int REGION_SIZE = 64;
-        public const int CELL_SIZE = 1024 / REGION_SIZE;
+        public const int SECTORS_PER_CELL = CELL_SIZE / REGION_SIZE;
+        public const int SECTOR_HMAP_RESOLUTION = REGION_SIZE / 2;
+        public const int CELL_HMAP_RESOLUTION = CELL_SIZE / 2;
+
         /*
         REGION_NEIGHBORHOOD_SIZE (cell sector size) used for polling objects in your proximity
         Was originally set to 1, recommended 3 and max 5
@@ -62,6 +76,7 @@ namespace AAEmu.Game.Core.Managers.World
             _areaShapes = new ConcurrentDictionary<uint, AreaShape>();
             _transfers = new ConcurrentDictionary<uint, Transfer>();
             _gimmicks = new ConcurrentDictionary<uint, Gimmick>();
+            _indunZones = new ConcurrentDictionary<uint, IndunZone>();
         }
 
         public void ActiveRegionTick(TimeSpan delta)
@@ -108,63 +123,107 @@ namespace AAEmu.Game.Core.Managers.World
 
             _log.Info("Loading world data...");
 
-            #region FileManager
+            #region LoadClientData
 
-            var pathFile = $"{FileManager.AppPath}Data/worlds.json";
-            var contents = FileManager.GetFileContents(pathFile);
-            if (string.IsNullOrWhiteSpace(contents))
-                throw new IOException($"File {pathFile} doesn't exists or is empty.");
+            var worldXmlPaths = ClientFileManager.GetFilesInDirectory(Path.Combine("game", "worlds"), "world.xml", true);
 
-            if (JsonHelper.TryDeserializeObject(contents, out List<InstanceWorld> worlds, out _))
+            if (worldXmlPaths.Count <= 0)
             {
-                foreach (var world in worlds)
+                _log.Fatal("No client worlds data has been found, please check the readme.txt file inside the ClientData folder for more info.");
+                return;
+            }
+            var worldNames = new List<string>();
+            worldNames.Add("main_world"); // Make sure main_world is the first even if it wouldn't exist
+
+            // Grab world_spawns.json info
+            var spawnPositionFile = Path.Combine(FileManager.AppPath, "Data", "Worlds", "world_spawns.json");
+            var contents = File.Exists(spawnPositionFile) ? File.ReadAllText(spawnPositionFile) : "";
+            var worldSpawnLookup = new List<WorldSpawnLocation>();
+            if (string.IsNullOrWhiteSpace(contents))
+                _log.Error($"File {spawnPositionFile} doesn't exists or is empty.");
+            else
+                if (!JsonHelper.TryDeserializeObject(contents, out List<WorldSpawnLocation> worldSpawnLookupFromJson, out _))
+                _log.Error($"Error in {spawnPositionFile}.");
+            else
+                worldSpawnLookup = worldSpawnLookupFromJson;
+
+            foreach (var worldXmlPath in worldXmlPaths)
+            {
+                var worldName = Path.GetFileName(Path.GetDirectoryName(worldXmlPath)); // the the base name of the current directory
+                if (!worldNames.Contains(worldName))
+                    worldNames.Add(worldName);
+            }
+
+            for (uint id = 0; id < worldNames.Count; id++)
+            {
+                var worldName = worldNames[(int)id];
+                if (worldName == "main_world")
+                    WorldManager.DefaultWorldId = id; // prefer to do it like this, in case we change order or IDs later on
+
+                var worldXmlData = ClientFileManager.GetFileStream(Path.Combine("game", "worlds", worldName, "world.xml"));
+                var xml = new XmlDocument();
+                xml.Load(worldXmlData);
+                var worldNode = xml.SelectSingleNode("/World");
+                if (worldNode != null)
                 {
-                    if (_worlds.ContainsKey(world.Id))
-                        throw new Exception("WorldManager: there are duplicates in world ids");
+                    var xmlWorld = new XmlWorld();
+                    var world = new InstanceWorld();
+                    world.Id = id;
+                    xmlWorld.ReadNode(worldNode, world);
+                    world.SpawnPosition = worldSpawnLookup.FirstOrDefault(w => w.Name == world.Name)?.SpawnPosition ?? new WorldSpawnPosition();
+                    _worlds.Add(id, world);
 
-                    world.Regions = new Region[world.CellX * CELL_SIZE, world.CellY * CELL_SIZE];
-                    world.ZoneIds = new uint[world.CellX * CELL_SIZE, world.CellY * CELL_SIZE];
-                    world.HeightMaps = new ushort[world.CellX * 512, world.CellY * 512];
-                    world.HeightMaxCoefficient = ushort.MaxValue / (world.MaxHeight / 4.0);
-
-                    _worlds.Add(world.Id, world);
+                    // cache zone keys to world reference
+                    foreach (var zoneKey in world.ZoneKeys)
+                        _worldIdByZoneId.Add(zoneKey, world.Id);
                 }
             }
-            else
-                throw new Exception($"WorldManager: Parse {pathFile} file");
 
-            foreach (var world in _worlds.Values)
-            {
-                pathFile = $"{FileManager.AppPath}Data/Worlds/{world.Name}/zones.json";
-                contents = FileManager.GetFileContents(pathFile);
-                if (string.IsNullOrWhiteSpace(contents))
-                    throw new IOException($"File {pathFile} doesn't exists or is empty.");
-
-                if (JsonHelper.TryDeserializeObject(contents, out List<ZoneConfig> zones, out _))
-                    foreach (var zone in zones)
-                    {
-                        _worldIdByZoneId.Add(zone.Id, world.Id);
-
-                        foreach (var cell in zone.Cells)
-                        {
-                            var x = cell.X * CELL_SIZE;
-                            var y = cell.Y * CELL_SIZE;
-                            foreach (var sector in cell.Sectors)
-                            {
-                                var sx = x + sector.X;
-                                var sy = y + sector.Y;
-                                world.ZoneIds[sx, sy] = zone.Id;
-                                world.Regions[sx, sy] = new Region(world.Id, sx, sy);
-                            }
-                        }
-                    }
-                else
-                    throw new Exception($"WorldManager: Parse {pathFile} file");
-            }
             #endregion
+
+            #region LoadServerDB
 
             using (var connection = SQLite.CreateConnection())
             {
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT * FROM indun_zones";
+                    command.Prepare();
+                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                    {
+                        while (reader.Read())
+                        {
+                            var idz = new IndunZone();
+                            idz.ZoneGroupId = reader.GetUInt32("zone_group_id");
+                            idz.Name = reader.GetString("name");
+                            //idz.Comment = reader.GetString("comment");
+                            idz.LevelMin = reader.GetUInt32("level_min");
+                            idz.LevelMax = reader.GetUInt32("level_max");
+                            idz.MaxPlayers = reader.GetUInt32("max_players");
+                            idz.PvP = reader.GetBoolean("pvp");
+                            idz.HasGraveyard = reader.GetBoolean("has_graveyard");
+                            idz.ItemId = reader.IsDBNull("item_id") ? 0 : reader.GetUInt32("item_id");
+                            idz.RestoreItemTime = reader.GetUInt32("restore_item_time");
+                            idz.PartyOnly = reader.GetBoolean("party_only");
+                            idz.ClientDriven = reader.GetBoolean("client_driven");
+                            idz.SelectChannel = reader.GetBoolean("select_channel");
+                            idz.LocalizedName = LocalizationManager.Instance.Get("indun_zones", "name", idz.ZoneGroupId, idz.Name);
+                            if (!_indunZones.TryAdd(idz.ZoneGroupId, idz))
+                                _log.Fatal($"Unable to add zone_group_id: {idz.ZoneGroupId} from indun_zone");
+                        }
+                    }
+                }
+
+                _log.Debug($"Loaded {_indunZones.Count()} dungeon zones");
+                /*
+                // add dummy main world as ID 0
+                if (!_indunZones.TryAdd(0, new IndunZone() { ZoneGroupId = 0, Name = "Main World", LocalizedName = "Erenor" }))
+                {
+                    _log.Fatal("Failed to add main world");
+                    return;
+                }
+                */
+
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "SELECT * FROM wi_group_wis";
@@ -199,8 +258,163 @@ namespace AAEmu.Game.Core.Managers.World
                     }
                 }
             }
+            #endregion
 
             //TickManager.Instance.OnLowFrequencyTick.Subscribe(ActiveRegionTick, TimeSpan.FromSeconds(5));
+        }
+
+        public bool LoadHeightMapFromDatFile(InstanceWorld world)
+        {
+            var heightMap = Path.Combine(FileManager.AppPath, "Data", "Worlds", world.Name, "hmap.dat");
+            if (!File.Exists(heightMap))
+            {
+                _log.Trace($"HeightMap for `{world.Name}` not found");
+                return false;
+            }
+
+            using (var stream = new FileStream(heightMap, FileMode.Open, FileAccess.Read, FileShare.None, 2 << 20))
+            using (var br = new BinaryReader(stream))
+            {
+                var version = br.ReadInt32();
+                if (version == 1)
+                {
+                    var hMapCellX = br.ReadInt32();
+                    var hMapCellY = br.ReadInt32();
+                    br.ReadDouble(); // heightMaxCoeff
+                    br.ReadInt32(); // count
+
+                    if (hMapCellX == world.CellX && hMapCellY == world.CellY)
+                    {
+                        for (var cellX = 0; cellX < world.CellX; cellX++)
+                        {
+                            for (var cellY = 0; cellY < world.CellY; cellY++)
+                            {
+                                if (br.ReadBoolean())
+                                    continue;
+                                for (var i = 0; i < SECTORS_PER_CELL; i++)
+                                    for (var j = 0; j < SECTORS_PER_CELL; j++)
+                                        for (var x = 0; x < SECTOR_HMAP_RESOLUTION; x++)
+                                            for (var y = 0; y < SECTOR_HMAP_RESOLUTION; y++)
+                                            {
+                                                var sx = cellX * CELL_HMAP_RESOLUTION + i * SECTOR_HMAP_RESOLUTION + x;
+                                                var sy = cellY * CELL_HMAP_RESOLUTION + j * SECTOR_HMAP_RESOLUTION + y;
+
+                                                world.HeightMaps[sx, sy] = br.ReadUInt16();
+                                            }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _log.Warn("{0}: Invalid heightmap cells, does not match world definition ...", world.Name);
+                        return false;
+                    }
+                }
+                else
+                {
+                    _log.Warn("{0}: Heightmap version not supported {1}", world.Name, version);
+                    return false;
+                }
+            }
+
+            _log.Info("{0} heightmap loaded", world.Name);
+            return true;
+        }
+
+        public bool LoadHeightMapFromClientData(InstanceWorld world)
+        {
+            // Use world.xml to check if we have client data enabled
+            var worldXmlTest = Path.Combine("game", "worlds", world.Name, "world.xml");
+            if (!ClientFileManager.FileExists(worldXmlTest))
+                return false;
+
+            var version = VersionCalc.Draft;
+
+            for (var cellY = 0; cellY < world.CellY; cellY++)
+                for (var cellX = 0; cellX < world.CellX; cellX++)
+                {
+                    var cellFileName = $"{cellX:000}_{cellY:000}";
+                    var heightMapFile = Path.Combine("game", "worlds", world.Name, "cells", cellFileName, "client",
+                        "terrain", "heightmap.dat");
+                    if (ClientFileManager.FileExists(heightMapFile))
+                        using (var stream = ClientFileManager.GetFileStream(heightMapFile))
+                        {
+                            if (stream == null)
+                            {
+                                //_log.Trace($"Cell {cellFileName} not found or not used in {world.Name}");
+                                continue;
+                            }
+
+                            // Read the cell hmap data
+                            using (var br = new BinaryReader(stream))
+                            {
+                                var hmap = new Hmap();
+
+                                if (hmap.Read(br, version == VersionCalc.V1) < 0)
+                                {
+                                    _log.Error($"Error reading {heightMapFile}");
+                                    continue;
+                                }
+
+                                var nodes = hmap.Nodes
+                                    .OrderBy(cell => cell.BoxHeightmap.Min.X)
+                                    .ThenBy(cell => cell.BoxHeightmap.Min.Y)
+                                    .Where(x => x.pHMData.Length > 0)
+                                    .ToList();
+
+                                // Read nodes into heightmap array
+
+                                #region ReadNodes
+
+                                for (ushort sectorX = 0; sectorX < SECTORS_PER_CELL; sectorX++) // 16x16 sectors / cell
+                                    for (ushort sectorY = 0; sectorY < SECTORS_PER_CELL; sectorY++)
+                                        for (ushort unitX = 0; unitX < SECTOR_HMAP_RESOLUTION; unitX++) // sector = 32x32 unit size
+                                            for (ushort unitY = 0; unitY < SECTOR_HMAP_RESOLUTION; unitY++)
+                                            {
+                                                var node = nodes[sectorX * SECTORS_PER_CELL + sectorY];
+                                                var oX = cellX * CELL_HMAP_RESOLUTION + sectorX * SECTOR_HMAP_RESOLUTION + unitX;
+                                                var oY = cellY * CELL_HMAP_RESOLUTION + sectorY * SECTOR_HMAP_RESOLUTION + unitY;
+
+                                                ushort value;
+                                                switch (version)
+                                                {
+                                                    case VersionCalc.V1:
+                                                        {
+                                                            var doubleValue = node.fRange * 100000d;
+                                                            var rawValue = node.RawDataByIndex(unitX, unitY);
+
+                                                            value = (ushort)((doubleValue / 1.52604335620711f) *
+                                                                             world.HeightMaxCoefficient /
+                                                                             ushort.MaxValue * rawValue +
+                                                                             node.BoxHeightmap.Min.Z * world.HeightMaxCoefficient);
+                                                        }
+                                                        break;
+                                                    case VersionCalc.V2:
+                                                        {
+                                                            value = node.RawDataByIndex(unitX, unitY);
+                                                            var height = node.RawDataToHeight(value);
+                                                        }
+                                                        break;
+                                                    case VersionCalc.Draft:
+                                                        {
+                                                            var height = node.GetHeight(unitX, unitY);
+                                                            value = (ushort)(height * world.HeightMaxCoefficient);
+                                                        }
+                                                        break;
+                                                    default:
+                                                        throw new ArgumentOutOfRangeException();
+                                                }
+
+                                                world.HeightMaps[oX, oY] = value;
+                                            }
+
+                                #endregion
+                            }
+                        }
+                }
+
+            _log.Info("{0} heightmap loaded", world.Name);
+            return true;
         }
 
         public void LoadHeightmaps()
@@ -208,64 +422,28 @@ namespace AAEmu.Game.Core.Managers.World
             if (AppConfiguration.Instance.HeightMapsEnable) // TODO fastboot if HeightMapsEnable = false!
             {
                 _log.Info("Loading heightmaps...");
+
+                var loaded = 0;
                 foreach (var world in _worlds.Values)
                 {
-                    var heightMap = $"{FileManager.AppPath}Data/Worlds/{world.Name}/hmap.dat";
-                    if (!File.Exists(heightMap))
-                    {
-                        _log.Warn($"HeightMap at `{world.Name}` doesn't exists");
-                        continue;
-                    }
-
-                    using (var stream = new FileStream(heightMap, FileMode.Open, FileAccess.Read, FileShare.None, 2 << 20))
-                    using (var br = new BinaryReader(stream))
-                    {
-                        var version = br.ReadInt32();
-                        if (version == 1)
-                        {
-                            var hMapCellX = br.ReadInt32();
-                            var hMapCellY = br.ReadInt32();
-                            br.ReadDouble(); // heightMaxCoeff
-                            br.ReadInt32(); // count
-
-                            if (hMapCellX == world.CellX && hMapCellY == world.CellY)
-                            {
-                                for (var cellX = 0; cellX < world.CellX; cellX++)
-                                {
-                                    for (var cellY = 0; cellY < world.CellY; cellY++)
-                                    {
-                                        if (br.ReadBoolean())
-                                            continue;
-                                        for (var i = 0; i < 16; i++)
-                                            for (var j = 0; j < 16; j++)
-                                                for (var x = 0; x < 32; x++)
-                                                    for (var y = 0; y < 32; y++)
-                                                    {
-                                                        var sx = cellX * 512 + i * 32 + x;
-                                                        var sy = cellY * 512 + j * 32 + y;
-
-                                                        world.HeightMaps[sx, sy] = br.ReadUInt16();
-                                                    }
-                                    }
-                                }
-                            }
-                            else
-                                _log.Warn("{0}: Invalid heightmap cells...", world.Name);
-                        }
-                        else
-                            _log.Warn("{0}: Heightmap not correct version", world.Name);
-                    }
-
-                    _log.Info("Heightmap {0} loaded", world.Name);
+                    if (AppConfiguration.Instance.ClientData.PreferClientHeightMap && LoadHeightMapFromClientData(world))
+                        loaded++;
+                    else if (LoadHeightMapFromDatFile(world))
+                        loaded++;
+                    else if (LoadHeightMapFromClientData(world))
+                        loaded++;
                 }
-                _log.Info("Heightmaps loaded");
 
+                _log.Info($"Loaded {loaded}/{_worlds.Count} heightmaps");
             }
         }
 
         public InstanceWorld GetWorld(uint worldId)
         {
-            return _worlds.ContainsKey(worldId) ? _worlds[worldId] : null;
+            if (_worlds.TryGetValue(worldId, out var res))
+                return res;
+            _log.Fatal("GetWorld(): No such WorldId {0}", worldId);
+            return null;
         }
 
         public InstanceWorld[] GetWorlds()
@@ -275,15 +453,30 @@ namespace AAEmu.Game.Core.Managers.World
 
         public InstanceWorld GetWorldByZone(uint zoneId)
         {
-            return _worlds[_worldIdByZoneId[zoneId]];
+            if (_worldIdByZoneId.TryGetValue(zoneId, out var worldId))
+                return GetWorld(worldId);
+            _log.Fatal("GetWorldByZone(): No world defined for ZoneId {0}", zoneId);
+            return null;
         }
 
         public uint GetZoneId(uint worldId, float x, float y)
         {
-            var world = _worlds[worldId];
+            if (!_worlds.TryGetValue(worldId, out var world))
+            {
+                _log.Fatal("GetZoneId(): No such WorldId {0}", worldId);
+                return 0;
+            }
             var sx = (int)(x / REGION_SIZE);
             var sy = (int)(y / REGION_SIZE);
-            return world.ZoneIds[sx, sy];
+
+            if (!world.ValidRegion(sx, sy))
+            {
+                _log.Fatal("GetZoneId(): Coordicates out of bounds for WorldId {0} - x:{1:#,0.#} - y: {2:#,0.#}", worldId, x, y);
+                return 0;
+            }
+
+            var region = world.GetRegion(sx, sy);
+            return region.ZoneKey;
         }
 
         public float GetHeight(uint zoneId, float x, float y)
@@ -297,6 +490,27 @@ namespace AAEmu.Game.Core.Managers.World
             {
                 return 0f;
             }
+        }
+
+        /// <summary>
+        /// Returns target height of World position of transform according to loaded heightmaps
+        /// </summary>
+        /// <param name="transform"></param>
+        /// <returns>Height at target world transform, or transform.World.Position.Z if no heightmap could be found</returns>
+        public float GetHeight(Transform transform)
+        {
+            if (AppConfiguration.Instance.HeightMapsEnable)
+                try
+                {
+                    var world = GetWorld(transform.WorldId);
+                    return world?.GetHeight(transform.World.Position.X, transform.World.Position.Y) ?? transform.World.Position.Z;
+                }
+                catch
+                {
+                    return 0f;
+                }
+            else
+                return transform.World.Position.Z;
         }
 
         private GameObject GetRootObj(GameObject obj)
@@ -314,13 +528,8 @@ namespace AAEmu.Game.Core.Managers.World
         public Region GetRegion(GameObject obj)
         {
             obj = GetRootObj(obj);
-            var world = GetWorld(obj.Position.WorldId);
-            return GetRegion(world, obj.Position.X, obj.Position.Y);
-        }
-
-        public Region GetRegion(Point point)
-        {
-            return GetRegion(point.ZoneId, point.X, point.Y);
+            InstanceWorld world = GetWorld(obj.Transform.WorldId);
+            return GetRegion(world, obj.Transform.World.Position.X, obj.Transform.World.Position.Y);
         }
 
         public Region[] GetNeighbors(uint worldId, int x, int y)
@@ -336,6 +545,12 @@ namespace AAEmu.Game.Core.Managers.World
             return result.ToArray();
         }
 
+        public GameObject GetGameObject(uint objId)
+        {
+            _objects.TryGetValue(objId, out var ret);
+            return ret;
+        }
+
         public BaseUnit GetBaseUnit(uint objId)
         {
             _baseUnits.TryGetValue(objId, out var ret);
@@ -345,6 +560,18 @@ namespace AAEmu.Game.Core.Managers.World
         public Doodad GetDoodad(uint objId)
         {
             _doodads.TryGetValue(objId, out var ret);
+            return ret;
+        }
+
+        public Doodad GetDoodadByDbId(uint dbId)
+        {
+            var ret = _doodads.FirstOrDefault(x => x.Value.DbId == dbId).Value;
+            return ret;
+        }
+
+        public List<Doodad> GetDoodadByHouseDbId(uint houseDbId)
+        {
+            var ret = _doodads.Where(x => x.Value.DbHouseId == houseDbId).Select(y => y.Value).ToList();
             return ret;
         }
 
@@ -379,16 +606,16 @@ namespace AAEmu.Game.Core.Managers.World
         public Character GetTargetOrSelf(Character character, string TargetName, out int FirstNonNameArgument)
         {
             FirstNonNameArgument = 0;
-            if (TargetName != null && TargetName != string.Empty)
+            if ((TargetName != null) && (TargetName != string.Empty))
             {
-                var player = WorldManager.Instance.GetCharacter(TargetName);
+                Character player = WorldManager.Instance.GetCharacter(TargetName);
                 if (player != null)
                 {
                     FirstNonNameArgument = 1;
                     return player;
                 }
             }
-            if (character.CurrentTarget != null && character.CurrentTarget is Character)
+            if ((character.CurrentTarget != null) && (character.CurrentTarget is Character))
                 return (Character)character.CurrentTarget;
             return character;
         }
@@ -428,6 +655,15 @@ namespace AAEmu.Game.Core.Managers.World
                 _transfers.TryAdd(transfer.ObjId, transfer);
             if (obj is Gimmick gimmick)
                 _gimmicks.TryAdd(gimmick.ObjId, gimmick);
+
+            if (_units.ContainsKey(obj.ObjId))
+            {
+
+            }
+            else
+            {
+
+            }
         }
 
         public void RemoveObject(GameObject obj)
@@ -458,14 +694,16 @@ namespace AAEmu.Game.Core.Managers.World
             if (obj == null || !obj.IsVisible)
                 return;
 
-            var region = GetRegion(obj);
-            var currentRegion = obj.Region;
+            var region = GetRegion(obj); // Get region of Object or it's Root object if it has one
+            var currentRegion = obj.Region; // Current Region this object is in
 
+            // If region didn't change, ignore
             if (region == null || currentRegion != null && currentRegion.Equals(region))
                 return;
 
             if (currentRegion == null)
             {
+                // If no currentRegion, add it (happens on new spawns)
                 foreach (var neighbor in region.GetNeighbors())
                     neighbor.AddToCharacters(obj);
 
@@ -474,9 +712,11 @@ namespace AAEmu.Game.Core.Managers.World
             }
             else
             {
+                // No longer in the same region, update things
                 var oldNeighbors = currentRegion.GetNeighbors();
                 var newNeighbors = region.GetNeighbors();
 
+                // Remove visibility from oldNeighbors
                 foreach (var neighbor in oldNeighbors)
                 {
                     var remove = true;
@@ -491,6 +731,7 @@ namespace AAEmu.Game.Core.Managers.World
                         neighbor.RemoveFromCharacters(obj);
                 }
 
+                // Add visibility to newNeighbours
                 foreach (var neighbor in newNeighbors)
                 {
                     var add = true;
@@ -505,11 +746,19 @@ namespace AAEmu.Game.Core.Managers.World
                         neighbor.AddToCharacters(obj);
                 }
 
+                // Add this obj to the new region
                 region.AddObject(obj);
+                // Update it's region
                 obj.Region = region;
 
+                // remove the obj from the old region
                 currentRegion.RemoveObject(obj);
             }
+
+            // Also show children
+            if (obj?.Transform?.Children.Count > 0)
+                foreach (var child in obj.Transform.Children)
+                    AddVisibleObject(child.GameObject);
         }
 
         public void RemoveVisibleObject(GameObject obj)
@@ -523,6 +772,11 @@ namespace AAEmu.Game.Core.Managers.World
                 neighbor.RemoveFromCharacters(obj);
 
             obj.Region = null;
+
+            // Also remove children
+            if (obj?.Transform?.Children.Count > 0)
+                foreach (var child in obj.Transform.Children)
+                    RemoveVisibleObject(child.GameObject);
         }
 
         public List<T> GetAround<T>(GameObject obj) where T : class
@@ -548,12 +802,12 @@ namespace AAEmu.Game.Core.Managers.World
 
             if (radius > 0.0f && RadiusFitsCurrentRegion(obj, radius))
             {
-                obj.Region.GetList(result, obj.ObjId, obj.Position.X, obj.Position.Y, radius * radius, useModelSize);
+                obj.Region.GetList(result, obj.ObjId, obj.Transform.World.Position.X, obj.Transform.World.Position.Y, radius * radius, useModelSize);
             }
             else
             {
                 foreach (var neighbor in obj.Region.GetNeighbors())
-                    neighbor.GetList(result, obj.ObjId, obj.Position.X, obj.Position.Y, radius * radius, useModelSize);
+                    neighbor.GetList(result, obj.ObjId, obj.Transform.World.Position.X, obj.Transform.World.Position.Y, radius * radius, useModelSize);
             }
 
             return result;
@@ -561,11 +815,11 @@ namespace AAEmu.Game.Core.Managers.World
 
         private bool RadiusFitsCurrentRegion(GameObject obj, float radius)
         {
-            var xMod = obj.Position.X % REGION_SIZE;
+            var xMod = obj.Transform.World.Position.X % REGION_SIZE;
             if (xMod - radius < 0 || xMod + radius > REGION_SIZE)
                 return false;
 
-            var yMod = obj.Position.Y % REGION_SIZE;
+            var yMod = obj.Transform.World.Position.Y % REGION_SIZE;
             if (yMod - radius < 0 || yMod + radius > REGION_SIZE)
                 return false;
             return true;
@@ -598,8 +852,8 @@ namespace AAEmu.Game.Core.Managers.World
         {
             var result = new List<T>();
             var regions = new List<Region>();
-            for (var a = x * CELL_SIZE; a < (x + 1) * CELL_SIZE; a++)
-                for (var b = y * CELL_SIZE; b < (y + 1) * CELL_SIZE; b++)
+            for (var a = x * SECTORS_PER_CELL; a < (x + 1) * SECTORS_PER_CELL; a++)
+                for (var b = y * SECTORS_PER_CELL; b < (y + 1) * SECTORS_PER_CELL; b++)
                 {
                     if (ValidRegion(worldId, a, b) && _worlds[worldId].Regions[a, b] != null)
                         regions.Add(_worlds[worldId].Regions[a, b]);
@@ -613,10 +867,10 @@ namespace AAEmu.Game.Core.Managers.World
         [Obsolete("Please use ChatManager.Instance.GetNationChat(race).SendPacker(packet) instead.")]
         public void BroadcastPacketToNation(GamePacket packet, Race race)
         {
-            var mRace = ((byte)race - 1) & 0xFC; // some bit magic that makes raceId into some kind of birth continent id
+            var mRace = (((byte)race - 1) & 0xFC); // some bit magic that makes raceId into some kind of birth continent id
             foreach (var character in _characters.Values)
             {
-                var cmRace = ((byte)character.Race - 1) & 0xFC;
+                var cmRace = (((byte)character.Race - 1) & 0xFC);
                 if (mRace != cmRace)
                     continue;
                 character.SendPacket(packet);
@@ -643,7 +897,7 @@ namespace AAEmu.Game.Core.Managers.World
             var validZones = ZoneManager.Instance.GetZoneKeysInZoneGroupById(zoneGroupId);
             foreach (var character in _characters.Values)
             {
-                if (!validZones.Contains(character.Position.ZoneId))
+                if (!validZones.Contains(character.Transform.ZoneId))
                     continue;
                 character.SendPacket(packet);
             }
@@ -674,14 +928,14 @@ namespace AAEmu.Game.Core.Managers.World
 
         private bool ValidRegion(uint worldId, int x, int y)
         {
-            var world = _worlds[worldId];
+            var world = GetWorld(worldId);
             return world.ValidRegion(x, y);
         }
 
         public void OnPlayerJoin(Character character)
         {
             //turn snow on off 
-            //Snow(character); // не нашел такого пакета в 3.0.3.0
+            // Snow(character); // TODO найти opcode
 
             //family stuff
             if (character.Family > 0)
@@ -700,18 +954,20 @@ namespace AAEmu.Game.Core.Managers.World
         public void ResendVisibleObjectsToCharacter(Character character)
         {
             // Re-send visible flags to character getting out of cinema
-            var stuffs = WorldManager.Instance.GetAround<Unit>(character, 1000f);
+            var stuffs = WorldManager.Instance.GetAround<GameObject>(character, REGION_NEIGHBORHOOD_SIZE * REGION_SIZE);
+            var doodads = new List<Doodad>();
             foreach (var stuff in stuffs)
             {
-                stuff.AddVisibleObject(character);
+                if (stuff is Doodad d)
+                    doodads.Add(d);
+                else
+                    stuff.AddVisibleObject(character);
             }
 
-            var doodads = WorldManager.Instance.GetAround<Doodad>(character, 1000f).ToArray();
-            for (var i = 0; i < doodads.Length; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
+            for (var i = 0; i < doodads.Count; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
             {
-                var count = doodads.Length - i;
-                var temp = new Doodad[count <= SCDoodadsCreatedPacket.MaxCountPerPacket ? count : SCDoodadsCreatedPacket.MaxCountPerPacket];
-                Array.Copy(doodads, i, temp, 0, temp.Length);
+                var count = Math.Min(doodads.Count - i, SCDoodadsCreatedPacket.MaxCountPerPacket);
+                var temp = doodads.GetRange(i, count).ToArray();
                 character.SendPacket(new SCDoodadsCreatedPacket(temp));
             }
         }
@@ -728,7 +984,7 @@ namespace AAEmu.Game.Core.Managers.World
 
         public AreaShape GetAreaShapeById(uint id)
         {
-            if (_areaShapes.TryGetValue(id, out var res))
+            if (_areaShapes.TryGetValue(id, out AreaShape res))
                 return res;
             return null;
         }

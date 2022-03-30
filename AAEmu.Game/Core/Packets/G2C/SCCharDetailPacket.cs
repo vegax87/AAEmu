@@ -27,10 +27,10 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write((byte)_character.Ability1);
             stream.Write((byte)_character.Ability2);
             stream.Write((byte)_character.Ability3);
-            stream.Write(Helpers.ConvertLongX(_character.Position.X));
-            stream.Write(Helpers.ConvertLongY(_character.Position.Y));
-            stream.Write(_character.Position.Z);
-            stream.Write(_character.Position.ZoneId);
+            stream.Write(Helpers.ConvertLongX(_character.Transform.Local.Position.X));
+            stream.Write(Helpers.ConvertLongY(_character.Transform.Local.Position.Y));
+            stream.Write(_character.Transform.Local.Position.Z);
+            stream.Write(_character.Transform.ZoneId);
             stream.Write(DateTime.UtcNow); // lastWorldLeaveTime
 
             var items = _character.Inventory.Equipment.GetSlottedItemsList();

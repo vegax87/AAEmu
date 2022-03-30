@@ -45,9 +45,9 @@ namespace AAEmu.Game.Scripts.Commands
             if (character.CurrentTarget != null)
             {
                 float value = 0;
-                float x = character.CurrentTarget.Position.X;
-                float y = character.CurrentTarget.Position.Y;
-                float z = character.CurrentTarget.Position.Z;
+                float x = character.CurrentTarget.Transform.World.Position.X;
+                float y = character.CurrentTarget.Transform.World.Position.Y;
+                float z = character.CurrentTarget.Transform.World.Position.Z;
 
                 if (float.TryParse(args[0], out value) && args[0] != "x")
                 {
@@ -70,25 +70,23 @@ namespace AAEmu.Game.Scripts.Commands
                 moveType.X = x;
                 moveType.Y = y;
                 moveType.Z = z;
-                character.CurrentTarget.Position.X = x;
-                character.CurrentTarget.Position.Y = y;
-                character.CurrentTarget.Position.Z = z;
+                character.CurrentTarget.Transform.Local.SetPosition(x, y, z);
 
-
-                moveType.RotationX = character.CurrentTarget.Position.RotationX;
-                moveType.RotationY = character.CurrentTarget.Position.RotationY;
-                moveType.RotationZ = character.CurrentTarget.Position.RotationZ;
+                var characterRot = character.CurrentTarget.Transform.World.ToRollPitchYawSBytes();
+                moveType.RotationX = characterRot.Item1 ;
+                moveType.RotationY = characterRot.Item2 ;
+                moveType.RotationZ = characterRot.Item3 ;
 
                 moveType.ActorFlags = ActorMoveType.Walk; // 5-walk, 4-run, 3-stand still
                 moveType.DeltaMovement = new sbyte[3];
                 moveType.DeltaMovement[0] = 0;
                 moveType.DeltaMovement[1] = 0;
                 moveType.DeltaMovement[2] = 0;
-                moveType.Stance = EStance.Idle;        // COMBAT = 0x0, IDLE = 0x1
-                moveType.Alertness = AiAlertness.Idle; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+                moveType.Stance = EStance.Idle; //combat=0, idle=1
+                moveType.Alertness = AiAlertness.Idle; //idle=0, combat=2
                 moveType.Time += 50; // has to change all the time for normal motion.
 
-                character.SendMessage("[nloc] New position {0} {1} {2}", character.CurrentTarget.Position.X, character.CurrentTarget.Position.Y, character.CurrentTarget.Position.Z);
+                character.SendMessage("[nloc] New position {0} {1} {2}", character.CurrentTarget.Transform.World.Position.X, character.CurrentTarget.Transform.World.Position.Y, character.CurrentTarget.Transform.World.Position.Z);
                 character.BroadcastPacket(new SCOneUnitMovementPacket(character.CurrentTarget.ObjId, moveType), true);
             }
             else

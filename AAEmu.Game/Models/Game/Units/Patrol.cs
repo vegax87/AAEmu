@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Numerics;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.NPChar;
@@ -69,7 +69,7 @@ namespace AAEmu.Game.Models.Game.Units
         /// 暂停巡航点
         /// Suspension of cruise points
         /// </summary>
-        protected Point PausePosition { get; set; }
+        protected Vector3 PausePosition { get; set; }
 
         /// <summary>
         /// 上次任务
@@ -103,8 +103,8 @@ namespace AAEmu.Game.Models.Game.Units
                 }
                 ++Count;
                 //++Seq;
-                //Seq = (uint)Rand.Next(0, 10000);
-                Seq = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
+                //Seq = (uint)(DateTime.Now - DateTime.Today).TotalMilliseconds;
+                Seq += 100;
                 Running = true;
                 npc.Patrol = this;
                 Execute(npc);
@@ -141,7 +141,7 @@ namespace AAEmu.Game.Models.Game.Units
         public void Pause(Npc npc)
         {
             Running = false;
-            PausePosition = npc.Position.Clone();
+            PausePosition = npc.Transform.Local.ClonePosition();
         }
 
         public void Stop(Npc npc)
@@ -166,7 +166,7 @@ namespace AAEmu.Game.Models.Game.Units
             // If the last cruise is not null
             if (LastPatrol != null && Running == false)
             {
-                if (npc.Position.X == LastPatrol.PausePosition.X && npc.Position.Y == LastPatrol.PausePosition.Y && npc.Position.Z == LastPatrol.PausePosition.Z)
+                if (npc.Transform.Local.Position.X == LastPatrol.PausePosition.X && npc.Transform.Local.Position.Y == LastPatrol.PausePosition.Y && npc.Transform.Local.Position.Z == LastPatrol.PausePosition.Z)
                 {
                     LastPatrol.Running = true;
                     npc.Patrol = LastPatrol;

@@ -1,16 +1,17 @@
 ﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game;
-using AAEmu.Game.Models.Game.AI.AiCharacters;
+using AAEmu.Game.Models.Game.AI.UnitTypes;
+using AAEmu.Game.Models.Game.AI.v2.AiCharacters;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
 
 namespace AAEmu.Game.Scripts.Commands
 {
-    public partial class TestAI : ICommand
+    public class TestAI : ICommand
     {
         public void OnLoad()
         {
-            string[] name = { "testai", "ai" };
+            string[] name = { "testai","ai" };
             CommandManager.Instance.Register(name, this);
         }
 
@@ -39,7 +40,7 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             npc.Patrol = null;
-            npc.Ai = new AlmightyNpcAiCharacter() { Owner = npc, IdlePosition = npc.Position.Clone() };
+            npc.Ai = new AlmightyNpcAiCharacter() {Owner = npc, IdlePosition = npc.Transform.CloneDetached()};
             AIManager.Instance.AddAi(npc.Ai);
         }
     }

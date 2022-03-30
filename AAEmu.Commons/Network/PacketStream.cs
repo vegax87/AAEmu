@@ -764,6 +764,13 @@ namespace AAEmu.Commons.Network
             return this;
         }
 
+        public PacketStream WritePosition(Vector3 pos)
+        {
+            var res = Helpers.ConvertPosition(pos.X, pos.Y, pos.Z);
+            Write(res);
+            return this;
+        }
+
         public PacketStream WriteQuaternionShort(Quaternion values, bool scalar = false)
         {
             var temp = new PacketStream();

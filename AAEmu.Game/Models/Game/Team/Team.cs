@@ -1,6 +1,7 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.World.Transform;
 
 namespace AAEmu.Game.Models.Game.Team
 {

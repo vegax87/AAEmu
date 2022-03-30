@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Units;
-
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Shipyard
@@ -13,37 +15,83 @@ namespace AAEmu.Game.Models.Game.Shipyard
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
 
-        public override UnitTypeFlag TypeFlag { get; } = UnitTypeFlag.Shipyard;
-        public ShipyardData Template { get; set; }
-        public override UnitCustomModelParams ModelParams { get; set; }
-
         public override float Scale => 1.0f;
+        private object _lock = new object();
+        private bool _isDirty;
+        private int _allAction;
+        private int _baseAction;
+        private int _numAction;
+        private int _currentStep;
+        private ShipyardsTemplate _template;
+
+        public override UnitTypeFlag TypeFlag { get; } = UnitTypeFlag.Shipyard;
+        public override UnitCustomModelParams ModelParams { get; set; }
+        public ShipyardData ShipyardData { get; set; }
+        public ShipyardsTemplate Template
+        {
+            get => _template;
+            set
+            {
+                _template = value;
+                _allAction = _template.ShipyardSteps.Values.Sum(step => step.NumActions);
+            }
+        }
+        private bool IsDirty { get => _isDirty; set => _isDirty = value; }
+        public int AllAction { get => _allAction; set { _allAction = value; _isDirty = true; } }
+        public int BaseAction {
+            get => _baseAction;
+            private set
+            {
+                _baseAction = value; _isDirty = true;
+            }
+        }
+        public int CurrentAction => BaseAction + NumAction;
+        public int NumAction {
+            get => _numAction;
+            private set
+            {
+                _numAction = value; _isDirty = true;
+            }
+        }
+        public int CurrentStep
+        {
+            get => _currentStep;
+            private set
+            {
+                _currentStep = value;
+                _isDirty = true;
+                ModelId = _currentStep == -1 ? Template.MainModelId : Template.ShipyardSteps[_currentStep].ModelId;
+                if (_currentStep <= 0) { return; }
+
+                BaseAction = 0;
+                for (var i = 0; i < _currentStep; i++)
+                    BaseAction += Template.ShipyardSteps[i].NumActions;
+            }
+        }
 
         public Shipyard()
         {
             ModelParams = new UnitCustomModelParams();
+            IsDirty = true;
+            Events.OnDeath += OnDeath;
         }
 
         public override void AddVisibleObject(Character character)
         {
             character.SendPacket(new SCUnitStatePacket(this));
-            character.SendPacket(new SCShipyardStatePacket(Template));
-            // TODO This packet is not available on the 3.5 server, but on the 1.2 server the shipyard is required to revive
-            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc));
+            character.SendPacket(new SCShipyardStatePacket(ShipyardData));
+
+            base.AddVisibleObject(character);
         }
 
         public override void RemoveVisibleObject(Character character)
         {
-            if (character.CurrentTarget != null && character.CurrentTarget == this)
-            {
-                character.CurrentTarget = null;
-                character.SendPacket(new SCTargetChangedPacket(character.ObjId, 0));
-            }
+            base.RemoveVisibleObject(character);
 
             character.SendPacket(new SCUnitsRemovedPacket(new[] { ObjId }));
-
         }
-            #region Attributes
+
+        #region Attributes
 
         public int Str
         {
@@ -188,7 +236,8 @@ namespace AAEmu.Game.Models.Game.Shipyard
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.MaxHealth);
+                var formula =
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.MaxHealth);
                 var parameters = new Dictionary<string, double>
                 {
                     ["level"] = Level,
@@ -220,7 +269,8 @@ namespace AAEmu.Game.Models.Game.Shipyard
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.HealthRegen);
+                var formula =
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.HealthRegen);
                 var parameters = new Dictionary<string, double>
                 {
                     ["level"] = Level,
@@ -253,7 +303,8 @@ namespace AAEmu.Game.Models.Game.Shipyard
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.PersistentHealthRegen);
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard,
+                    UnitFormulaKind.PersistentHealthRegen);
                 var parameters = new Dictionary<string, double>
                 {
                     ["level"] = Level,
@@ -286,7 +337,8 @@ namespace AAEmu.Game.Models.Game.Shipyard
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.MaxMana);
+                var formula =
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.MaxMana);
                 var parameters = new Dictionary<string, double>
                 {
                     ["level"] = Level,
@@ -318,7 +370,8 @@ namespace AAEmu.Game.Models.Game.Shipyard
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.ManaRegen);
+                var formula =
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.ManaRegen);
                 var parameters = new Dictionary<string, double>
                 {
                     ["level"] = Level,
@@ -351,7 +404,9 @@ namespace AAEmu.Game.Models.Game.Shipyard
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard, UnitFormulaKind.PersistentManaRegen);
+                var formula =
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Shipyard,
+                        UnitFormulaKind.PersistentManaRegen);
                 var parameters = new Dictionary<string, double>
                 {
                     ["level"] = Level,
@@ -381,5 +436,35 @@ namespace AAEmu.Game.Models.Game.Shipyard
         }
 
         #endregion
-}
+
+        private void OnDeath(object sender, EventArgs args)
+        {
+            _log.Debug("Shipyard died ObjId:{0} - TemplateId:{1} - {2}", ObjId, ShipyardData.TemplateId, ShipyardData.OwnerName);
+            ShipyardManager.Instance.RemoveShipyard(this);
+        }
+
+        public void AddBuildAction()
+        {
+            if (CurrentStep == -1)
+                return;
+
+            lock (_lock)
+            {
+                var nextAction = NumAction + 1;
+                if (Template.ShipyardSteps[CurrentStep].NumActions > nextAction)
+                    NumAction = nextAction;
+                else
+                {
+                    NumAction = 0;
+                    var nextStep = CurrentStep + 1;
+                    if (Template.ShipyardSteps.Count > nextStep)
+                        CurrentStep = nextStep;
+                    else
+                    {
+                        CurrentStep = -1;
+                    }
+                }
+            }
+        }
+    }
 }

@@ -7,7 +7,7 @@ using AAEmu.Game.Models.Tasks.Doodads;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 {
-    public class DoodadFuncTimer : DoodadFuncTemplate
+    public class DoodadFuncTimer : DoodadPhaseFuncTemplate
     {
         public int Delay { get; set; }
         public int NextPhase { get; set; }
@@ -16,28 +16,23 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
         public bool ShowEndTime { get; set; }
         public string Tip { get; set; }
 
-        public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
+        public override bool Use(Unit caster, Doodad owner)
         {
-            //_log.Debug("Delay " + Delay);
-            //_log.Debug("NextPhase " + NextPhase);
-            //_log.Debug("KeepRequester " + KeepRequester);
-            //_log.Debug("ShowTip " + ShowTip);
-            //_log.Debug("ShowEndTime " + ShowEndTime);
-            //_log.Debug("Tip " + Tip);
-
-            owner.GrowthTime = DateTime.Now.AddMilliseconds(Delay + 1); // TODO need here
 
             if (NextPhase > 0)
             {
-                owner.FuncTask = new DoodadFuncTimerTask(caster, owner, skillId, NextPhase);
-                TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(Delay + 1));
+                _log.Trace("DoodadFuncTimer: TemplateId {0},  Delay {1}, NextPhase {2}, KeepRequester {3}, ShowTip {4}, ShowEndTime {5}, Tip {6}", owner.TemplateId, Delay, NextPhase, KeepRequester, ShowTip, ShowEndTime, Tip);
+                owner.FuncTask = new DoodadFuncTimerTask(caster, owner, 0, NextPhase);
+                owner.GrowthTime = DateTime.UtcNow.AddMilliseconds(Delay); // TODO need here
+                TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(Delay));
             }
             else
             {
                 //Wondering if more needs done here if depending on next phase func
-                owner.Use(caster, skillId);
+                //owner.Use(caster, skillId);
             }
-            owner.ToPhaseAndUse = false;
+
+            return false; // никогда не прерываем последовательность фазовых функций
         }
     }
 }

@@ -12,6 +12,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
     public class DeclareDominion: SpecialEffectAction
     {
+        protected override SpecialType SpecialEffectActionType => SpecialType.DeclareDominion;
+        
         public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
@@ -37,30 +39,30 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             // Advance building step on target
             
             // Create new dominion data
-            var dominion = new DominionData
+            var dominion = new DominionData()
             {
                 House = lodestone.Id,
-                X = lodestone.Position.X,
-                Y = lodestone.Position.Y,
-                Z = lodestone.Position.Z,
+                X = lodestone.Transform.World.Position.X,
+                Y = lodestone.Transform.World.Position.Y,
+                Z = lodestone.Transform.World.Position.Z,
                 TaxRate = 50,
-                ReignStartTime = DateTime.Now,
+                ReignStartTime = DateTime.UtcNow,
                 ExpeditionId = caster.Expedition.Id,
                 CurHouseTaxMoney = 500000,
                 CurHuntTaxMoney = 9000,
                 PeaceTaxMoney = 300000,
                 CurHouseTaxAaPoint = 0,
                 PeaceTaxAaPoint = 0,
-                LastPaidTime = DateTime.Now,
-                LastSiegeEndTime = DateTime.Now,
-                LastTaxRateChangedTime = DateTime.Now,
-                LastNationalTaxRateChagedTime = DateTime.Now,
+                LastPaidTime = DateTime.UtcNow,
+                LastSiegeEndTime = DateTime.UtcNow,
+                LastTaxRateChangedTime = DateTime.UtcNow,
+                LastNationalTaxRateChagedTime = DateTime.UtcNow,
                 NationalTaxRate = 500,
                 NationalMonumentDbId = 0,
                 NationalMonumentX = 0,
                 NationalMonumentY = 0,
                 NationalMonumentZ = 0,
-                TerritoryData = new DominionTerritoryData
+                TerritoryData = new DominionTerritoryData()
                 {
                   Id = 6,
                   Id2 = 4771,
@@ -71,14 +73,14 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                   RadiusSiege = 250,
                   RadiusOffenseHq = 100
                 },
-                SiegeTimers = new DominionSiegeTimers
+                SiegeTimers = new DominionSiegeTimers()
                 {
                     Bdm = 0,
                     Durations = new int[]{0,0,0,0,0},
                     Fixed = DateTime.MinValue,
                     Started = DateTime.MinValue,
                     SiegePeriod = 1,
-                    UnkData = new DominionUnkData
+                    UnkData = new DominionUnkData()
                     {
                         Id = 0,
                         Limit = 0,
@@ -90,7 +92,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                         ObjId = 4,
                         UnkIds = new uint[]{}
                     },
-                    Unk2Data = new DominionUnkData
+                    Unk2Data = new DominionUnkData()
                     {
                         Id = 0,
                         Limit = 0,
@@ -104,8 +106,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                     }
                 },
                 NonPvPDuration = 0,
-                NonPvPStart = DateTime.Now,
-                ZoneId = (ushort) ZoneManager.Instance.GetZoneByKey(lodestone.Position.ZoneId).GroupId,
+                NonPvPStart = DateTime.UtcNow,
+                ZoneId = (ushort) ZoneManager.Instance.GetZoneByKey(lodestone.Transform.ZoneId).GroupId,
                 ObjId = 0
             };
             

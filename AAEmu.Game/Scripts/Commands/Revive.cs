@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
@@ -33,7 +33,7 @@ namespace AAEmu.Game.Scripts.Commands
                 {
                     targetPlayer.Hp = targetPlayer.MaxHp;
                     targetPlayer.Mp = targetPlayer.MaxMp;
-                    targetPlayer.BroadcastPacket(new SCCharacterResurrectedPacket(targetPlayer.ObjId, targetPlayer.Position.X, targetPlayer.Position.Y, targetPlayer.Position.Z, targetPlayer.Position.RotationZ), true);
+                    targetPlayer.BroadcastPacket(new SCCharacterResurrectedPacket(targetPlayer.ObjId, targetPlayer.Transform.World.Position.X, targetPlayer.Transform.World.Position.Y, targetPlayer.Transform.World.Position.Z, targetPlayer.Transform.World.Rotation.Z), true);
                     targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp, targetPlayer.HighAbilityRsc), true);
                 }
                 else
