@@ -35,9 +35,7 @@ atel0/AAEmu are not affiliated with XLGames. All brands and trademarks belong to
 ## Description
 - It's just aproof of concept;
 - Made based on the develop_feat_quest&doodad branch;
-- Requires careful correction of package structures;
-- Database compact.sqlite3 from server version 3.0.3.0;
-- Client version 8.0.3.12 r558734 14.12.2021 ArcheAge Kakao.
+- Requires careful correction of package structures.
 
 ## Screenshots
 ![avatar](/doc/img/Screenshot_1.png)
